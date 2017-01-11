@@ -14,8 +14,8 @@
 
 package com.liferay.portlet.announcements.service.impl;
 
+import com.liferay.announcements.kernel.model.AnnouncementsFlag;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portlet.announcements.model.AnnouncementsFlag;
 import com.liferay.portlet.announcements.service.base.AnnouncementsFlagLocalServiceBaseImpl;
 
 import java.util.Date;
@@ -30,7 +30,6 @@ public class AnnouncementsFlagLocalServiceImpl
 
 	@Override
 	public AnnouncementsFlag addFlag(long userId, long entryId, int value) {
-
 		long flagId = counterLocalService.increment();
 
 		AnnouncementsFlag flag = announcementsFlagPersistence.create(flagId);

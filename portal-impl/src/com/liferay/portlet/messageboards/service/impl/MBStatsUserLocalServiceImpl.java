@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.messageboards.service.impl;
 
+import com.liferay.message.boards.kernel.model.MBStatsUser;
+import com.liferay.message.boards.kernel.model.MBThread;
 import com.liferay.portal.kernel.dao.orm.Disjunction;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
@@ -27,11 +29,9 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.util.ClassLoaderUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.model.Group;
-import com.liferay.portal.util.ClassLoaderUtil;
-import com.liferay.portlet.messageboards.model.MBStatsUser;
-import com.liferay.portlet.messageboards.model.MBThread;
 import com.liferay.portlet.messageboards.model.impl.MBStatsUserImpl;
 import com.liferay.portlet.messageboards.service.base.MBStatsUserLocalServiceBaseImpl;
 
@@ -46,7 +46,6 @@ public class MBStatsUserLocalServiceImpl
 
 	@Override
 	public MBStatsUser addStatsUser(long groupId, long userId) {
-
 		long statsUserId = counterLocalService.increment();
 
 		MBStatsUser statsUser = mbStatsUserPersistence.create(statsUserId);
@@ -110,7 +109,6 @@ public class MBStatsUserLocalServiceImpl
 
 	@Override
 	public Date getLastPostDateByUserId(long groupId, long userId) {
-
 		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
 			MBThread.class, MBStatsUserImpl.TABLE_NAME,
 			ClassLoaderUtil.getPortalClassLoader());
@@ -123,7 +121,7 @@ public class MBStatsUserLocalServiceImpl
 
 		Disjunction disjunction = RestrictionsFactoryUtil.disjunction();
 
-		QueryDefinition queryDefinition = new QueryDefinition(
+		QueryDefinition<MBThread> queryDefinition = new QueryDefinition<>(
 			WorkflowConstants.STATUS_IN_TRASH);
 
 		List<MBThread> threads = mbThreadLocalService.getGroupThreads(
@@ -188,7 +186,6 @@ public class MBStatsUserLocalServiceImpl
 
 	@Override
 	public MBStatsUser getStatsUser(long groupId, long userId) {
-
 		MBStatsUser statsUser = mbStatsUserPersistence.fetchByG_U(
 			groupId, userId);
 
@@ -228,13 +225,11 @@ public class MBStatsUserLocalServiceImpl
 
 	@Override
 	public List<MBStatsUser> getStatsUsersByUserId(long userId) {
-
 		return mbStatsUserPersistence.findByUserId(userId);
 	}
 
 	@Override
 	public MBStatsUser updateStatsUser(long groupId, long userId) {
-
 		return updateStatsUser(
 			groupId, userId, getLastPostDateByUserId(groupId, userId));
 	}
@@ -266,7 +261,7 @@ public class MBStatsUserLocalServiceImpl
 		return statsUser;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		MBStatsUserLocalServiceImpl.class);
 
 }

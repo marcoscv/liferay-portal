@@ -93,10 +93,12 @@ public class MicrosoftTranslatorImpl implements MicrosoftTranslator {
 		String text = HttpUtil.URLtoString(options);
 
 		int x = text.indexOf(">") + 1;
+
 		int y = text.indexOf("</string>", x);
 
 		if ((x == -1) || (y == -1)) {
 			x = text.indexOf("Message: ");
+
 			y = text.indexOf("<", x);
 
 			if ((x > -1) && (y > -1)) {
@@ -139,6 +141,7 @@ public class MicrosoftTranslatorImpl implements MicrosoftTranslator {
 		return languageId;
 	}
 
-	private MicrosoftTranslatorAuthenticator _microsoftTranslatorAuthenticator;
+	private final MicrosoftTranslatorAuthenticator
+		_microsoftTranslatorAuthenticator;
 
 }

@@ -15,7 +15,7 @@
 package com.liferay.portal.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.model.UserIdMapper;
+import com.liferay.portal.kernel.model.UserIdMapper;
 import com.liferay.portal.service.base.UserIdMapperLocalServiceBaseImpl;
 
 import java.util.List;
@@ -48,7 +48,6 @@ public class UserIdMapperLocalServiceImpl
 
 	@Override
 	public List<UserIdMapper> getUserIdMappers(long userId) {
-
 		return userIdMapperPersistence.findByUserId(userId);
 	}
 

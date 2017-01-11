@@ -14,42 +14,39 @@
 
 package com.liferay.portal.service.persistence.impl;
 
-import com.liferay.portal.NoSuchServiceComponentException;
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
+import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
 import com.liferay.portal.kernel.dao.orm.Query;
 import com.liferay.portal.kernel.dao.orm.QueryPos;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.Session;
+import com.liferay.portal.kernel.exception.NoSuchServiceComponentException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.InstanceFactory;
+import com.liferay.portal.kernel.model.ServiceComponent;
+import com.liferay.portal.kernel.service.persistence.ServiceComponentPersistence;
+import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.ModelListener;
-import com.liferay.portal.model.ServiceComponent;
 import com.liferay.portal.model.impl.ServiceComponentImpl;
 import com.liferay.portal.model.impl.ServiceComponentModelImpl;
-import com.liferay.portal.service.persistence.ServiceComponentPersistence;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -61,9 +58,10 @@ import java.util.Set;
  *
  * @author Brian Wing Shun Chan
  * @see ServiceComponentPersistence
- * @see ServiceComponentUtil
+ * @see com.liferay.portal.kernel.service.persistence.ServiceComponentUtil
  * @generated
  */
+@ProviderType
 public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<ServiceComponent>
 	implements ServiceComponentPersistence {
 	/*
@@ -127,7 +125,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 * Returns a range of all the service components where buildNamespace = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ServiceComponentModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ServiceComponentModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param buildNamespace the build namespace
@@ -145,7 +143,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 * Returns an ordered range of all the service components where buildNamespace = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ServiceComponentModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ServiceComponentModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param buildNamespace the build namespace
@@ -156,7 +154,31 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 */
 	@Override
 	public List<ServiceComponent> findByBuildNamespace(String buildNamespace,
-		int start, int end, OrderByComparator orderByComparator) {
+		int start, int end,
+		OrderByComparator<ServiceComponent> orderByComparator) {
+		return findByBuildNamespace(buildNamespace, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the service components where buildNamespace = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ServiceComponentModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param buildNamespace the build namespace
+	 * @param start the lower bound of the range of service components
+	 * @param end the upper bound of the range of service components (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching service components
+	 */
+	@Override
+	public List<ServiceComponent> findByBuildNamespace(String buildNamespace,
+		int start, int end,
+		OrderByComparator<ServiceComponent> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -176,16 +198,20 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 				};
 		}
 
-		List<ServiceComponent> list = (List<ServiceComponent>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<ServiceComponent> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (ServiceComponent serviceComponent : list) {
-				if (!Validator.equals(buildNamespace,
-							serviceComponent.getBuildNamespace())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<ServiceComponent>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (ServiceComponent serviceComponent : list) {
+					if (!Objects.equals(buildNamespace,
+								serviceComponent.getBuildNamespace())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -195,7 +221,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -256,10 +282,10 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -277,11 +303,11 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 * @param buildNamespace the build namespace
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching service component
-	 * @throws com.liferay.portal.NoSuchServiceComponentException if a matching service component could not be found
+	 * @throws NoSuchServiceComponentException if a matching service component could not be found
 	 */
 	@Override
 	public ServiceComponent findByBuildNamespace_First(String buildNamespace,
-		OrderByComparator orderByComparator)
+		OrderByComparator<ServiceComponent> orderByComparator)
 		throws NoSuchServiceComponentException {
 		ServiceComponent serviceComponent = fetchByBuildNamespace_First(buildNamespace,
 				orderByComparator);
@@ -311,7 +337,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 */
 	@Override
 	public ServiceComponent fetchByBuildNamespace_First(String buildNamespace,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<ServiceComponent> orderByComparator) {
 		List<ServiceComponent> list = findByBuildNamespace(buildNamespace, 0,
 				1, orderByComparator);
 
@@ -328,11 +354,11 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 * @param buildNamespace the build namespace
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching service component
-	 * @throws com.liferay.portal.NoSuchServiceComponentException if a matching service component could not be found
+	 * @throws NoSuchServiceComponentException if a matching service component could not be found
 	 */
 	@Override
 	public ServiceComponent findByBuildNamespace_Last(String buildNamespace,
-		OrderByComparator orderByComparator)
+		OrderByComparator<ServiceComponent> orderByComparator)
 		throws NoSuchServiceComponentException {
 		ServiceComponent serviceComponent = fetchByBuildNamespace_Last(buildNamespace,
 				orderByComparator);
@@ -362,7 +388,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 */
 	@Override
 	public ServiceComponent fetchByBuildNamespace_Last(String buildNamespace,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<ServiceComponent> orderByComparator) {
 		int count = countByBuildNamespace(buildNamespace);
 
 		if (count == 0) {
@@ -386,12 +412,12 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 * @param buildNamespace the build namespace
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next service component
-	 * @throws com.liferay.portal.NoSuchServiceComponentException if a service component with the primary key could not be found
+	 * @throws NoSuchServiceComponentException if a service component with the primary key could not be found
 	 */
 	@Override
 	public ServiceComponent[] findByBuildNamespace_PrevAndNext(
 		long serviceComponentId, String buildNamespace,
-		OrderByComparator orderByComparator)
+		OrderByComparator<ServiceComponent> orderByComparator)
 		throws NoSuchServiceComponentException {
 		ServiceComponent serviceComponent = findByPrimaryKey(serviceComponentId);
 
@@ -422,13 +448,14 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 
 	protected ServiceComponent getByBuildNamespace_PrevAndNext(
 		Session session, ServiceComponent serviceComponent,
-		String buildNamespace, OrderByComparator orderByComparator,
-		boolean previous) {
+		String buildNamespace,
+		OrderByComparator<ServiceComponent> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -565,8 +592,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 
 		Object[] finderArgs = new Object[] { buildNamespace };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(2);
@@ -604,10 +630,10 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -635,12 +661,12 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 			new String[] { String.class.getName(), Long.class.getName() });
 
 	/**
-	 * Returns the service component where buildNamespace = &#63; and buildNumber = &#63; or throws a {@link com.liferay.portal.NoSuchServiceComponentException} if it could not be found.
+	 * Returns the service component where buildNamespace = &#63; and buildNumber = &#63; or throws a {@link NoSuchServiceComponentException} if it could not be found.
 	 *
 	 * @param buildNamespace the build namespace
 	 * @param buildNumber the build number
 	 * @return the matching service component
-	 * @throws com.liferay.portal.NoSuchServiceComponentException if a matching service component could not be found
+	 * @throws NoSuchServiceComponentException if a matching service component could not be found
 	 */
 	@Override
 	public ServiceComponent findByBNS_BNU(String buildNamespace,
@@ -661,8 +687,8 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 
 			msg.append(StringPool.CLOSE_CURLY_BRACE);
 
-			if (_log.isWarnEnabled()) {
-				_log.warn(msg.toString());
+			if (_log.isDebugEnabled()) {
+				_log.debug(msg.toString());
 			}
 
 			throw new NoSuchServiceComponentException(msg.toString());
@@ -689,7 +715,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 *
 	 * @param buildNamespace the build namespace
 	 * @param buildNumber the build number
-	 * @param retrieveFromCache whether to use the finder cache
+	 * @param retrieveFromCache whether to retrieve from the finder cache
 	 * @return the matching service component, or <code>null</code> if a matching service component could not be found
 	 */
 	@Override
@@ -700,14 +726,14 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 		Object result = null;
 
 		if (retrieveFromCache) {
-			result = FinderCacheUtil.getResult(FINDER_PATH_FETCH_BY_BNS_BNU,
+			result = finderCache.getResult(FINDER_PATH_FETCH_BY_BNS_BNU,
 					finderArgs, this);
 		}
 
 		if (result instanceof ServiceComponent) {
 			ServiceComponent serviceComponent = (ServiceComponent)result;
 
-			if (!Validator.equals(buildNamespace,
+			if (!Objects.equals(buildNamespace,
 						serviceComponent.getBuildNamespace()) ||
 					(buildNumber != serviceComponent.getBuildNumber())) {
 				result = null;
@@ -755,7 +781,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 				List<ServiceComponent> list = q.list();
 
 				if (list.isEmpty()) {
-					FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_BNS_BNU,
+					finderCache.putResult(FINDER_PATH_FETCH_BY_BNS_BNU,
 						finderArgs, list);
 				}
 				else {
@@ -769,13 +795,13 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 							!serviceComponent.getBuildNamespace()
 												 .equals(buildNamespace) ||
 							(serviceComponent.getBuildNumber() != buildNumber)) {
-						FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_BNS_BNU,
+						finderCache.putResult(FINDER_PATH_FETCH_BY_BNS_BNU,
 							finderArgs, serviceComponent);
 					}
 				}
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_BNS_BNU,
+				finderCache.removeResult(FINDER_PATH_FETCH_BY_BNS_BNU,
 					finderArgs);
 
 				throw processException(e);
@@ -822,8 +848,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 
 		Object[] finderArgs = new Object[] { buildNamespace, buildNumber };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(3);
@@ -865,10 +890,10 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -896,11 +921,11 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 */
 	@Override
 	public void cacheResult(ServiceComponent serviceComponent) {
-		EntityCacheUtil.putResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.putResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
 			ServiceComponentImpl.class, serviceComponent.getPrimaryKey(),
 			serviceComponent);
 
-		FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_BNS_BNU,
+		finderCache.putResult(FINDER_PATH_FETCH_BY_BNS_BNU,
 			new Object[] {
 				serviceComponent.getBuildNamespace(),
 				serviceComponent.getBuildNumber()
@@ -917,7 +942,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	@Override
 	public void cacheResult(List<ServiceComponent> serviceComponents) {
 		for (ServiceComponent serviceComponent : serviceComponents) {
-			if (EntityCacheUtil.getResult(
+			if (entityCache.getResult(
 						ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
 						ServiceComponentImpl.class,
 						serviceComponent.getPrimaryKey()) == null) {
@@ -933,103 +958,86 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 * Clears the cache for all service components.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
-		if (_HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE) {
-			CacheRegistryUtil.clear(ServiceComponentImpl.class.getName());
-		}
+		entityCache.clearCache(ServiceComponentImpl.class);
 
-		EntityCacheUtil.clearCache(ServiceComponentImpl.class);
-
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
 	/**
 	 * Clears the cache for the service component.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache(ServiceComponent serviceComponent) {
-		EntityCacheUtil.removeResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.removeResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
 			ServiceComponentImpl.class, serviceComponent.getPrimaryKey());
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
-		clearUniqueFindersCache(serviceComponent);
+		clearUniqueFindersCache((ServiceComponentModelImpl)serviceComponent,
+			true);
 	}
 
 	@Override
 	public void clearCache(List<ServiceComponent> serviceComponents) {
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
 		for (ServiceComponent serviceComponent : serviceComponents) {
-			EntityCacheUtil.removeResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
+			entityCache.removeResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
 				ServiceComponentImpl.class, serviceComponent.getPrimaryKey());
 
-			clearUniqueFindersCache(serviceComponent);
+			clearUniqueFindersCache((ServiceComponentModelImpl)serviceComponent,
+				true);
 		}
 	}
 
-	protected void cacheUniqueFindersCache(ServiceComponent serviceComponent) {
-		if (serviceComponent.isNew()) {
-			Object[] args = new Object[] {
-					serviceComponent.getBuildNamespace(),
-					serviceComponent.getBuildNumber()
-				};
-
-			FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_BNS_BNU, args,
-				Long.valueOf(1));
-			FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_BNS_BNU, args,
-				serviceComponent);
-		}
-		else {
-			ServiceComponentModelImpl serviceComponentModelImpl = (ServiceComponentModelImpl)serviceComponent;
-
-			if ((serviceComponentModelImpl.getColumnBitmask() &
-					FINDER_PATH_FETCH_BY_BNS_BNU.getColumnBitmask()) != 0) {
-				Object[] args = new Object[] {
-						serviceComponent.getBuildNamespace(),
-						serviceComponent.getBuildNumber()
-					};
-
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_BNS_BNU, args,
-					Long.valueOf(1));
-				FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_BNS_BNU, args,
-					serviceComponent);
-			}
-		}
-	}
-
-	protected void clearUniqueFindersCache(ServiceComponent serviceComponent) {
-		ServiceComponentModelImpl serviceComponentModelImpl = (ServiceComponentModelImpl)serviceComponent;
-
+	protected void cacheUniqueFindersCache(
+		ServiceComponentModelImpl serviceComponentModelImpl) {
 		Object[] args = new Object[] {
-				serviceComponent.getBuildNamespace(),
-				serviceComponent.getBuildNumber()
+				serviceComponentModelImpl.getBuildNamespace(),
+				serviceComponentModelImpl.getBuildNumber()
 			};
 
-		FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_BNS_BNU, args);
-		FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_BNS_BNU, args);
+		finderCache.putResult(FINDER_PATH_COUNT_BY_BNS_BNU, args,
+			Long.valueOf(1), false);
+		finderCache.putResult(FINDER_PATH_FETCH_BY_BNS_BNU, args,
+			serviceComponentModelImpl, false);
+	}
+
+	protected void clearUniqueFindersCache(
+		ServiceComponentModelImpl serviceComponentModelImpl,
+		boolean clearCurrent) {
+		if (clearCurrent) {
+			Object[] args = new Object[] {
+					serviceComponentModelImpl.getBuildNamespace(),
+					serviceComponentModelImpl.getBuildNumber()
+				};
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_BNS_BNU, args);
+			finderCache.removeResult(FINDER_PATH_FETCH_BY_BNS_BNU, args);
+		}
 
 		if ((serviceComponentModelImpl.getColumnBitmask() &
 				FINDER_PATH_FETCH_BY_BNS_BNU.getColumnBitmask()) != 0) {
-			args = new Object[] {
+			Object[] args = new Object[] {
 					serviceComponentModelImpl.getOriginalBuildNamespace(),
 					serviceComponentModelImpl.getOriginalBuildNumber()
 				};
 
-			FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_BNS_BNU, args);
-			FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_BNS_BNU, args);
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_BNS_BNU, args);
+			finderCache.removeResult(FINDER_PATH_FETCH_BY_BNS_BNU, args);
 		}
 	}
 
@@ -1054,7 +1062,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 *
 	 * @param serviceComponentId the primary key of the service component
 	 * @return the service component that was removed
-	 * @throws com.liferay.portal.NoSuchServiceComponentException if a service component with the primary key could not be found
+	 * @throws NoSuchServiceComponentException if a service component with the primary key could not be found
 	 */
 	@Override
 	public ServiceComponent remove(long serviceComponentId)
@@ -1067,7 +1075,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 *
 	 * @param primaryKey the primary key of the service component
 	 * @return the service component that was removed
-	 * @throws com.liferay.portal.NoSuchServiceComponentException if a service component with the primary key could not be found
+	 * @throws NoSuchServiceComponentException if a service component with the primary key could not be found
 	 */
 	@Override
 	public ServiceComponent remove(Serializable primaryKey)
@@ -1081,8 +1089,8 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 					primaryKey);
 
 			if (serviceComponent == null) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+				if (_log.isDebugEnabled()) {
+					_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 				}
 
 				throw new NoSuchServiceComponentException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -1135,8 +1143,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	}
 
 	@Override
-	public ServiceComponent updateImpl(
-		com.liferay.portal.model.ServiceComponent serviceComponent) {
+	public ServiceComponent updateImpl(ServiceComponent serviceComponent) {
 		serviceComponent = toUnwrappedModel(serviceComponent);
 
 		boolean isNew = serviceComponent.isNew();
@@ -1154,7 +1161,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 				serviceComponent.setNew(false);
 			}
 			else {
-				session.merge(serviceComponent);
+				serviceComponent = (ServiceComponent)session.merge(serviceComponent);
 			}
 		}
 		catch (Exception e) {
@@ -1164,10 +1171,10 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 			closeSession(session);
 		}
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 
 		if (isNew || !ServiceComponentModelImpl.COLUMN_BITMASK_ENABLED) {
-			FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+			finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 		}
 
 		else {
@@ -1177,28 +1184,28 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 						serviceComponentModelImpl.getOriginalBuildNamespace()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_BUILDNAMESPACE,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_BUILDNAMESPACE,
 					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_BUILDNAMESPACE,
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_BUILDNAMESPACE,
 					args);
 
 				args = new Object[] {
 						serviceComponentModelImpl.getBuildNamespace()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_BUILDNAMESPACE,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_BUILDNAMESPACE,
 					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_BUILDNAMESPACE,
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_BUILDNAMESPACE,
 					args);
 			}
 		}
 
-		EntityCacheUtil.putResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.putResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
 			ServiceComponentImpl.class, serviceComponent.getPrimaryKey(),
 			serviceComponent, false);
 
-		clearUniqueFindersCache(serviceComponent);
-		cacheUniqueFindersCache(serviceComponent);
+		clearUniqueFindersCache(serviceComponentModelImpl, false);
+		cacheUniqueFindersCache(serviceComponentModelImpl);
 
 		serviceComponent.resetOriginalValues();
 
@@ -1227,11 +1234,11 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	}
 
 	/**
-	 * Returns the service component with the primary key or throws a {@link com.liferay.portal.NoSuchModelException} if it could not be found.
+	 * Returns the service component with the primary key or throws a {@link com.liferay.portal.kernel.exception.NoSuchModelException} if it could not be found.
 	 *
 	 * @param primaryKey the primary key of the service component
 	 * @return the service component
-	 * @throws com.liferay.portal.NoSuchServiceComponentException if a service component with the primary key could not be found
+	 * @throws NoSuchServiceComponentException if a service component with the primary key could not be found
 	 */
 	@Override
 	public ServiceComponent findByPrimaryKey(Serializable primaryKey)
@@ -1239,8 +1246,8 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 		ServiceComponent serviceComponent = fetchByPrimaryKey(primaryKey);
 
 		if (serviceComponent == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+			if (_log.isDebugEnabled()) {
+				_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 			}
 
 			throw new NoSuchServiceComponentException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -1251,11 +1258,11 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	}
 
 	/**
-	 * Returns the service component with the primary key or throws a {@link com.liferay.portal.NoSuchServiceComponentException} if it could not be found.
+	 * Returns the service component with the primary key or throws a {@link NoSuchServiceComponentException} if it could not be found.
 	 *
 	 * @param serviceComponentId the primary key of the service component
 	 * @return the service component
-	 * @throws com.liferay.portal.NoSuchServiceComponentException if a service component with the primary key could not be found
+	 * @throws NoSuchServiceComponentException if a service component with the primary key could not be found
 	 */
 	@Override
 	public ServiceComponent findByPrimaryKey(long serviceComponentId)
@@ -1271,12 +1278,14 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 */
 	@Override
 	public ServiceComponent fetchByPrimaryKey(Serializable primaryKey) {
-		ServiceComponent serviceComponent = (ServiceComponent)EntityCacheUtil.getResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
+		Serializable serializable = entityCache.getResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
 				ServiceComponentImpl.class, primaryKey);
 
-		if (serviceComponent == _nullServiceComponent) {
+		if (serializable == nullModel) {
 			return null;
 		}
+
+		ServiceComponent serviceComponent = (ServiceComponent)serializable;
 
 		if (serviceComponent == null) {
 			Session session = null;
@@ -1291,13 +1300,12 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 					cacheResult(serviceComponent);
 				}
 				else {
-					EntityCacheUtil.putResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
-						ServiceComponentImpl.class, primaryKey,
-						_nullServiceComponent);
+					entityCache.putResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
+						ServiceComponentImpl.class, primaryKey, nullModel);
 				}
 			}
 			catch (Exception e) {
-				EntityCacheUtil.removeResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
+				entityCache.removeResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
 					ServiceComponentImpl.class, primaryKey);
 
 				throw processException(e);
@@ -1347,18 +1355,20 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 		Set<Serializable> uncachedPrimaryKeys = null;
 
 		for (Serializable primaryKey : primaryKeys) {
-			ServiceComponent serviceComponent = (ServiceComponent)EntityCacheUtil.getResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
+			Serializable serializable = entityCache.getResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
 					ServiceComponentImpl.class, primaryKey);
 
-			if (serviceComponent == null) {
-				if (uncachedPrimaryKeys == null) {
-					uncachedPrimaryKeys = new HashSet<Serializable>();
-				}
+			if (serializable != nullModel) {
+				if (serializable == null) {
+					if (uncachedPrimaryKeys == null) {
+						uncachedPrimaryKeys = new HashSet<Serializable>();
+					}
 
-				uncachedPrimaryKeys.add(primaryKey);
-			}
-			else {
-				map.put(primaryKey, serviceComponent);
+					uncachedPrimaryKeys.add(primaryKey);
+				}
+				else {
+					map.put(primaryKey, (ServiceComponent)serializable);
+				}
 			}
 		}
 
@@ -1399,9 +1409,8 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 			}
 
 			for (Serializable primaryKey : uncachedPrimaryKeys) {
-				EntityCacheUtil.putResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
-					ServiceComponentImpl.class, primaryKey,
-					_nullServiceComponent);
+				entityCache.putResult(ServiceComponentModelImpl.ENTITY_CACHE_ENABLED,
+					ServiceComponentImpl.class, primaryKey, nullModel);
 			}
 		}
 		catch (Exception e) {
@@ -1428,7 +1437,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 * Returns a range of all the service components.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ServiceComponentModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ServiceComponentModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of service components
@@ -1444,7 +1453,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 * Returns an ordered range of all the service components.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ServiceComponentModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ServiceComponentModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of service components
@@ -1454,7 +1463,27 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 */
 	@Override
 	public List<ServiceComponent> findAll(int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<ServiceComponent> orderByComparator) {
+		return findAll(start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the service components.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ServiceComponentModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param start the lower bound of the range of service components
+	 * @param end the upper bound of the range of service components (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of service components
+	 */
+	@Override
+	public List<ServiceComponent> findAll(int start, int end,
+		OrderByComparator<ServiceComponent> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1470,8 +1499,12 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 			finderArgs = new Object[] { start, end, orderByComparator };
 		}
 
-		List<ServiceComponent> list = (List<ServiceComponent>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<ServiceComponent> list = null;
+
+		if (retrieveFromCache) {
+			list = (List<ServiceComponent>)finderCache.getResult(finderPath,
+					finderArgs, this);
+		}
 
 		if (list == null) {
 			StringBundler query = null;
@@ -1479,7 +1512,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 
 			if (orderByComparator != null) {
 				query = new StringBundler(2 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 
 				query.append(_SQL_SELECT_SERVICECOMPONENT);
 
@@ -1518,10 +1551,10 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1551,7 +1584,7 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)FinderCacheUtil.getResult(FINDER_PATH_COUNT_ALL,
+		Long count = (Long)finderCache.getResult(FINDER_PATH_COUNT_ALL,
 				FINDER_ARGS_EMPTY, this);
 
 		if (count == null) {
@@ -1564,11 +1597,11 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_ALL,
-					FINDER_ARGS_EMPTY, count);
+				finderCache.putResult(FINDER_PATH_COUNT_ALL, FINDER_ARGS_EMPTY,
+					count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_ALL,
+				finderCache.removeResult(FINDER_PATH_COUNT_ALL,
 					FINDER_ARGS_EMPTY);
 
 				throw processException(e);
@@ -1582,42 +1615,30 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	}
 
 	@Override
-	protected Set<String> getBadColumnNames() {
+	public Set<String> getBadColumnNames() {
 		return _badColumnNames;
+	}
+
+	@Override
+	protected Map<String, Integer> getTableColumnsMap() {
+		return ServiceComponentModelImpl.TABLE_COLUMNS_MAP;
 	}
 
 	/**
 	 * Initializes the service component persistence.
 	 */
 	public void afterPropertiesSet() {
-		String[] listenerClassNames = StringUtil.split(GetterUtil.getString(
-					com.liferay.portal.util.PropsUtil.get(
-						"value.object.listener.com.liferay.portal.model.ServiceComponent")));
-
-		if (listenerClassNames.length > 0) {
-			try {
-				List<ModelListener<ServiceComponent>> listenersList = new ArrayList<ModelListener<ServiceComponent>>();
-
-				for (String listenerClassName : listenerClassNames) {
-					listenersList.add((ModelListener<ServiceComponent>)InstanceFactory.newInstance(
-							getClassLoader(), listenerClassName));
-				}
-
-				listeners = listenersList.toArray(new ModelListener[listenersList.size()]);
-			}
-			catch (Exception e) {
-				_log.error(e);
-			}
-		}
 	}
 
 	public void destroy() {
-		EntityCacheUtil.removeCache(ServiceComponentImpl.class.getName());
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		entityCache.removeCache(ServiceComponentImpl.class.getName());
+		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
+		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
+	protected EntityCache entityCache = EntityCacheUtil.getEntityCache();
+	protected FinderCache finderCache = FinderCacheUtil.getFinderCache();
 	private static final String _SQL_SELECT_SERVICECOMPONENT = "SELECT serviceComponent FROM ServiceComponent serviceComponent";
 	private static final String _SQL_SELECT_SERVICECOMPONENT_WHERE_PKS_IN = "SELECT serviceComponent FROM ServiceComponent serviceComponent WHERE serviceComponentId IN (";
 	private static final String _SQL_SELECT_SERVICECOMPONENT_WHERE = "SELECT serviceComponent FROM ServiceComponent serviceComponent WHERE ";
@@ -1626,39 +1647,8 @@ public class ServiceComponentPersistenceImpl extends BasePersistenceImpl<Service
 	private static final String _ORDER_BY_ENTITY_ALIAS = "serviceComponent.";
 	private static final String _NO_SUCH_ENTITY_WITH_PRIMARY_KEY = "No ServiceComponent exists with the primary key ";
 	private static final String _NO_SUCH_ENTITY_WITH_KEY = "No ServiceComponent exists with the key {";
-	private static final boolean _HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE = com.liferay.portal.util.PropsValues.HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE;
-	private static Log _log = LogFactoryUtil.getLog(ServiceComponentPersistenceImpl.class);
-	private static Set<String> _badColumnNames = SetUtil.fromArray(new String[] {
+	private static final Log _log = LogFactoryUtil.getLog(ServiceComponentPersistenceImpl.class);
+	private static final Set<String> _badColumnNames = SetUtil.fromArray(new String[] {
 				"data"
 			});
-	private static ServiceComponent _nullServiceComponent = new ServiceComponentImpl() {
-			@Override
-			public Object clone() {
-				return this;
-			}
-
-			@Override
-			public CacheModel<ServiceComponent> toCacheModel() {
-				return _nullServiceComponentCacheModel;
-			}
-		};
-
-	private static CacheModel<ServiceComponent> _nullServiceComponentCacheModel = new NullCacheModel();
-
-	private static class NullCacheModel implements CacheModel<ServiceComponent>,
-		MVCCModel {
-		@Override
-		public long getMvccVersion() {
-			return 0;
-		}
-
-		@Override
-		public void setMvccVersion(long mvccVersion) {
-		}
-
-		@Override
-		public ServiceComponent toEntityModel() {
-			return _nullServiceComponent;
-		}
-	}
 }

@@ -14,6 +14,10 @@
 
 package com.liferay.portlet.messageboards.service.persistence.impl;
 
+import com.liferay.message.boards.kernel.model.MBMessage;
+import com.liferay.message.boards.kernel.model.MBThread;
+import com.liferay.message.boards.kernel.service.persistence.MBThreadFinder;
+import com.liferay.message.boards.kernel.service.persistence.MBThreadUtil;
 import com.liferay.portal.kernel.dao.orm.QueryDefinition;
 import com.liferay.portal.kernel.dao.orm.QueryPos;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
@@ -21,18 +25,13 @@ import com.liferay.portal.kernel.dao.orm.SQLQuery;
 import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.dao.orm.Type;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.security.permission.InlineSQLHelperUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.security.permission.InlineSQLHelperUtil;
-import com.liferay.portal.service.persistence.impl.BasePersistenceImpl;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portlet.messageboards.model.MBMessage;
-import com.liferay.portlet.messageboards.model.MBThread;
 import com.liferay.portlet.messageboards.model.impl.MBThreadImpl;
-import com.liferay.portlet.messageboards.service.persistence.MBThreadFinder;
-import com.liferay.portlet.messageboards.service.persistence.MBThreadUtil;
 import com.liferay.util.dao.orm.CustomSQLUtil;
 
 import java.util.Date;
@@ -44,7 +43,7 @@ import java.util.List;
  * @author Shuyang Zhou
  */
 public class MBThreadFinderImpl
-	extends BasePersistenceImpl<MBThread> implements MBThreadFinder {
+	extends MBThreadFinderBaseImpl implements MBThreadFinder {
 
 	public static final String COUNT_BY_G_U =
 		MBThreadFinder.class.getName() + ".countByG_U";
@@ -99,7 +98,7 @@ public class MBThreadFinderImpl
 
 	@Override
 	public int countByG_U(
-		long groupId, long userId, QueryDefinition queryDefinition) {
+		long groupId, long userId, QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -145,7 +144,8 @@ public class MBThreadFinderImpl
 
 	@Override
 	public int countByG_C(
-		long groupId, long categoryId, QueryDefinition queryDefinition) {
+		long groupId, long categoryId,
+		QueryDefinition<MBThread> queryDefinition) {
 
 		return doCountByG_C(groupId, categoryId, queryDefinition, false);
 	}
@@ -153,7 +153,7 @@ public class MBThreadFinderImpl
 	@Override
 	public int countByG_U_C(
 		long groupId, long userId, long[] categoryIds,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -212,7 +212,7 @@ public class MBThreadFinderImpl
 	@Override
 	public int countByG_U_LPD(
 		long groupId, long userId, Date lastPostDate,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -269,7 +269,7 @@ public class MBThreadFinderImpl
 	@Override
 	public int countByG_U_A(
 		long groupId, long userId, boolean anonymous,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -316,7 +316,7 @@ public class MBThreadFinderImpl
 
 	@Override
 	public int countByS_G_U(
-		long groupId, long userId, QueryDefinition queryDefinition) {
+		long groupId, long userId, QueryDefinition<MBThread> queryDefinition) {
 
 		return doCountByS_G_U(groupId, userId, queryDefinition);
 	}
@@ -324,7 +324,7 @@ public class MBThreadFinderImpl
 	@Override
 	public int countByG_U_C_A(
 		long groupId, long userId, long[] categoryIds, boolean anonymous,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -384,7 +384,7 @@ public class MBThreadFinderImpl
 	@Override
 	public int countByS_G_U_C(
 		long groupId, long userId, long[] categoryIds,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		return doCountByS_G_U_C(
 			groupId, userId, categoryIds, queryDefinition, false);
@@ -392,7 +392,6 @@ public class MBThreadFinderImpl
 
 	@Override
 	public int filterCountByG_C(long groupId, long categoryId) {
-
 		if (!InlineSQLHelperUtil.isEnabled(groupId)) {
 			return MBThreadUtil.countByG_C(groupId, categoryId);
 		}
@@ -439,7 +438,8 @@ public class MBThreadFinderImpl
 
 	@Override
 	public int filterCountByG_C(
-		long groupId, long categoryId, QueryDefinition queryDefinition) {
+		long groupId, long categoryId,
+		QueryDefinition<MBThread> queryDefinition) {
 
 		return doCountByG_C(groupId, categoryId, queryDefinition, true);
 	}
@@ -447,7 +447,7 @@ public class MBThreadFinderImpl
 	@Override
 	public int filterCountByS_G_U_C(
 		long groupId, long userId, long[] categoryIds,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		return doCountByS_G_U_C(
 			groupId, userId, categoryIds, queryDefinition, true);
@@ -493,7 +493,8 @@ public class MBThreadFinderImpl
 
 	@Override
 	public List<MBThread> filterFindByG_C(
-		long groupId, long categoryId, QueryDefinition queryDefinition) {
+		long groupId, long categoryId,
+		QueryDefinition<MBThread> queryDefinition) {
 
 		return doFindByG_C(groupId, categoryId, queryDefinition, true);
 	}
@@ -501,7 +502,7 @@ public class MBThreadFinderImpl
 	@Override
 	public List<MBThread> filterFindByS_G_U_C(
 		long groupId, long userId, long[] categoryIds,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		return doFindByS_G_U_C(
 			groupId, userId, categoryIds, queryDefinition, true);
@@ -532,7 +533,7 @@ public class MBThreadFinderImpl
 
 	@Override
 	public List<MBThread> findByG_U(
-		long groupId, long userId, QueryDefinition queryDefinition) {
+		long groupId, long userId, QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -570,7 +571,8 @@ public class MBThreadFinderImpl
 
 	@Override
 	public List<MBThread> findByG_C(
-		long groupId, long categoryId, QueryDefinition queryDefinition) {
+		long groupId, long categoryId,
+		QueryDefinition<MBThread> queryDefinition) {
 
 		return doFindByG_C(groupId, categoryId, queryDefinition, false);
 	}
@@ -578,7 +580,7 @@ public class MBThreadFinderImpl
 	@Override
 	public List<MBThread> findByG_U_C(
 		long groupId, long userId, long[] categoryIds,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -629,7 +631,7 @@ public class MBThreadFinderImpl
 	@Override
 	public List<MBThread> findByG_U_LPD(
 		long groupId, long userId, Date lastPostDate,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -678,7 +680,7 @@ public class MBThreadFinderImpl
 	@Override
 	public List<MBThread> findByG_U_A(
 		long groupId, long userId, boolean anonymous,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -717,7 +719,7 @@ public class MBThreadFinderImpl
 
 	@Override
 	public List<MBThread> findByS_G_U(
-		long groupId, long userId, QueryDefinition queryDefinition) {
+		long groupId, long userId, QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -757,7 +759,7 @@ public class MBThreadFinderImpl
 	@Override
 	public List<MBThread> findByG_U_C_A(
 		long groupId, long userId, long[] categoryIds, boolean anonymous,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -809,15 +811,15 @@ public class MBThreadFinderImpl
 	@Override
 	public List<MBThread> findByS_G_U_C(
 		long groupId, long userId, long[] categoryIds,
-		QueryDefinition queryDefinition) {
+		QueryDefinition<MBThread> queryDefinition) {
 
 		return doFindByS_G_U_C(
 			groupId, userId, categoryIds, queryDefinition, false);
 	}
 
 	protected int doCountByG_C(
-		long groupId, long categoryId, QueryDefinition queryDefinition,
-		boolean inlineSQLHelper) {
+		long groupId, long categoryId,
+		QueryDefinition<MBThread> queryDefinition, boolean inlineSQLHelper) {
 
 		if (!inlineSQLHelper || !InlineSQLHelperUtil.isEnabled(groupId)) {
 			if (queryDefinition.isExcludeStatus()) {
@@ -884,7 +886,7 @@ public class MBThreadFinderImpl
 	}
 
 	protected int doCountByS_G_U(
-		long groupId, long userId, QueryDefinition queryDefinition) {
+		long groupId, long userId, QueryDefinition<MBThread> queryDefinition) {
 
 		Session session = null;
 
@@ -931,7 +933,7 @@ public class MBThreadFinderImpl
 
 	protected int doCountByS_G_U_C(
 		long groupId, long userId, long[] categoryIds,
-		QueryDefinition queryDefinition, boolean inlineSQLHelper) {
+		QueryDefinition<MBThread> queryDefinition, boolean inlineSQLHelper) {
 
 		Session session = null;
 
@@ -995,8 +997,8 @@ public class MBThreadFinderImpl
 	}
 
 	protected List<MBThread> doFindByG_C(
-		long groupId, long categoryId, QueryDefinition queryDefinition,
-		boolean inlineSQLHelper) {
+		long groupId, long categoryId,
+		QueryDefinition<MBThread> queryDefinition, boolean inlineSQLHelper) {
 
 		if (!inlineSQLHelper || !InlineSQLHelperUtil.isEnabled(groupId)) {
 			if (queryDefinition.isExcludeStatus()) {
@@ -1060,7 +1062,7 @@ public class MBThreadFinderImpl
 
 	protected List<MBThread> doFindByS_G_U_C(
 		long groupId, long userId, long[] categoryIds,
-		QueryDefinition queryDefinition, boolean inlineSQLHelper) {
+		QueryDefinition<MBThread> queryDefinition, boolean inlineSQLHelper) {
 
 		Session session = null;
 
@@ -1115,7 +1117,9 @@ public class MBThreadFinderImpl
 		}
 	}
 
-	protected String updateSQL(String sql, QueryDefinition queryDefinition) {
+	protected String updateSQL(
+		String sql, QueryDefinition<MBThread> queryDefinition) {
+
 		if (queryDefinition.getStatus() == WorkflowConstants.STATUS_ANY) {
 			return sql;
 		}

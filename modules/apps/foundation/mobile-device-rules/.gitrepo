@@ -1,0 +1,9 @@
+;
+; Do not manually edit this file.
+;
+[subrepo]
+	cmdver = liferay
+	commit = d672beb5e615a540f7edf491ff2e3f698d07e976
+	mode = push
+	parent = 1f39a28ef8abe329b6f3ef642c406d8d83b45175
+	remote = git@github.com:liferay/com-liferay-mobile-device-rules.git

@@ -14,18 +14,21 @@
 
 package com.liferay.portlet.messageboards.service.impl;
 
+import com.liferay.message.boards.kernel.exception.LockedThreadException;
+import com.liferay.message.boards.kernel.model.MBCategoryConstants;
+import com.liferay.message.boards.kernel.model.MBMessage;
+import com.liferay.message.boards.kernel.model.MBThread;
 import com.liferay.portal.kernel.dao.orm.QueryDefinition;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.lock.Lock;
+import com.liferay.portal.kernel.lock.LockManagerUtil;
 import com.liferay.portal.kernel.search.Hits;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.InlineSQLHelperUtil;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.model.Lock;
-import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.security.permission.InlineSQLHelperUtil;
-import com.liferay.portal.service.ServiceContext;
-import com.liferay.portlet.messageboards.LockedThreadException;
-import com.liferay.portlet.messageboards.model.MBCategoryConstants;
-import com.liferay.portlet.messageboards.model.MBMessage;
-import com.liferay.portlet.messageboards.model.MBThread;
 import com.liferay.portlet.messageboards.model.impl.MBThreadModelImpl;
 import com.liferay.portlet.messageboards.service.base.MBThreadServiceBaseImpl;
 import com.liferay.portlet.messageboards.service.permission.MBCategoryPermission;
@@ -46,8 +49,15 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 
 	@Override
 	public void deleteThread(long threadId) throws PortalException {
-		if (lockLocalService.isLocked(MBThread.class.getName(), threadId)) {
-			throw new LockedThreadException();
+		if (LockManagerUtil.isLocked(MBThread.class.getName(), threadId)) {
+			StringBundler sb = new StringBundler(4);
+
+			sb.append("Thread is locked for class name ");
+			sb.append(MBThread.class.getName());
+			sb.append(" and class PK ");
+			sb.append(threadId);
+
+			throw new LockedThreadException(sb.toString());
 		}
 
 		List<MBMessage> messages = mbMessagePersistence.findByThreadId(
@@ -69,7 +79,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 		throws PortalException {
 
 		if (!InlineSQLHelperUtil.isEnabled(groupId)) {
-			QueryDefinition queryDefinition = new QueryDefinition(
+			QueryDefinition<MBThread> queryDefinition = new QueryDefinition<>(
 				status, start, end, null);
 
 			return mbThreadFinder.findByG_U_LPD(
@@ -86,7 +96,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 		List<Long> threadIds = mbMessageFinder.filterFindByG_U_MD_C_S(
 			groupId, userId, modifiedDate, categoryIds, status, start, end);
 
-		List<MBThread> threads = new ArrayList<MBThread>(threadIds.size());
+		List<MBThread> threads = new ArrayList<>(threadIds.size());
 
 		for (long threadId : threadIds) {
 			MBThread thread = mbThreadPersistence.findByPrimaryKey(threadId);
@@ -124,8 +134,8 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 		}
 		else {
 			if (subscribed) {
-				QueryDefinition queryDefinition = new QueryDefinition(
-					status, start, end, null);
+				QueryDefinition<MBThread> queryDefinition =
+					new QueryDefinition<>(status, start, end, null);
 
 				return mbThreadFinder.filterFindByS_G_U_C(
 					groupId, userId, categoryIds, queryDefinition);
@@ -143,7 +153,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 			}
 		}
 
-		List<MBThread> threads = new ArrayList<MBThread>(threadIds.size());
+		List<MBThread> threads = new ArrayList<>(threadIds.size());
 
 		for (long threadId : threadIds) {
 			MBThread thread = mbThreadPersistence.findByPrimaryKey(threadId);
@@ -177,7 +187,8 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 		long groupId, long userId, Date modifiedDate, int status) {
 
 		if (!InlineSQLHelperUtil.isEnabled(groupId)) {
-			QueryDefinition queryDefinition = new QueryDefinition(status);
+			QueryDefinition<MBThread> queryDefinition = new QueryDefinition<>(
+				status);
 
 			return mbThreadFinder.countByG_U_LPD(
 				groupId, userId, modifiedDate, queryDefinition);
@@ -196,7 +207,6 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 
 	@Override
 	public int getGroupThreadsCount(long groupId, long userId, int status) {
-
 		return getGroupThreadsCount(groupId, userId, status, false);
 	}
 
@@ -230,7 +240,8 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 		}
 		else {
 			if (subscribed) {
-				QueryDefinition queryDefinition = new QueryDefinition(status);
+				QueryDefinition<MBThread> queryDefinition =
+					new QueryDefinition<>(status);
 
 				return mbThreadFinder.filterCountByS_G_U_C(
 					groupId, userId, categoryIds, queryDefinition);
@@ -252,7 +263,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 	public List<MBThread> getThreads(
 		long groupId, long categoryId, int status, int start, int end) {
 
-		QueryDefinition queryDefinition = new QueryDefinition(
+		QueryDefinition<MBThread> queryDefinition = new QueryDefinition<>(
 			status, start, end, null);
 
 		return mbThreadFinder.filterFindByG_C(
@@ -261,12 +272,12 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 
 	@Override
 	public int getThreadsCount(long groupId, long categoryId, int status) {
-
 		if (status == WorkflowConstants.STATUS_ANY) {
 			return mbThreadFinder.filterCountByG_C(groupId, categoryId);
 		}
 		else {
-			QueryDefinition queryDefinition = new QueryDefinition(status);
+			QueryDefinition<MBThread> queryDefinition = new QueryDefinition<>(
+				status);
 
 			return mbThreadFinder.filterCountByG_C(
 				groupId, categoryId, queryDefinition);
@@ -281,7 +292,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 			getPermissionChecker(), thread.getGroupId(), thread.getCategoryId(),
 			ActionKeys.LOCK_THREAD);
 
-		return lockLocalService.lock(
+		return LockManagerUtil.lock(
 			getUserId(), MBThread.class.getName(), threadId,
 			String.valueOf(threadId), false,
 			MBThreadModelImpl.LOCK_EXPIRATION_TIME);
@@ -291,8 +302,15 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 	public MBThread moveThread(long categoryId, long threadId)
 		throws PortalException {
 
-		if (lockLocalService.isLocked(MBThread.class.getName(), threadId)) {
-			throw new LockedThreadException();
+		if (LockManagerUtil.isLocked(MBThread.class.getName(), threadId)) {
+			StringBundler sb = new StringBundler(4);
+
+			sb.append("Thread is locked for class name ");
+			sb.append(MBThread.class.getName());
+			sb.append(" and class PK ");
+			sb.append(threadId);
+
+			throw new LockedThreadException(sb.toString());
 		}
 
 		MBThread thread = mbThreadLocalService.getThread(threadId);
@@ -325,8 +343,15 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 
 	@Override
 	public MBThread moveThreadToTrash(long threadId) throws PortalException {
-		if (lockLocalService.isLocked(MBThread.class.getName(), threadId)) {
-			throw new LockedThreadException();
+		if (LockManagerUtil.isLocked(MBThread.class.getName(), threadId)) {
+			StringBundler sb = new StringBundler(4);
+
+			sb.append("Thread is locked for class name ");
+			sb.append(MBThread.class.getName());
+			sb.append(" and class PK ");
+			sb.append(threadId);
+
+			throw new LockedThreadException(sb.toString());
 		}
 
 		List<MBMessage> messages = mbMessagePersistence.findByThreadId(
@@ -380,14 +405,19 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 			long messageId, String subject, ServiceContext serviceContext)
 		throws PortalException {
 
+		PermissionChecker permissionChecker = getPermissionChecker();
+
 		MBMessage message = mbMessageLocalService.getMessage(messageId);
 
 		MBCategoryPermission.check(
-			getPermissionChecker(), message.getGroupId(),
-			message.getCategoryId(), ActionKeys.MOVE_THREAD);
+			permissionChecker, message.getGroupId(), message.getCategoryId(),
+			ActionKeys.MOVE_THREAD);
+
+		MBMessagePermission.check(
+			permissionChecker, messageId, ActionKeys.VIEW);
 
 		return mbThreadLocalService.splitThread(
-			messageId, subject, serviceContext);
+			getUserId(), messageId, subject, serviceContext);
 	}
 
 	@Override
@@ -398,7 +428,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 			getPermissionChecker(), thread.getGroupId(), thread.getCategoryId(),
 			ActionKeys.LOCK_THREAD);
 
-		lockLocalService.unlock(MBThread.class.getName(), threadId);
+		LockManagerUtil.unlock(MBThread.class.getName(), threadId);
 	}
 
 	protected List<MBThread> doGetGroupThreads(
@@ -415,7 +445,7 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 			}
 		}
 
-		QueryDefinition queryDefinition = new QueryDefinition(
+		QueryDefinition<MBThread> queryDefinition = new QueryDefinition<>(
 			status, start, end, null);
 
 		if (subscribed) {
@@ -443,7 +473,8 @@ public class MBThreadServiceImpl extends MBThreadServiceBaseImpl {
 			}
 		}
 
-		QueryDefinition queryDefinition = new QueryDefinition(status);
+		QueryDefinition<MBThread> queryDefinition = new QueryDefinition<>(
+			status);
 
 		if (subscribed) {
 			return mbThreadFinder.countByS_G_U(

@@ -14,13 +14,13 @@
 
 package com.liferay.portlet.documentlibrary.service.impl;
 
+import com.liferay.document.library.kernel.model.DLSyncEvent;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.Projection;
 import com.liferay.portal.kernel.dao.orm.ProjectionFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
-import com.liferay.portlet.documentlibrary.model.DLSyncEvent;
 import com.liferay.portlet.documentlibrary.service.base.DLSyncEventLocalServiceBaseImpl;
 
 import java.util.List;
@@ -33,7 +33,6 @@ public class DLSyncEventLocalServiceImpl
 
 	@Override
 	public DLSyncEvent addDLSyncEvent(String event, String type, long typePK) {
-
 		DLSyncEvent dlSyncEvent = dlSyncEventPersistence.fetchByTypePK(typePK);
 
 		if (dlSyncEvent == null) {
@@ -58,7 +57,6 @@ public class DLSyncEventLocalServiceImpl
 
 	@Override
 	public List<DLSyncEvent> getDLSyncEvents(long modifiedTime) {
-
 		return dlSyncEventPersistence.findByModifiedTime(modifiedTime);
 	}
 

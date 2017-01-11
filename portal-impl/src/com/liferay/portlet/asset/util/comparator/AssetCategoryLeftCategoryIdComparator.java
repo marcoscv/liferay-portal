@@ -14,13 +14,14 @@
 
 package com.liferay.portlet.asset.util.comparator;
 
+import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.portal.kernel.util.OrderByComparator;
-import com.liferay.portlet.asset.model.AssetCategory;
 
 /**
  * @author Shuyang Zhou
  */
-public class AssetCategoryLeftCategoryIdComparator extends OrderByComparator {
+public class AssetCategoryLeftCategoryIdComparator
+	extends OrderByComparator<AssetCategory> {
 
 	public static final String ORDER_BY_ASC = "leftCategoryId ASC";
 
@@ -37,9 +38,8 @@ public class AssetCategoryLeftCategoryIdComparator extends OrderByComparator {
 	}
 
 	@Override
-	public int compare(Object obj1, Object obj2) {
-		AssetCategory assetCategory1 = (AssetCategory)obj1;
-		AssetCategory assetCategory2 = (AssetCategory)obj2;
+	public int compare(
+		AssetCategory assetCategory1, AssetCategory assetCategory2) {
 
 		long leftCategoryId1 = assetCategory1.getLeftCategoryId();
 		long leftCategoryId2 = assetCategory2.getLeftCategoryId();
@@ -81,6 +81,6 @@ public class AssetCategoryLeftCategoryIdComparator extends OrderByComparator {
 		return _ascending;
 	}
 
-	private boolean _ascending;
+	private final boolean _ascending;
 
 }

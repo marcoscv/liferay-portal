@@ -14,19 +14,19 @@
 
 package com.liferay.portlet.documentlibrary.service.impl;
 
+import com.liferay.document.library.kernel.model.DLFileRank;
+import com.liferay.document.library.kernel.model.DLFolder;
+import com.liferay.document.library.kernel.util.comparator.FileRankCreateDateComparator;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.SystemEventConstants;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
-import com.liferay.portal.model.SystemEventConstants;
-import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.portlet.documentlibrary.model.DLFileRank;
-import com.liferay.portlet.documentlibrary.model.DLFolder;
 import com.liferay.portlet.documentlibrary.service.base.DLFileRankLocalServiceBaseImpl;
-import com.liferay.portlet.documentlibrary.util.comparator.FileRankCreateDateComparator;
 
 import java.util.List;
 
@@ -116,7 +116,6 @@ public class DLFileRankLocalServiceImpl extends DLFileRankLocalServiceBaseImpl {
 
 	@Override
 	public void deleteFileRanksByFileEntryId(long fileEntryId) {
-
 		List<DLFileRank> dlFileRanks = dlFileRankPersistence.findByFileEntryId(
 			fileEntryId);
 
@@ -179,7 +178,6 @@ public class DLFileRankLocalServiceImpl extends DLFileRankLocalServiceBaseImpl {
 
 	@Override
 	public List<DLFileRank> getFileRanks(long groupId, long userId) {
-
 		return dlFileRankPersistence.findByG_U_A(
 			groupId, userId, true, 0, PropsValues.DL_FILE_RANK_MAX_SIZE,
 			new FileRankCreateDateComparator());
@@ -221,7 +219,6 @@ public class DLFileRankLocalServiceImpl extends DLFileRankLocalServiceBaseImpl {
 	}
 
 	protected void updateFileRanks(DLFolder dlFolder, boolean active) {
-
 		List<DLFolder> dlFolders = dlFolderPersistence.findByG_P(
 			dlFolder.getGroupId(), dlFolder.getFolderId());
 
@@ -239,7 +236,7 @@ public class DLFileRankLocalServiceImpl extends DLFileRankLocalServiceBaseImpl {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DLFileRankLocalServiceImpl.class);
 
 }

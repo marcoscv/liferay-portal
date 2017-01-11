@@ -24,7 +24,7 @@ import javax.servlet.jsp.JspException;
  * @author Julio Camarero
  * @generated
  */
-public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
+public abstract class BaseInputTag extends com.liferay.taglib.BaseValidatorTagSupport {
 
 	@Override
 	public int doStartTag() throws JspException {
@@ -137,16 +137,20 @@ public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
 		return _localized;
 	}
 
+	public boolean getLocalizeLabel() {
+		return _localizeLabel;
+	}
+
 	public java.lang.Object getMax() {
 		return _max;
 	}
 
-	public java.lang.Class<?> getModel() {
-		return _model;
-	}
-
 	public java.lang.Object getMin() {
 		return _min;
+	}
+
+	public java.lang.Class<?> getModel() {
+		return _model;
 	}
 
 	public boolean getMultiple() {
@@ -203,6 +207,10 @@ public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
 
 	public java.lang.Object getValue() {
 		return _value;
+	}
+
+	public boolean getWrappedField() {
+		return _wrappedField;
 	}
 
 	public java.lang.String getWrapperCssClass() {
@@ -365,22 +373,28 @@ public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
 		setScopedAttribute("localized", localized);
 	}
 
+	public void setLocalizeLabel(boolean localizeLabel) {
+		_localizeLabel = localizeLabel;
+
+		setScopedAttribute("localizeLabel", localizeLabel);
+	}
+
 	public void setMax(java.lang.Object max) {
 		_max = max;
 
 		setScopedAttribute("max", max);
 	}
 
-	public void setModel(java.lang.Class<?> model) {
-		_model = model;
-
-		setScopedAttribute("model", model);
-	}
-
 	public void setMin(java.lang.Object min) {
 		_min = min;
 
 		setScopedAttribute("min", min);
+	}
+
+	public void setModel(java.lang.Class<?> model) {
+		_model = model;
+
+		setScopedAttribute("model", model);
 	}
 
 	public void setMultiple(boolean multiple) {
@@ -467,6 +481,12 @@ public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
 		setScopedAttribute("value", value);
 	}
 
+	public void setWrappedField(boolean wrappedField) {
+		_wrappedField = wrappedField;
+
+		setScopedAttribute("wrappedField", wrappedField);
+	}
+
 	public void setWrapperCssClass(java.lang.String wrapperCssClass) {
 		_wrapperCssClass = wrapperCssClass;
 
@@ -475,6 +495,8 @@ public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
 
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
 		_autoFocus = false;
 		_autoSize = false;
 		_bean = null;
@@ -501,9 +523,10 @@ public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
 		_languageId = null;
 		_last = false;
 		_localized = false;
+		_localizeLabel = true;
 		_max = null;
-		_model = null;
 		_min = null;
+		_model = null;
 		_multiple = false;
 		_name = null;
 		_onChange = null;
@@ -518,6 +541,7 @@ public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
 		_type = null;
 		_useNamespace = true;
 		_value = null;
+		_wrappedField = false;
 		_wrapperCssClass = null;
 	}
 
@@ -554,9 +578,10 @@ public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
 		setNamespacedAttribute(request, "languageId", _languageId);
 		setNamespacedAttribute(request, "last", _last);
 		setNamespacedAttribute(request, "localized", _localized);
+		setNamespacedAttribute(request, "localizeLabel", _localizeLabel);
 		setNamespacedAttribute(request, "max", _max);
-		setNamespacedAttribute(request, "model", _model);
 		setNamespacedAttribute(request, "min", _min);
+		setNamespacedAttribute(request, "model", _model);
 		setNamespacedAttribute(request, "multiple", _multiple);
 		setNamespacedAttribute(request, "name", _name);
 		setNamespacedAttribute(request, "onChange", _onChange);
@@ -571,6 +596,7 @@ public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
 		setNamespacedAttribute(request, "type", _type);
 		setNamespacedAttribute(request, "useNamespace", _useNamespace);
 		setNamespacedAttribute(request, "value", _value);
+		setNamespacedAttribute(request, "wrappedField", _wrappedField);
 		setNamespacedAttribute(request, "wrapperCssClass", _wrapperCssClass);
 	}
 
@@ -605,9 +631,10 @@ public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
 	private java.lang.String _languageId = null;
 	private boolean _last = false;
 	private boolean _localized = false;
+	private boolean _localizeLabel = true;
 	private java.lang.Object _max = null;
-	private java.lang.Class<?> _model = null;
 	private java.lang.Object _min = null;
+	private java.lang.Class<?> _model = null;
 	private boolean _multiple = false;
 	private java.lang.String _name = null;
 	private java.lang.String _onChange = null;
@@ -622,6 +649,7 @@ public class BaseInputTag extends com.liferay.taglib.util.IncludeTag {
 	private java.lang.String _type = null;
 	private boolean _useNamespace = true;
 	private java.lang.Object _value = null;
+	private boolean _wrappedField = false;
 	private java.lang.String _wrapperCssClass = null;
 
 }

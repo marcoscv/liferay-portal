@@ -14,8 +14,16 @@
 
 package com.liferay.portlet.documentlibrary.service.persistence.impl;
 
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.document.library.kernel.exception.NoSuchFileVersionException;
+import com.liferay.document.library.kernel.model.DLFileVersion;
+import com.liferay.document.library.kernel.service.persistence.DLFileVersionPersistence;
+
+import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
+import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
 import com.liferay.portal.kernel.dao.orm.Query;
@@ -24,34 +32,31 @@ import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.InstanceFactory;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.service.persistence.CompanyProvider;
+import com.liferay.portal.kernel.service.persistence.CompanyProviderWrapper;
+import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.ModelListener;
-import com.liferay.portal.service.persistence.impl.BasePersistenceImpl;
 
-import com.liferay.portlet.documentlibrary.NoSuchFileVersionException;
-import com.liferay.portlet.documentlibrary.model.DLFileVersion;
 import com.liferay.portlet.documentlibrary.model.impl.DLFileVersionImpl;
 import com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl;
-import com.liferay.portlet.documentlibrary.service.persistence.DLFileVersionPersistence;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -63,9 +68,10 @@ import java.util.Set;
  *
  * @author Brian Wing Shun Chan
  * @see DLFileVersionPersistence
- * @see DLFileVersionUtil
+ * @see com.liferay.document.library.kernel.service.persistence.DLFileVersionUtil
  * @generated
  */
+@ProviderType
 public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVersion>
 	implements DLFileVersionPersistence {
 	/*
@@ -126,7 +132,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns a range of all the document library file versions where uuid = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param uuid the uuid
@@ -143,7 +149,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns an ordered range of all the document library file versions where uuid = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param uuid the uuid
@@ -154,7 +160,28 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public List<DLFileVersion> findByUuid(String uuid, int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
+		return findByUuid(uuid, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file versions where uuid = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param uuid the uuid
+	 * @param start the lower bound of the range of document library file versions
+	 * @param end the upper bound of the range of document library file versions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file versions
+	 */
+	@Override
+	public List<DLFileVersion> findByUuid(String uuid, int start, int end,
+		OrderByComparator<DLFileVersion> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -170,15 +197,19 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 			finderArgs = new Object[] { uuid, start, end, orderByComparator };
 		}
 
-		List<DLFileVersion> list = (List<DLFileVersion>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileVersion> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileVersion dlFileVersion : list) {
-				if (!Validator.equals(uuid, dlFileVersion.getUuid())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileVersion>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileVersion dlFileVersion : list) {
+					if (!Objects.equals(uuid, dlFileVersion.getUuid())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -188,7 +219,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -249,10 +280,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -270,11 +301,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param uuid the uuid
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByUuid_First(String uuid,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByUuid_First(uuid, orderByComparator);
 
 		if (dlFileVersion != null) {
@@ -302,7 +334,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByUuid_First(String uuid,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		List<DLFileVersion> list = findByUuid(uuid, 0, 1, orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -318,11 +350,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param uuid the uuid
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByUuid_Last(String uuid,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByUuid_Last(uuid, orderByComparator);
 
 		if (dlFileVersion != null) {
@@ -350,7 +383,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByUuid_Last(String uuid,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		int count = countByUuid(uuid);
 
 		if (count == 0) {
@@ -374,11 +407,11 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param uuid the uuid
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion[] findByUuid_PrevAndNext(long fileVersionId,
-		String uuid, OrderByComparator orderByComparator)
+		String uuid, OrderByComparator<DLFileVersion> orderByComparator)
 		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = findByPrimaryKey(fileVersionId);
 
@@ -409,12 +442,13 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 	protected DLFileVersion getByUuid_PrevAndNext(Session session,
 		DLFileVersion dlFileVersion, String uuid,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<DLFileVersion> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -551,8 +585,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		Object[] finderArgs = new Object[] { uuid };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(2);
@@ -590,10 +623,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -620,12 +653,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 			new String[] { String.class.getName(), Long.class.getName() });
 
 	/**
-	 * Returns the document library file version where uuid = &#63; and groupId = &#63; or throws a {@link com.liferay.portlet.documentlibrary.NoSuchFileVersionException} if it could not be found.
+	 * Returns the document library file version where uuid = &#63; and groupId = &#63; or throws a {@link NoSuchFileVersionException} if it could not be found.
 	 *
 	 * @param uuid the uuid
 	 * @param groupId the group ID
 	 * @return the matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByUUID_G(String uuid, long groupId)
@@ -645,8 +678,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			msg.append(StringPool.CLOSE_CURLY_BRACE);
 
-			if (_log.isWarnEnabled()) {
-				_log.warn(msg.toString());
+			if (_log.isDebugEnabled()) {
+				_log.debug(msg.toString());
 			}
 
 			throw new NoSuchFileVersionException(msg.toString());
@@ -672,7 +705,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 *
 	 * @param uuid the uuid
 	 * @param groupId the group ID
-	 * @param retrieveFromCache whether to use the finder cache
+	 * @param retrieveFromCache whether to retrieve from the finder cache
 	 * @return the matching document library file version, or <code>null</code> if a matching document library file version could not be found
 	 */
 	@Override
@@ -683,14 +716,14 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 		Object result = null;
 
 		if (retrieveFromCache) {
-			result = FinderCacheUtil.getResult(FINDER_PATH_FETCH_BY_UUID_G,
+			result = finderCache.getResult(FINDER_PATH_FETCH_BY_UUID_G,
 					finderArgs, this);
 		}
 
 		if (result instanceof DLFileVersion) {
 			DLFileVersion dlFileVersion = (DLFileVersion)result;
 
-			if (!Validator.equals(uuid, dlFileVersion.getUuid()) ||
+			if (!Objects.equals(uuid, dlFileVersion.getUuid()) ||
 					(groupId != dlFileVersion.getGroupId())) {
 				result = null;
 			}
@@ -737,7 +770,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 				List<DLFileVersion> list = q.list();
 
 				if (list.isEmpty()) {
-					FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_UUID_G,
+					finderCache.putResult(FINDER_PATH_FETCH_BY_UUID_G,
 						finderArgs, list);
 				}
 				else {
@@ -750,14 +783,13 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 					if ((dlFileVersion.getUuid() == null) ||
 							!dlFileVersion.getUuid().equals(uuid) ||
 							(dlFileVersion.getGroupId() != groupId)) {
-						FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_UUID_G,
+						finderCache.putResult(FINDER_PATH_FETCH_BY_UUID_G,
 							finderArgs, dlFileVersion);
 					}
 				}
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_UUID_G,
-					finderArgs);
+				finderCache.removeResult(FINDER_PATH_FETCH_BY_UUID_G, finderArgs);
 
 				throw processException(e);
 			}
@@ -802,8 +834,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		Object[] finderArgs = new Object[] { uuid, groupId };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(3);
@@ -845,10 +876,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -906,7 +937,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns a range of all the document library file versions where uuid = &#63; and companyId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param uuid the uuid
@@ -925,7 +956,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns an ordered range of all the document library file versions where uuid = &#63; and companyId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param uuid the uuid
@@ -937,7 +968,29 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public List<DLFileVersion> findByUuid_C(String uuid, long companyId,
-		int start, int end, OrderByComparator orderByComparator) {
+		int start, int end, OrderByComparator<DLFileVersion> orderByComparator) {
+		return findByUuid_C(uuid, companyId, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file versions where uuid = &#63; and companyId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @param start the lower bound of the range of document library file versions
+	 * @param end the upper bound of the range of document library file versions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file versions
+	 */
+	@Override
+	public List<DLFileVersion> findByUuid_C(String uuid, long companyId,
+		int start, int end, OrderByComparator<DLFileVersion> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -957,16 +1010,20 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 				};
 		}
 
-		List<DLFileVersion> list = (List<DLFileVersion>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileVersion> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileVersion dlFileVersion : list) {
-				if (!Validator.equals(uuid, dlFileVersion.getUuid()) ||
-						(companyId != dlFileVersion.getCompanyId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileVersion>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileVersion dlFileVersion : list) {
+					if (!Objects.equals(uuid, dlFileVersion.getUuid()) ||
+							(companyId != dlFileVersion.getCompanyId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -976,7 +1033,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			if (orderByComparator != null) {
 				query = new StringBundler(4 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(4);
@@ -1041,10 +1098,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1063,11 +1120,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByUuid_C_First(String uuid, long companyId,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByUuid_C_First(uuid, companyId,
 				orderByComparator);
 
@@ -1100,7 +1158,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByUuid_C_First(String uuid, long companyId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		List<DLFileVersion> list = findByUuid_C(uuid, companyId, 0, 1,
 				orderByComparator);
 
@@ -1118,11 +1176,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByUuid_C_Last(String uuid, long companyId,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByUuid_C_Last(uuid, companyId,
 				orderByComparator);
 
@@ -1155,7 +1214,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByUuid_C_Last(String uuid, long companyId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		int count = countByUuid_C(uuid, companyId);
 
 		if (count == 0) {
@@ -1180,11 +1239,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion[] findByUuid_C_PrevAndNext(long fileVersionId,
-		String uuid, long companyId, OrderByComparator orderByComparator)
+		String uuid, long companyId,
+		OrderByComparator<DLFileVersion> orderByComparator)
 		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = findByPrimaryKey(fileVersionId);
 
@@ -1215,15 +1275,16 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 	protected DLFileVersion getByUuid_C_PrevAndNext(Session session,
 		DLFileVersion dlFileVersion, String uuid, long companyId,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<DLFileVersion> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(5 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(4);
 		}
 
 		query.append(_SQL_SELECT_DLFILEVERSION_WHERE);
@@ -1363,8 +1424,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		Object[] finderArgs = new Object[] { uuid, companyId };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(3);
@@ -1406,10 +1466,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1465,7 +1525,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns a range of all the document library file versions where companyId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param companyId the company ID
@@ -1483,7 +1543,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns an ordered range of all the document library file versions where companyId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param companyId the company ID
@@ -1494,7 +1554,28 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public List<DLFileVersion> findByCompanyId(long companyId, int start,
-		int end, OrderByComparator orderByComparator) {
+		int end, OrderByComparator<DLFileVersion> orderByComparator) {
+		return findByCompanyId(companyId, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file versions where companyId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param companyId the company ID
+	 * @param start the lower bound of the range of document library file versions
+	 * @param end the upper bound of the range of document library file versions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file versions
+	 */
+	@Override
+	public List<DLFileVersion> findByCompanyId(long companyId, int start,
+		int end, OrderByComparator<DLFileVersion> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1510,15 +1591,19 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 			finderArgs = new Object[] { companyId, start, end, orderByComparator };
 		}
 
-		List<DLFileVersion> list = (List<DLFileVersion>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileVersion> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileVersion dlFileVersion : list) {
-				if ((companyId != dlFileVersion.getCompanyId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileVersion>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileVersion dlFileVersion : list) {
+					if ((companyId != dlFileVersion.getCompanyId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -1528,7 +1613,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -1575,10 +1660,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1596,11 +1681,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByCompanyId_First(long companyId,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByCompanyId_First(companyId,
 				orderByComparator);
 
@@ -1629,7 +1715,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByCompanyId_First(long companyId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		List<DLFileVersion> list = findByCompanyId(companyId, 0, 1,
 				orderByComparator);
 
@@ -1646,11 +1732,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByCompanyId_Last(long companyId,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByCompanyId_Last(companyId,
 				orderByComparator);
 
@@ -1679,7 +1766,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByCompanyId_Last(long companyId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		int count = countByCompanyId(companyId);
 
 		if (count == 0) {
@@ -1703,11 +1790,11 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion[] findByCompanyId_PrevAndNext(long fileVersionId,
-		long companyId, OrderByComparator orderByComparator)
+		long companyId, OrderByComparator<DLFileVersion> orderByComparator)
 		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = findByPrimaryKey(fileVersionId);
 
@@ -1738,12 +1825,13 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 	protected DLFileVersion getByCompanyId_PrevAndNext(Session session,
 		DLFileVersion dlFileVersion, long companyId,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<DLFileVersion> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -1866,8 +1954,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		Object[] finderArgs = new Object[] { companyId };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(2);
@@ -1891,10 +1978,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1946,7 +2033,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns a range of all the document library file versions where fileEntryId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param fileEntryId the file entry ID
@@ -1964,7 +2051,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns an ordered range of all the document library file versions where fileEntryId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param fileEntryId the file entry ID
@@ -1975,7 +2062,29 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public List<DLFileVersion> findByFileEntryId(long fileEntryId, int start,
-		int end, OrderByComparator orderByComparator) {
+		int end, OrderByComparator<DLFileVersion> orderByComparator) {
+		return findByFileEntryId(fileEntryId, start, end, orderByComparator,
+			true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file versions where fileEntryId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param fileEntryId the file entry ID
+	 * @param start the lower bound of the range of document library file versions
+	 * @param end the upper bound of the range of document library file versions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file versions
+	 */
+	@Override
+	public List<DLFileVersion> findByFileEntryId(long fileEntryId, int start,
+		int end, OrderByComparator<DLFileVersion> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1991,15 +2100,19 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 			finderArgs = new Object[] { fileEntryId, start, end, orderByComparator };
 		}
 
-		List<DLFileVersion> list = (List<DLFileVersion>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileVersion> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileVersion dlFileVersion : list) {
-				if ((fileEntryId != dlFileVersion.getFileEntryId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileVersion>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileVersion dlFileVersion : list) {
+					if ((fileEntryId != dlFileVersion.getFileEntryId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -2009,7 +2122,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -2056,10 +2169,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -2077,11 +2190,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param fileEntryId the file entry ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByFileEntryId_First(long fileEntryId,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByFileEntryId_First(fileEntryId,
 				orderByComparator);
 
@@ -2110,7 +2224,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByFileEntryId_First(long fileEntryId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		List<DLFileVersion> list = findByFileEntryId(fileEntryId, 0, 1,
 				orderByComparator);
 
@@ -2127,11 +2241,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param fileEntryId the file entry ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByFileEntryId_Last(long fileEntryId,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByFileEntryId_Last(fileEntryId,
 				orderByComparator);
 
@@ -2160,7 +2275,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByFileEntryId_Last(long fileEntryId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		int count = countByFileEntryId(fileEntryId);
 
 		if (count == 0) {
@@ -2184,11 +2299,11 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param fileEntryId the file entry ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion[] findByFileEntryId_PrevAndNext(long fileVersionId,
-		long fileEntryId, OrderByComparator orderByComparator)
+		long fileEntryId, OrderByComparator<DLFileVersion> orderByComparator)
 		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = findByPrimaryKey(fileVersionId);
 
@@ -2219,12 +2334,13 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 	protected DLFileVersion getByFileEntryId_PrevAndNext(Session session,
 		DLFileVersion dlFileVersion, long fileEntryId,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<DLFileVersion> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -2347,8 +2463,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		Object[] finderArgs = new Object[] { fileEntryId };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(2);
@@ -2372,10 +2487,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -2427,7 +2542,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns a range of all the document library file versions where mimeType = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param mimeType the mime type
@@ -2445,7 +2560,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns an ordered range of all the document library file versions where mimeType = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param mimeType the mime type
@@ -2456,7 +2571,28 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public List<DLFileVersion> findByMimeType(String mimeType, int start,
-		int end, OrderByComparator orderByComparator) {
+		int end, OrderByComparator<DLFileVersion> orderByComparator) {
+		return findByMimeType(mimeType, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file versions where mimeType = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param mimeType the mime type
+	 * @param start the lower bound of the range of document library file versions
+	 * @param end the upper bound of the range of document library file versions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file versions
+	 */
+	@Override
+	public List<DLFileVersion> findByMimeType(String mimeType, int start,
+		int end, OrderByComparator<DLFileVersion> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -2472,15 +2608,19 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 			finderArgs = new Object[] { mimeType, start, end, orderByComparator };
 		}
 
-		List<DLFileVersion> list = (List<DLFileVersion>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileVersion> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileVersion dlFileVersion : list) {
-				if (!Validator.equals(mimeType, dlFileVersion.getMimeType())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileVersion>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileVersion dlFileVersion : list) {
+					if (!Objects.equals(mimeType, dlFileVersion.getMimeType())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -2490,7 +2630,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -2551,10 +2691,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -2572,11 +2712,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param mimeType the mime type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByMimeType_First(String mimeType,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByMimeType_First(mimeType,
 				orderByComparator);
 
@@ -2605,7 +2746,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByMimeType_First(String mimeType,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		List<DLFileVersion> list = findByMimeType(mimeType, 0, 1,
 				orderByComparator);
 
@@ -2622,11 +2763,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param mimeType the mime type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByMimeType_Last(String mimeType,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByMimeType_Last(mimeType,
 				orderByComparator);
 
@@ -2655,7 +2797,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByMimeType_Last(String mimeType,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		int count = countByMimeType(mimeType);
 
 		if (count == 0) {
@@ -2679,11 +2821,11 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param mimeType the mime type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion[] findByMimeType_PrevAndNext(long fileVersionId,
-		String mimeType, OrderByComparator orderByComparator)
+		String mimeType, OrderByComparator<DLFileVersion> orderByComparator)
 		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = findByPrimaryKey(fileVersionId);
 
@@ -2714,12 +2856,13 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 	protected DLFileVersion getByMimeType_PrevAndNext(Session session,
 		DLFileVersion dlFileVersion, String mimeType,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<DLFileVersion> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -2856,8 +2999,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		Object[] finderArgs = new Object[] { mimeType };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(2);
@@ -2895,10 +3037,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -2945,7 +3087,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns a range of all the document library file versions where companyId = &#63; and status &ne; &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param companyId the company ID
@@ -2964,7 +3106,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns an ordered range of all the document library file versions where companyId = &#63; and status &ne; &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param companyId the company ID
@@ -2976,7 +3118,30 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public List<DLFileVersion> findByC_NotS(long companyId, int status,
-		int start, int end, OrderByComparator orderByComparator) {
+		int start, int end, OrderByComparator<DLFileVersion> orderByComparator) {
+		return findByC_NotS(companyId, status, start, end, orderByComparator,
+			true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file versions where companyId = &#63; and status &ne; &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param companyId the company ID
+	 * @param status the status
+	 * @param start the lower bound of the range of document library file versions
+	 * @param end the upper bound of the range of document library file versions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file versions
+	 */
+	@Override
+	public List<DLFileVersion> findByC_NotS(long companyId, int status,
+		int start, int end, OrderByComparator<DLFileVersion> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -2988,16 +3153,20 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 				start, end, orderByComparator
 			};
 
-		List<DLFileVersion> list = (List<DLFileVersion>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileVersion> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileVersion dlFileVersion : list) {
-				if ((companyId != dlFileVersion.getCompanyId()) ||
-						(status == dlFileVersion.getStatus())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileVersion>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileVersion dlFileVersion : list) {
+					if ((companyId != dlFileVersion.getCompanyId()) ||
+							(status == dlFileVersion.getStatus())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -3007,7 +3176,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			if (orderByComparator != null) {
 				query = new StringBundler(4 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(4);
@@ -3058,10 +3227,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -3080,11 +3249,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param status the status
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByC_NotS_First(long companyId, int status,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByC_NotS_First(companyId, status,
 				orderByComparator);
 
@@ -3117,7 +3287,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByC_NotS_First(long companyId, int status,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		List<DLFileVersion> list = findByC_NotS(companyId, status, 0, 1,
 				orderByComparator);
 
@@ -3135,11 +3305,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param status the status
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByC_NotS_Last(long companyId, int status,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByC_NotS_Last(companyId, status,
 				orderByComparator);
 
@@ -3172,7 +3343,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByC_NotS_Last(long companyId, int status,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		int count = countByC_NotS(companyId, status);
 
 		if (count == 0) {
@@ -3197,11 +3368,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param status the status
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion[] findByC_NotS_PrevAndNext(long fileVersionId,
-		long companyId, int status, OrderByComparator orderByComparator)
+		long companyId, int status,
+		OrderByComparator<DLFileVersion> orderByComparator)
 		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = findByPrimaryKey(fileVersionId);
 
@@ -3232,15 +3404,16 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 	protected DLFileVersion getByC_NotS_PrevAndNext(Session session,
 		DLFileVersion dlFileVersion, long companyId, int status,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<DLFileVersion> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(5 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(4);
 		}
 
 		query.append(_SQL_SELECT_DLFILEVERSION_WHERE);
@@ -3366,8 +3539,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		Object[] finderArgs = new Object[] { companyId, status };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(3);
@@ -3395,10 +3567,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -3424,12 +3596,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 			new String[] { Long.class.getName(), String.class.getName() });
 
 	/**
-	 * Returns the document library file version where fileEntryId = &#63; and version = &#63; or throws a {@link com.liferay.portlet.documentlibrary.NoSuchFileVersionException} if it could not be found.
+	 * Returns the document library file version where fileEntryId = &#63; and version = &#63; or throws a {@link NoSuchFileVersionException} if it could not be found.
 	 *
 	 * @param fileEntryId the file entry ID
 	 * @param version the version
 	 * @return the matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByF_V(long fileEntryId, String version)
@@ -3449,8 +3621,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			msg.append(StringPool.CLOSE_CURLY_BRACE);
 
-			if (_log.isWarnEnabled()) {
-				_log.warn(msg.toString());
+			if (_log.isDebugEnabled()) {
+				_log.debug(msg.toString());
 			}
 
 			throw new NoSuchFileVersionException(msg.toString());
@@ -3476,7 +3648,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 *
 	 * @param fileEntryId the file entry ID
 	 * @param version the version
-	 * @param retrieveFromCache whether to use the finder cache
+	 * @param retrieveFromCache whether to retrieve from the finder cache
 	 * @return the matching document library file version, or <code>null</code> if a matching document library file version could not be found
 	 */
 	@Override
@@ -3487,7 +3659,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 		Object result = null;
 
 		if (retrieveFromCache) {
-			result = FinderCacheUtil.getResult(FINDER_PATH_FETCH_BY_F_V,
+			result = finderCache.getResult(FINDER_PATH_FETCH_BY_F_V,
 					finderArgs, this);
 		}
 
@@ -3495,7 +3667,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 			DLFileVersion dlFileVersion = (DLFileVersion)result;
 
 			if ((fileEntryId != dlFileVersion.getFileEntryId()) ||
-					!Validator.equals(version, dlFileVersion.getVersion())) {
+					!Objects.equals(version, dlFileVersion.getVersion())) {
 				result = null;
 			}
 		}
@@ -3541,8 +3713,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 				List<DLFileVersion> list = q.list();
 
 				if (list.isEmpty()) {
-					FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_F_V,
-						finderArgs, list);
+					finderCache.putResult(FINDER_PATH_FETCH_BY_F_V, finderArgs,
+						list);
 				}
 				else {
 					DLFileVersion dlFileVersion = list.get(0);
@@ -3554,14 +3726,13 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 					if ((dlFileVersion.getFileEntryId() != fileEntryId) ||
 							(dlFileVersion.getVersion() == null) ||
 							!dlFileVersion.getVersion().equals(version)) {
-						FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_F_V,
+						finderCache.putResult(FINDER_PATH_FETCH_BY_F_V,
 							finderArgs, dlFileVersion);
 					}
 				}
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_F_V,
-					finderArgs);
+				finderCache.removeResult(FINDER_PATH_FETCH_BY_F_V, finderArgs);
 
 				throw processException(e);
 			}
@@ -3606,8 +3777,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		Object[] finderArgs = new Object[] { fileEntryId, version };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(3);
@@ -3649,10 +3819,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -3708,7 +3878,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns a range of all the document library file versions where fileEntryId = &#63; and status = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param fileEntryId the file entry ID
@@ -3727,7 +3897,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns an ordered range of all the document library file versions where fileEntryId = &#63; and status = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param fileEntryId the file entry ID
@@ -3739,7 +3909,30 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public List<DLFileVersion> findByF_S(long fileEntryId, int status,
-		int start, int end, OrderByComparator orderByComparator) {
+		int start, int end, OrderByComparator<DLFileVersion> orderByComparator) {
+		return findByF_S(fileEntryId, status, start, end, orderByComparator,
+			true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file versions where fileEntryId = &#63; and status = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param fileEntryId the file entry ID
+	 * @param status the status
+	 * @param start the lower bound of the range of document library file versions
+	 * @param end the upper bound of the range of document library file versions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file versions
+	 */
+	@Override
+	public List<DLFileVersion> findByF_S(long fileEntryId, int status,
+		int start, int end, OrderByComparator<DLFileVersion> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -3759,16 +3952,20 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 				};
 		}
 
-		List<DLFileVersion> list = (List<DLFileVersion>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileVersion> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileVersion dlFileVersion : list) {
-				if ((fileEntryId != dlFileVersion.getFileEntryId()) ||
-						(status != dlFileVersion.getStatus())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileVersion>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileVersion dlFileVersion : list) {
+					if ((fileEntryId != dlFileVersion.getFileEntryId()) ||
+							(status != dlFileVersion.getStatus())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -3778,7 +3975,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			if (orderByComparator != null) {
 				query = new StringBundler(4 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(4);
@@ -3829,10 +4026,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -3851,11 +4048,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param status the status
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByF_S_First(long fileEntryId, int status,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByF_S_First(fileEntryId, status,
 				orderByComparator);
 
@@ -3888,7 +4086,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByF_S_First(long fileEntryId, int status,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		List<DLFileVersion> list = findByF_S(fileEntryId, status, 0, 1,
 				orderByComparator);
 
@@ -3906,11 +4104,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param status the status
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByF_S_Last(long fileEntryId, int status,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByF_S_Last(fileEntryId, status,
 				orderByComparator);
 
@@ -3943,7 +4142,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByF_S_Last(long fileEntryId, int status,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		int count = countByF_S(fileEntryId, status);
 
 		if (count == 0) {
@@ -3968,11 +4167,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param status the status
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion[] findByF_S_PrevAndNext(long fileVersionId,
-		long fileEntryId, int status, OrderByComparator orderByComparator)
+		long fileEntryId, int status,
+		OrderByComparator<DLFileVersion> orderByComparator)
 		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = findByPrimaryKey(fileVersionId);
 
@@ -4003,15 +4203,16 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 	protected DLFileVersion getByF_S_PrevAndNext(Session session,
 		DLFileVersion dlFileVersion, long fileEntryId, int status,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<DLFileVersion> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(5 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(4);
 		}
 
 		query.append(_SQL_SELECT_DLFILEVERSION_WHERE);
@@ -4137,8 +4338,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		Object[] finderArgs = new Object[] { fileEntryId, status };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(3);
@@ -4166,10 +4366,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -4234,7 +4434,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns a range of all the document library file versions where groupId = &#63; and folderId = &#63; and status = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param groupId the group ID
@@ -4254,7 +4454,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns an ordered range of all the document library file versions where groupId = &#63; and folderId = &#63; and status = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param groupId the group ID
@@ -4267,7 +4467,33 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public List<DLFileVersion> findByG_F_S(long groupId, long folderId,
-		int status, int start, int end, OrderByComparator orderByComparator) {
+		int status, int start, int end,
+		OrderByComparator<DLFileVersion> orderByComparator) {
+		return findByG_F_S(groupId, folderId, status, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file versions where groupId = &#63; and folderId = &#63; and status = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param groupId the group ID
+	 * @param folderId the folder ID
+	 * @param status the status
+	 * @param start the lower bound of the range of document library file versions
+	 * @param end the upper bound of the range of document library file versions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file versions
+	 */
+	@Override
+	public List<DLFileVersion> findByG_F_S(long groupId, long folderId,
+		int status, int start, int end,
+		OrderByComparator<DLFileVersion> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -4287,17 +4513,21 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 				};
 		}
 
-		List<DLFileVersion> list = (List<DLFileVersion>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileVersion> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileVersion dlFileVersion : list) {
-				if ((groupId != dlFileVersion.getGroupId()) ||
-						(folderId != dlFileVersion.getFolderId()) ||
-						(status != dlFileVersion.getStatus())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileVersion>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileVersion dlFileVersion : list) {
+					if ((groupId != dlFileVersion.getGroupId()) ||
+							(folderId != dlFileVersion.getFolderId()) ||
+							(status != dlFileVersion.getStatus())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -4307,7 +4537,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			if (orderByComparator != null) {
 				query = new StringBundler(5 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(5);
@@ -4362,10 +4592,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -4385,11 +4615,11 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param status the status
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByG_F_S_First(long groupId, long folderId,
-		int status, OrderByComparator orderByComparator)
+		int status, OrderByComparator<DLFileVersion> orderByComparator)
 		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByG_F_S_First(groupId, folderId,
 				status, orderByComparator);
@@ -4427,7 +4657,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByG_F_S_First(long groupId, long folderId,
-		int status, OrderByComparator orderByComparator) {
+		int status, OrderByComparator<DLFileVersion> orderByComparator) {
 		List<DLFileVersion> list = findByG_F_S(groupId, folderId, status, 0, 1,
 				orderByComparator);
 
@@ -4446,11 +4676,11 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param status the status
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByG_F_S_Last(long groupId, long folderId,
-		int status, OrderByComparator orderByComparator)
+		int status, OrderByComparator<DLFileVersion> orderByComparator)
 		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByG_F_S_Last(groupId, folderId,
 				status, orderByComparator);
@@ -4488,7 +4718,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByG_F_S_Last(long groupId, long folderId,
-		int status, OrderByComparator orderByComparator) {
+		int status, OrderByComparator<DLFileVersion> orderByComparator) {
 		int count = countByG_F_S(groupId, folderId, status);
 
 		if (count == 0) {
@@ -4514,12 +4744,13 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param status the status
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion[] findByG_F_S_PrevAndNext(long fileVersionId,
 		long groupId, long folderId, int status,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = findByPrimaryKey(fileVersionId);
 
 		Session session = null;
@@ -4549,15 +4780,16 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 	protected DLFileVersion getByG_F_S_PrevAndNext(Session session,
 		DLFileVersion dlFileVersion, long groupId, long folderId, int status,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<DLFileVersion> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
 			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(5);
 		}
 
 		query.append(_SQL_SELECT_DLFILEVERSION_WHERE);
@@ -4689,8 +4921,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		Object[] finderArgs = new Object[] { groupId, folderId, status };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(4);
@@ -4722,10 +4953,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -4794,7 +5025,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns a range of all the document library file versions where groupId = &#63; and folderId = &#63; and title = &#63; and version = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param groupId the group ID
@@ -4815,7 +5046,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns an ordered range of all the document library file versions where groupId = &#63; and folderId = &#63; and title = &#63; and version = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param groupId the group ID
@@ -4830,7 +5061,33 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	@Override
 	public List<DLFileVersion> findByG_F_T_V(long groupId, long folderId,
 		String title, String version, int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
+		return findByG_F_T_V(groupId, folderId, title, version, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file versions where groupId = &#63; and folderId = &#63; and title = &#63; and version = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param groupId the group ID
+	 * @param folderId the folder ID
+	 * @param title the title
+	 * @param version the version
+	 * @param start the lower bound of the range of document library file versions
+	 * @param end the upper bound of the range of document library file versions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file versions
+	 */
+	@Override
+	public List<DLFileVersion> findByG_F_T_V(long groupId, long folderId,
+		String title, String version, int start, int end,
+		OrderByComparator<DLFileVersion> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -4850,18 +5107,22 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 				};
 		}
 
-		List<DLFileVersion> list = (List<DLFileVersion>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileVersion> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileVersion dlFileVersion : list) {
-				if ((groupId != dlFileVersion.getGroupId()) ||
-						(folderId != dlFileVersion.getFolderId()) ||
-						!Validator.equals(title, dlFileVersion.getTitle()) ||
-						!Validator.equals(version, dlFileVersion.getVersion())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileVersion>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileVersion dlFileVersion : list) {
+					if ((groupId != dlFileVersion.getGroupId()) ||
+							(folderId != dlFileVersion.getFolderId()) ||
+							!Objects.equals(title, dlFileVersion.getTitle()) ||
+							!Objects.equals(version, dlFileVersion.getVersion())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -4871,7 +5132,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			if (orderByComparator != null) {
 				query = new StringBundler(6 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(6);
@@ -4958,10 +5219,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -4982,11 +5243,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param version the version
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByG_F_T_V_First(long groupId, long folderId,
-		String title, String version, OrderByComparator orderByComparator)
+		String title, String version,
+		OrderByComparator<DLFileVersion> orderByComparator)
 		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByG_F_T_V_First(groupId, folderId,
 				title, version, orderByComparator);
@@ -5028,7 +5290,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByG_F_T_V_First(long groupId, long folderId,
-		String title, String version, OrderByComparator orderByComparator) {
+		String title, String version,
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		List<DLFileVersion> list = findByG_F_T_V(groupId, folderId, title,
 				version, 0, 1, orderByComparator);
 
@@ -5048,11 +5311,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param version the version
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a matching document library file version could not be found
+	 * @throws NoSuchFileVersionException if a matching document library file version could not be found
 	 */
 	@Override
 	public DLFileVersion findByG_F_T_V_Last(long groupId, long folderId,
-		String title, String version, OrderByComparator orderByComparator)
+		String title, String version,
+		OrderByComparator<DLFileVersion> orderByComparator)
 		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = fetchByG_F_T_V_Last(groupId, folderId,
 				title, version, orderByComparator);
@@ -5094,7 +5358,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByG_F_T_V_Last(long groupId, long folderId,
-		String title, String version, OrderByComparator orderByComparator) {
+		String title, String version,
+		OrderByComparator<DLFileVersion> orderByComparator) {
 		int count = countByG_F_T_V(groupId, folderId, title, version);
 
 		if (count == 0) {
@@ -5121,12 +5386,13 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * @param version the version
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion[] findByG_F_T_V_PrevAndNext(long fileVersionId,
 		long groupId, long folderId, String title, String version,
-		OrderByComparator orderByComparator) throws NoSuchFileVersionException {
+		OrderByComparator<DLFileVersion> orderByComparator)
+		throws NoSuchFileVersionException {
 		DLFileVersion dlFileVersion = findByPrimaryKey(fileVersionId);
 
 		Session session = null;
@@ -5156,15 +5422,17 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 	protected DLFileVersion getByG_F_T_V_PrevAndNext(Session session,
 		DLFileVersion dlFileVersion, long groupId, long folderId, String title,
-		String version, OrderByComparator orderByComparator, boolean previous) {
+		String version, OrderByComparator<DLFileVersion> orderByComparator,
+		boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(7 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(6);
 		}
 
 		query.append(_SQL_SELECT_DLFILEVERSION_WHERE);
@@ -5332,8 +5600,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		Object[] finderArgs = new Object[] { groupId, folderId, title, version };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(5);
@@ -5397,10 +5664,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -5432,15 +5699,15 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public void cacheResult(DLFileVersion dlFileVersion) {
-		EntityCacheUtil.putResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.putResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
 			DLFileVersionImpl.class, dlFileVersion.getPrimaryKey(),
 			dlFileVersion);
 
-		FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_UUID_G,
+		finderCache.putResult(FINDER_PATH_FETCH_BY_UUID_G,
 			new Object[] { dlFileVersion.getUuid(), dlFileVersion.getGroupId() },
 			dlFileVersion);
 
-		FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_F_V,
+		finderCache.putResult(FINDER_PATH_FETCH_BY_F_V,
 			new Object[] {
 				dlFileVersion.getFileEntryId(), dlFileVersion.getVersion()
 			}, dlFileVersion);
@@ -5456,7 +5723,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	@Override
 	public void cacheResult(List<DLFileVersion> dlFileVersions) {
 		for (DLFileVersion dlFileVersion : dlFileVersions) {
-			if (EntityCacheUtil.getResult(
+			if (entityCache.getResult(
 						DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
 						DLFileVersionImpl.class, dlFileVersion.getPrimaryKey()) == null) {
 				cacheResult(dlFileVersion);
@@ -5471,140 +5738,114 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Clears the cache for all document library file versions.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
-		if (_HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE) {
-			CacheRegistryUtil.clear(DLFileVersionImpl.class.getName());
-		}
+		entityCache.clearCache(DLFileVersionImpl.class);
 
-		EntityCacheUtil.clearCache(DLFileVersionImpl.class);
-
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
 	/**
 	 * Clears the cache for the document library file version.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache(DLFileVersion dlFileVersion) {
-		EntityCacheUtil.removeResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.removeResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
 			DLFileVersionImpl.class, dlFileVersion.getPrimaryKey());
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
-		clearUniqueFindersCache(dlFileVersion);
+		clearUniqueFindersCache((DLFileVersionModelImpl)dlFileVersion, true);
 	}
 
 	@Override
 	public void clearCache(List<DLFileVersion> dlFileVersions) {
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
 		for (DLFileVersion dlFileVersion : dlFileVersions) {
-			EntityCacheUtil.removeResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
+			entityCache.removeResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
 				DLFileVersionImpl.class, dlFileVersion.getPrimaryKey());
 
-			clearUniqueFindersCache(dlFileVersion);
+			clearUniqueFindersCache((DLFileVersionModelImpl)dlFileVersion, true);
 		}
 	}
 
-	protected void cacheUniqueFindersCache(DLFileVersion dlFileVersion) {
-		if (dlFileVersion.isNew()) {
-			Object[] args = new Object[] {
-					dlFileVersion.getUuid(), dlFileVersion.getGroupId()
-				};
-
-			FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_UUID_G, args,
-				Long.valueOf(1));
-			FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_UUID_G, args,
-				dlFileVersion);
-
-			args = new Object[] {
-					dlFileVersion.getFileEntryId(), dlFileVersion.getVersion()
-				};
-
-			FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_F_V, args,
-				Long.valueOf(1));
-			FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_F_V, args,
-				dlFileVersion);
-		}
-		else {
-			DLFileVersionModelImpl dlFileVersionModelImpl = (DLFileVersionModelImpl)dlFileVersion;
-
-			if ((dlFileVersionModelImpl.getColumnBitmask() &
-					FINDER_PATH_FETCH_BY_UUID_G.getColumnBitmask()) != 0) {
-				Object[] args = new Object[] {
-						dlFileVersion.getUuid(), dlFileVersion.getGroupId()
-					};
-
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_UUID_G, args,
-					Long.valueOf(1));
-				FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_UUID_G, args,
-					dlFileVersion);
-			}
-
-			if ((dlFileVersionModelImpl.getColumnBitmask() &
-					FINDER_PATH_FETCH_BY_F_V.getColumnBitmask()) != 0) {
-				Object[] args = new Object[] {
-						dlFileVersion.getFileEntryId(),
-						dlFileVersion.getVersion()
-					};
-
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_F_V, args,
-					Long.valueOf(1));
-				FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_F_V, args,
-					dlFileVersion);
-			}
-		}
-	}
-
-	protected void clearUniqueFindersCache(DLFileVersion dlFileVersion) {
-		DLFileVersionModelImpl dlFileVersionModelImpl = (DLFileVersionModelImpl)dlFileVersion;
-
+	protected void cacheUniqueFindersCache(
+		DLFileVersionModelImpl dlFileVersionModelImpl) {
 		Object[] args = new Object[] {
-				dlFileVersion.getUuid(), dlFileVersion.getGroupId()
+				dlFileVersionModelImpl.getUuid(),
+				dlFileVersionModelImpl.getGroupId()
 			};
 
-		FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_UUID_G, args);
-		FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_UUID_G, args);
+		finderCache.putResult(FINDER_PATH_COUNT_BY_UUID_G, args,
+			Long.valueOf(1), false);
+		finderCache.putResult(FINDER_PATH_FETCH_BY_UUID_G, args,
+			dlFileVersionModelImpl, false);
+
+		args = new Object[] {
+				dlFileVersionModelImpl.getFileEntryId(),
+				dlFileVersionModelImpl.getVersion()
+			};
+
+		finderCache.putResult(FINDER_PATH_COUNT_BY_F_V, args, Long.valueOf(1),
+			false);
+		finderCache.putResult(FINDER_PATH_FETCH_BY_F_V, args,
+			dlFileVersionModelImpl, false);
+	}
+
+	protected void clearUniqueFindersCache(
+		DLFileVersionModelImpl dlFileVersionModelImpl, boolean clearCurrent) {
+		if (clearCurrent) {
+			Object[] args = new Object[] {
+					dlFileVersionModelImpl.getUuid(),
+					dlFileVersionModelImpl.getGroupId()
+				};
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID_G, args);
+			finderCache.removeResult(FINDER_PATH_FETCH_BY_UUID_G, args);
+		}
 
 		if ((dlFileVersionModelImpl.getColumnBitmask() &
 				FINDER_PATH_FETCH_BY_UUID_G.getColumnBitmask()) != 0) {
-			args = new Object[] {
+			Object[] args = new Object[] {
 					dlFileVersionModelImpl.getOriginalUuid(),
 					dlFileVersionModelImpl.getOriginalGroupId()
 				};
 
-			FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_UUID_G, args);
-			FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_UUID_G, args);
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID_G, args);
+			finderCache.removeResult(FINDER_PATH_FETCH_BY_UUID_G, args);
 		}
 
-		args = new Object[] {
-				dlFileVersion.getFileEntryId(), dlFileVersion.getVersion()
-			};
+		if (clearCurrent) {
+			Object[] args = new Object[] {
+					dlFileVersionModelImpl.getFileEntryId(),
+					dlFileVersionModelImpl.getVersion()
+				};
 
-		FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_F_V, args);
-		FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_F_V, args);
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_F_V, args);
+			finderCache.removeResult(FINDER_PATH_FETCH_BY_F_V, args);
+		}
 
 		if ((dlFileVersionModelImpl.getColumnBitmask() &
 				FINDER_PATH_FETCH_BY_F_V.getColumnBitmask()) != 0) {
-			args = new Object[] {
+			Object[] args = new Object[] {
 					dlFileVersionModelImpl.getOriginalFileEntryId(),
 					dlFileVersionModelImpl.getOriginalVersion()
 				};
 
-			FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_F_V, args);
-			FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_F_V, args);
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_F_V, args);
+			finderCache.removeResult(FINDER_PATH_FETCH_BY_F_V, args);
 		}
 	}
 
@@ -5625,6 +5866,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 		dlFileVersion.setUuid(uuid);
 
+		dlFileVersion.setCompanyId(companyProvider.getCompanyId());
+
 		return dlFileVersion;
 	}
 
@@ -5633,7 +5876,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 *
 	 * @param fileVersionId the primary key of the document library file version
 	 * @return the document library file version that was removed
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion remove(long fileVersionId)
@@ -5646,7 +5889,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 *
 	 * @param primaryKey the primary key of the document library file version
 	 * @return the document library file version that was removed
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion remove(Serializable primaryKey)
@@ -5660,8 +5903,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 					primaryKey);
 
 			if (dlFileVersion == null) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+				if (_log.isDebugEnabled()) {
+					_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 				}
 
 				throw new NoSuchFileVersionException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -5714,8 +5957,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	}
 
 	@Override
-	public DLFileVersion updateImpl(
-		com.liferay.portlet.documentlibrary.model.DLFileVersion dlFileVersion) {
+	public DLFileVersion updateImpl(DLFileVersion dlFileVersion) {
 		dlFileVersion = toUnwrappedModel(dlFileVersion);
 
 		boolean isNew = dlFileVersion.isNew();
@@ -5726,6 +5968,29 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 			String uuid = PortalUUIDUtil.generate();
 
 			dlFileVersion.setUuid(uuid);
+		}
+
+		ServiceContext serviceContext = ServiceContextThreadLocal.getServiceContext();
+
+		Date now = new Date();
+
+		if (isNew && (dlFileVersion.getCreateDate() == null)) {
+			if (serviceContext == null) {
+				dlFileVersion.setCreateDate(now);
+			}
+			else {
+				dlFileVersion.setCreateDate(serviceContext.getCreateDate(now));
+			}
+		}
+
+		if (!dlFileVersionModelImpl.hasSetModifiedDate()) {
+			if (serviceContext == null) {
+				dlFileVersion.setModifiedDate(now);
+			}
+			else {
+				dlFileVersion.setModifiedDate(serviceContext.getModifiedDate(
+						now));
+			}
 		}
 
 		Session session = null;
@@ -5739,7 +6004,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 				dlFileVersion.setNew(false);
 			}
 			else {
-				session.merge(dlFileVersion);
+				dlFileVersion = (DLFileVersion)session.merge(dlFileVersion);
 			}
 		}
 		catch (Exception e) {
@@ -5749,10 +6014,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 			closeSession(session);
 		}
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 
 		if (isNew || !DLFileVersionModelImpl.COLUMN_BITMASK_ENABLED) {
-			FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+			finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 		}
 
 		else {
@@ -5762,14 +6027,14 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getOriginalUuid()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_UUID, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID,
 					args);
 
 				args = new Object[] { dlFileVersionModelImpl.getUuid() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_UUID, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID,
 					args);
 			}
 
@@ -5780,8 +6045,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getOriginalCompanyId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_UUID_C, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID_C,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID_C, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID_C,
 					args);
 
 				args = new Object[] {
@@ -5789,8 +6054,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getCompanyId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_UUID_C, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID_C,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID_C, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID_C,
 					args);
 			}
 
@@ -5800,16 +6065,14 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getOriginalCompanyId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_COMPANYID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_COMPANYID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_COMPANYID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_COMPANYID,
 					args);
 
 				args = new Object[] { dlFileVersionModelImpl.getCompanyId() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_COMPANYID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_COMPANYID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_COMPANYID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_COMPANYID,
 					args);
 			}
 
@@ -5819,16 +6082,14 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getOriginalFileEntryId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_FILEENTRYID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_FILEENTRYID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYID,
 					args);
 
 				args = new Object[] { dlFileVersionModelImpl.getFileEntryId() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_FILEENTRYID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_FILEENTRYID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYID,
 					args);
 			}
 
@@ -5838,14 +6099,14 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getOriginalMimeType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_MIMETYPE, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_MIMETYPE,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_MIMETYPE, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_MIMETYPE,
 					args);
 
 				args = new Object[] { dlFileVersionModelImpl.getMimeType() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_MIMETYPE, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_MIMETYPE,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_MIMETYPE, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_MIMETYPE,
 					args);
 			}
 
@@ -5856,8 +6117,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getOriginalStatus()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_F_S, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_F_S,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_F_S, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_F_S,
 					args);
 
 				args = new Object[] {
@@ -5865,8 +6126,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getStatus()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_F_S, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_F_S,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_F_S, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_F_S,
 					args);
 			}
 
@@ -5878,8 +6139,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getOriginalStatus()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_G_F_S, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_F_S,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_G_F_S, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_F_S,
 					args);
 
 				args = new Object[] {
@@ -5888,8 +6149,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getStatus()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_G_F_S, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_F_S,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_G_F_S, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_F_S,
 					args);
 			}
 
@@ -5902,8 +6163,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getOriginalVersion()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_G_F_T_V, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_F_T_V,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_G_F_T_V, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_F_T_V,
 					args);
 
 				args = new Object[] {
@@ -5913,18 +6174,18 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 						dlFileVersionModelImpl.getVersion()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_G_F_T_V, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_F_T_V,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_G_F_T_V, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_F_T_V,
 					args);
 			}
 		}
 
-		EntityCacheUtil.putResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.putResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
 			DLFileVersionImpl.class, dlFileVersion.getPrimaryKey(),
 			dlFileVersion, false);
 
-		clearUniqueFindersCache(dlFileVersion);
-		cacheUniqueFindersCache(dlFileVersion);
+		clearUniqueFindersCache(dlFileVersionModelImpl, false);
+		cacheUniqueFindersCache(dlFileVersionModelImpl);
 
 		dlFileVersion.resetOriginalValues();
 
@@ -5953,6 +6214,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 		dlFileVersionImpl.setFolderId(dlFileVersion.getFolderId());
 		dlFileVersionImpl.setFileEntryId(dlFileVersion.getFileEntryId());
 		dlFileVersionImpl.setTreePath(dlFileVersion.getTreePath());
+		dlFileVersionImpl.setFileName(dlFileVersion.getFileName());
 		dlFileVersionImpl.setExtension(dlFileVersion.getExtension());
 		dlFileVersionImpl.setMimeType(dlFileVersion.getMimeType());
 		dlFileVersionImpl.setTitle(dlFileVersion.getTitle());
@@ -5963,6 +6225,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 		dlFileVersionImpl.setVersion(dlFileVersion.getVersion());
 		dlFileVersionImpl.setSize(dlFileVersion.getSize());
 		dlFileVersionImpl.setChecksum(dlFileVersion.getChecksum());
+		dlFileVersionImpl.setLastPublishDate(dlFileVersion.getLastPublishDate());
 		dlFileVersionImpl.setStatus(dlFileVersion.getStatus());
 		dlFileVersionImpl.setStatusByUserId(dlFileVersion.getStatusByUserId());
 		dlFileVersionImpl.setStatusByUserName(dlFileVersion.getStatusByUserName());
@@ -5972,11 +6235,11 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	}
 
 	/**
-	 * Returns the document library file version with the primary key or throws a {@link com.liferay.portal.NoSuchModelException} if it could not be found.
+	 * Returns the document library file version with the primary key or throws a {@link com.liferay.portal.kernel.exception.NoSuchModelException} if it could not be found.
 	 *
 	 * @param primaryKey the primary key of the document library file version
 	 * @return the document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion findByPrimaryKey(Serializable primaryKey)
@@ -5984,8 +6247,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 		DLFileVersion dlFileVersion = fetchByPrimaryKey(primaryKey);
 
 		if (dlFileVersion == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+			if (_log.isDebugEnabled()) {
+				_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 			}
 
 			throw new NoSuchFileVersionException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -5996,11 +6259,11 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	}
 
 	/**
-	 * Returns the document library file version with the primary key or throws a {@link com.liferay.portlet.documentlibrary.NoSuchFileVersionException} if it could not be found.
+	 * Returns the document library file version with the primary key or throws a {@link NoSuchFileVersionException} if it could not be found.
 	 *
 	 * @param fileVersionId the primary key of the document library file version
 	 * @return the document library file version
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileVersionException if a document library file version with the primary key could not be found
+	 * @throws NoSuchFileVersionException if a document library file version with the primary key could not be found
 	 */
 	@Override
 	public DLFileVersion findByPrimaryKey(long fileVersionId)
@@ -6016,12 +6279,14 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public DLFileVersion fetchByPrimaryKey(Serializable primaryKey) {
-		DLFileVersion dlFileVersion = (DLFileVersion)EntityCacheUtil.getResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
+		Serializable serializable = entityCache.getResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
 				DLFileVersionImpl.class, primaryKey);
 
-		if (dlFileVersion == _nullDLFileVersion) {
+		if (serializable == nullModel) {
 			return null;
 		}
+
+		DLFileVersion dlFileVersion = (DLFileVersion)serializable;
 
 		if (dlFileVersion == null) {
 			Session session = null;
@@ -6036,12 +6301,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 					cacheResult(dlFileVersion);
 				}
 				else {
-					EntityCacheUtil.putResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
-						DLFileVersionImpl.class, primaryKey, _nullDLFileVersion);
+					entityCache.putResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
+						DLFileVersionImpl.class, primaryKey, nullModel);
 				}
 			}
 			catch (Exception e) {
-				EntityCacheUtil.removeResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
+				entityCache.removeResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
 					DLFileVersionImpl.class, primaryKey);
 
 				throw processException(e);
@@ -6091,18 +6356,20 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 		Set<Serializable> uncachedPrimaryKeys = null;
 
 		for (Serializable primaryKey : primaryKeys) {
-			DLFileVersion dlFileVersion = (DLFileVersion)EntityCacheUtil.getResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
+			Serializable serializable = entityCache.getResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
 					DLFileVersionImpl.class, primaryKey);
 
-			if (dlFileVersion == null) {
-				if (uncachedPrimaryKeys == null) {
-					uncachedPrimaryKeys = new HashSet<Serializable>();
-				}
+			if (serializable != nullModel) {
+				if (serializable == null) {
+					if (uncachedPrimaryKeys == null) {
+						uncachedPrimaryKeys = new HashSet<Serializable>();
+					}
 
-				uncachedPrimaryKeys.add(primaryKey);
-			}
-			else {
-				map.put(primaryKey, dlFileVersion);
+					uncachedPrimaryKeys.add(primaryKey);
+				}
+				else {
+					map.put(primaryKey, (DLFileVersion)serializable);
+				}
 			}
 		}
 
@@ -6143,8 +6410,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 			}
 
 			for (Serializable primaryKey : uncachedPrimaryKeys) {
-				EntityCacheUtil.putResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
-					DLFileVersionImpl.class, primaryKey, _nullDLFileVersion);
+				entityCache.putResult(DLFileVersionModelImpl.ENTITY_CACHE_ENABLED,
+					DLFileVersionImpl.class, primaryKey, nullModel);
 			}
 		}
 		catch (Exception e) {
@@ -6171,7 +6438,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns a range of all the document library file versions.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of document library file versions
@@ -6187,7 +6454,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 * Returns an ordered range of all the document library file versions.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of document library file versions
@@ -6197,7 +6464,27 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public List<DLFileVersion> findAll(int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileVersion> orderByComparator) {
+		return findAll(start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file versions.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileVersionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param start the lower bound of the range of document library file versions
+	 * @param end the upper bound of the range of document library file versions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of document library file versions
+	 */
+	@Override
+	public List<DLFileVersion> findAll(int start, int end,
+		OrderByComparator<DLFileVersion> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -6213,8 +6500,12 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 			finderArgs = new Object[] { start, end, orderByComparator };
 		}
 
-		List<DLFileVersion> list = (List<DLFileVersion>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileVersion> list = null;
+
+		if (retrieveFromCache) {
+			list = (List<DLFileVersion>)finderCache.getResult(finderPath,
+					finderArgs, this);
+		}
 
 		if (list == null) {
 			StringBundler query = null;
@@ -6222,7 +6513,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 			if (orderByComparator != null) {
 				query = new StringBundler(2 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 
 				query.append(_SQL_SELECT_DLFILEVERSION);
 
@@ -6261,10 +6552,10 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -6294,7 +6585,7 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)FinderCacheUtil.getResult(FINDER_PATH_COUNT_ALL,
+		Long count = (Long)finderCache.getResult(FINDER_PATH_COUNT_ALL,
 				FINDER_ARGS_EMPTY, this);
 
 		if (count == null) {
@@ -6307,11 +6598,11 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_ALL,
-					FINDER_ARGS_EMPTY, count);
+				finderCache.putResult(FINDER_PATH_COUNT_ALL, FINDER_ARGS_EMPTY,
+					count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_ALL,
+				finderCache.removeResult(FINDER_PATH_COUNT_ALL,
 					FINDER_ARGS_EMPTY);
 
 				throw processException(e);
@@ -6325,42 +6616,32 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	}
 
 	@Override
-	protected Set<String> getBadColumnNames() {
+	public Set<String> getBadColumnNames() {
 		return _badColumnNames;
+	}
+
+	@Override
+	protected Map<String, Integer> getTableColumnsMap() {
+		return DLFileVersionModelImpl.TABLE_COLUMNS_MAP;
 	}
 
 	/**
 	 * Initializes the document library file version persistence.
 	 */
 	public void afterPropertiesSet() {
-		String[] listenerClassNames = StringUtil.split(GetterUtil.getString(
-					com.liferay.portal.util.PropsUtil.get(
-						"value.object.listener.com.liferay.portlet.documentlibrary.model.DLFileVersion")));
-
-		if (listenerClassNames.length > 0) {
-			try {
-				List<ModelListener<DLFileVersion>> listenersList = new ArrayList<ModelListener<DLFileVersion>>();
-
-				for (String listenerClassName : listenerClassNames) {
-					listenersList.add((ModelListener<DLFileVersion>)InstanceFactory.newInstance(
-							getClassLoader(), listenerClassName));
-				}
-
-				listeners = listenersList.toArray(new ModelListener[listenersList.size()]);
-			}
-			catch (Exception e) {
-				_log.error(e);
-			}
-		}
 	}
 
 	public void destroy() {
-		EntityCacheUtil.removeCache(DLFileVersionImpl.class.getName());
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		entityCache.removeCache(DLFileVersionImpl.class.getName());
+		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
+		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
+	@BeanReference(type = CompanyProviderWrapper.class)
+	protected CompanyProvider companyProvider;
+	protected EntityCache entityCache = EntityCacheUtil.getEntityCache();
+	protected FinderCache finderCache = FinderCacheUtil.getFinderCache();
 	private static final String _SQL_SELECT_DLFILEVERSION = "SELECT dlFileVersion FROM DLFileVersion dlFileVersion";
 	private static final String _SQL_SELECT_DLFILEVERSION_WHERE_PKS_IN = "SELECT dlFileVersion FROM DLFileVersion dlFileVersion WHERE fileVersionId IN (";
 	private static final String _SQL_SELECT_DLFILEVERSION_WHERE = "SELECT dlFileVersion FROM DLFileVersion dlFileVersion WHERE ";
@@ -6369,27 +6650,8 @@ public class DLFileVersionPersistenceImpl extends BasePersistenceImpl<DLFileVers
 	private static final String _ORDER_BY_ENTITY_ALIAS = "dlFileVersion.";
 	private static final String _NO_SUCH_ENTITY_WITH_PRIMARY_KEY = "No DLFileVersion exists with the primary key ";
 	private static final String _NO_SUCH_ENTITY_WITH_KEY = "No DLFileVersion exists with the key {";
-	private static final boolean _HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE = com.liferay.portal.util.PropsValues.HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE;
-	private static Log _log = LogFactoryUtil.getLog(DLFileVersionPersistenceImpl.class);
-	private static Set<String> _badColumnNames = SetUtil.fromArray(new String[] {
+	private static final Log _log = LogFactoryUtil.getLog(DLFileVersionPersistenceImpl.class);
+	private static final Set<String> _badColumnNames = SetUtil.fromArray(new String[] {
 				"uuid", "size"
 			});
-	private static DLFileVersion _nullDLFileVersion = new DLFileVersionImpl() {
-			@Override
-			public Object clone() {
-				return this;
-			}
-
-			@Override
-			public CacheModel<DLFileVersion> toCacheModel() {
-				return _nullDLFileVersionCacheModel;
-			}
-		};
-
-	private static CacheModel<DLFileVersion> _nullDLFileVersionCacheModel = new CacheModel<DLFileVersion>() {
-			@Override
-			public DLFileVersion toEntityModel() {
-				return _nullDLFileVersion;
-			}
-		};
 }

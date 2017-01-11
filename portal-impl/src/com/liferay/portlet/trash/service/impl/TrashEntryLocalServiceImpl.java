@@ -15,9 +15,14 @@
 package com.liferay.portlet.trash.service.impl;
 
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
-import com.liferay.portal.kernel.dao.orm.BaseActionableDynamicQuery;
+import com.liferay.portal.kernel.dao.orm.DefaultActionableDynamicQuery;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.SystemEvent;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.Indexable;
@@ -32,13 +37,10 @@ import com.liferay.portal.kernel.trash.TrashHandlerRegistryUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.UnicodeProperties;
-import com.liferay.portal.model.Group;
-import com.liferay.portal.model.SystemEvent;
-import com.liferay.portal.model.User;
-import com.liferay.portlet.trash.model.TrashEntry;
-import com.liferay.portlet.trash.model.TrashVersion;
 import com.liferay.portlet.trash.service.base.TrashEntryLocalServiceBaseImpl;
-import com.liferay.portlet.trash.util.TrashUtil;
+import com.liferay.trash.kernel.model.TrashEntry;
+import com.liferay.trash.kernel.model.TrashVersion;
+import com.liferay.trash.kernel.util.TrashUtil;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -68,7 +70,6 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 	 *         com.liferay.portlet.documentlibrary.model.DLFileVersion})
 	 * @param  typeSettingsProperties the type settings properties
 	 * @return the trashEntry
-	 * @throws PortalException if a user with the primary key could not be found
 	 */
 	@Override
 	public TrashEntry addTrashEntry(
@@ -81,6 +82,13 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 		User user = userPersistence.findByPrimaryKey(userId);
 		long classNameId = classNameLocalService.getClassNameId(className);
 
+		TrashEntry trashEntry = trashEntryPersistence.fetchByC_C(
+			classNameId, classPK);
+
+		if (trashEntry != null) {
+			return trashEntry;
+		}
+
 		TrashHandler trashHandler = TrashHandlerRegistryUtil.getTrashHandler(
 			className);
 
@@ -89,7 +97,7 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 
 		long entryId = counterLocalService.increment();
 
-		TrashEntry trashEntry = trashEntryPersistence.create(entryId);
+		trashEntry = trashEntryPersistence.create(entryId);
 
 		trashEntry.setGroupId(groupId);
 		trashEntry.setCompanyId(user.getCompanyId());
@@ -129,43 +137,60 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 
 	@Override
 	public void checkEntries() throws PortalException {
-
 		ActionableDynamicQuery actionableDynamicQuery =
-			groupLocalService.getActionableDynamicQuery();
+			trashEntryLocalService.getActionableDynamicQuery();
 
 		actionableDynamicQuery.setPerformActionMethod(
-			new ActionableDynamicQuery.PerformActionMethod() {
+			new ActionableDynamicQuery.PerformActionMethod<TrashEntry>() {
 
 				@Override
-				public void performAction(Object object)
+				public void performAction(TrashEntry trashEntry)
 					throws PortalException {
 
-					Group group = (Group)object;
+					Date createDate = trashEntry.getCreateDate();
 
-					if (!TrashUtil.isTrashEnabled(group.getGroupId())) {
+					Group group = groupPersistence.fetchByPrimaryKey(
+						trashEntry.getGroupId());
+
+					if (group == null) {
 						return;
 					}
 
 					Date date = getMaxAge(group);
 
-					List<TrashEntry> entries =
-						trashEntryPersistence.findByG_LtCD(
-							group.getGroupId(), date);
+					if (createDate.before(date) ||
+						!TrashUtil.isTrashEnabled(group)) {
 
-					for (TrashEntry entry : entries) {
 						TrashHandler trashHandler =
 							TrashHandlerRegistryUtil.getTrashHandler(
-								entry.getClassName());
+								trashEntry.getClassName());
 
-						trashHandler.deleteTrashEntry(entry.getClassPK());
+						if (trashHandler != null) {
+							try {
+								trashHandler.deleteTrashEntry(
+									trashEntry.getClassPK());
+							}
+							catch (Exception e) {
+								_log.error(e, e);
+							}
+						}
 					}
 				}
 
 			});
-		actionableDynamicQuery.setTransactionAttribute(
-			BaseActionableDynamicQuery.REQUIRES_NEW_TRANSACTION_ATTRIBUTE);
+		actionableDynamicQuery.setTransactionConfig(
+			DefaultActionableDynamicQuery.REQUIRES_NEW_TRANSACTION_CONFIG);
 
 		actionableDynamicQuery.performActions();
+	}
+
+	@Override
+	public void deleteEntries(long groupId) {
+		List<TrashEntry> entries = getEntries(groupId);
+
+		for (TrashEntry entry : entries) {
+			deleteEntry(entry);
+		}
 	}
 
 	/**
@@ -173,11 +198,9 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 	 *
 	 * @param  entryId the primary key of the trash entry
 	 * @return the trash entry with the primary key
-	 * @throws PortalException if a trash entry with the primary key could not
-	 *         be found
 	 */
 	@Override
-	public TrashEntry deleteEntry(long entryId) throws PortalException {
+	public TrashEntry deleteEntry(long entryId) {
 		TrashEntry entry = trashEntryPersistence.fetchByPrimaryKey(entryId);
 
 		return deleteEntry(entry);
@@ -189,13 +212,9 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 	 * @param  className the class name of entity
 	 * @param  classPK the primary key of the entry
 	 * @return the trash entry with the entity class name and primary key
-	 * @throws PortalException if a trash entry with the primary key could not
-	 *         be found
 	 */
 	@Override
-	public TrashEntry deleteEntry(String className, long classPK)
-		throws PortalException {
-
+	public TrashEntry deleteEntry(String className, long classPK) {
 		long classNameId = classNameLocalService.getClassNameId(className);
 
 		TrashEntry entry = trashEntryPersistence.fetchByC_C(
@@ -207,7 +226,6 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 	@Indexable(type = IndexableType.DELETE)
 	@Override
 	public TrashEntry deleteEntry(TrashEntry trashEntry) {
-
 		if (trashEntry != null) {
 			trashVersionPersistence.removeByEntryId(trashEntry.getEntryId());
 
@@ -240,7 +258,6 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 	 */
 	@Override
 	public TrashEntry fetchEntry(String className, long classPK) {
-
 		long classNameId = classNameLocalService.getClassNameId(className);
 
 		return trashEntryPersistence.fetchByC_C(classNameId, classPK);
@@ -268,7 +285,6 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 	 */
 	@Override
 	public List<TrashEntry> getEntries(long groupId, int start, int end) {
-
 		return trashEntryPersistence.findByGroupId(groupId, start, end);
 	}
 
@@ -286,14 +302,13 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 	 */
 	@Override
 	public List<TrashEntry> getEntries(
-		long groupId, int start, int end, OrderByComparator obc) {
+		long groupId, int start, int end, OrderByComparator<TrashEntry> obc) {
 
 		return trashEntryPersistence.findByGroupId(groupId, start, end, obc);
 	}
 
 	@Override
 	public List<TrashEntry> getEntries(long groupId, String className) {
-
 		long classNameId = classNameLocalService.getClassNameId(className);
 
 		return trashEntryPersistence.findByG_C(groupId, classNameId);
@@ -315,8 +330,6 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 	 *
 	 * @param  entryId the primary key of the trash entry
 	 * @return the trash entry with the primary key
-	 * @throws PortalException if a trash entry with the primary key could not
-	 *         be found
 	 */
 	@Override
 	public TrashEntry getEntry(long entryId) throws PortalException {
@@ -329,8 +342,6 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 	 * @param  className the class name of the entity
 	 * @param  classPK the primary key of the entity
 	 * @return the trash entry with the entity class name and primary key
-	 * @throws PortalException if a trash entry with the primary key could not
-	 *         be found
 	 */
 	@Override
 	public TrashEntry getEntry(String className, long classPK)
@@ -347,8 +358,8 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 		int end, Sort sort) {
 
 		try {
-			Indexer indexer = IndexerRegistryUtil.nullSafeGetIndexer(
-				TrashEntry.class);
+			Indexer<TrashEntry> indexer =
+				IndexerRegistryUtil.nullSafeGetIndexer(TrashEntry.class);
 
 			SearchContext searchContext = buildSearchContext(
 				companyId, groupId, userId, keywords, start, end, sort);
@@ -366,8 +377,8 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 		int end, Sort sort) {
 
 		try {
-			Indexer indexer = IndexerRegistryUtil.nullSafeGetIndexer(
-				TrashEntry.class);
+			Indexer<TrashEntry> indexer =
+				IndexerRegistryUtil.nullSafeGetIndexer(TrashEntry.class);
 
 			SearchContext searchContext = buildSearchContext(
 				companyId, groupId, userId, keywords, start, end, sort);
@@ -376,8 +387,7 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 
 			List<TrashEntry> trashEntries = TrashUtil.getEntries(hits);
 
-			return new BaseModelSearchResult<TrashEntry>(
-				trashEntries, hits.getLength());
+			return new BaseModelSearchResult<>(trashEntries, hits.getLength());
 		}
 		catch (Exception e) {
 			throw new SystemException(e);
@@ -421,5 +431,8 @@ public class TrashEntryLocalServiceImpl extends TrashEntryLocalServiceBaseImpl {
 
 		return calendar.getTime();
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		TrashEntryLocalServiceImpl.class);
 
 }

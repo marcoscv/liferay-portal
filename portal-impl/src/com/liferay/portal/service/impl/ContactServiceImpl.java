@@ -15,11 +15,11 @@
 package com.liferay.portal.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Contact;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.service.permission.CommonPermissionUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
-import com.liferay.portal.model.Contact;
-import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.service.base.ContactServiceBaseImpl;
-import com.liferay.portal.service.permission.CommonPermissionUtil;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ public class ContactServiceImpl extends ContactServiceBaseImpl {
 	@Override
 	public List<Contact> getContacts(
 			long classNameId, long classPK, int start, int end,
-			OrderByComparator orderByComparator)
+			OrderByComparator<Contact> orderByComparator)
 		throws PortalException {
 
 		CommonPermissionUtil.check(

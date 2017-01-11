@@ -14,17 +14,16 @@
 
 package com.liferay.portlet.documentlibrary.service.impl;
 
+import com.liferay.document.library.kernel.exception.NoSuchContentException;
+import com.liferay.document.library.kernel.model.DLContent;
+import com.liferay.document.library.kernel.util.comparator.DLContentVersionComparator;
 import com.liferay.portal.kernel.dao.jdbc.OutputBlob;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.StreamUtil;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portlet.documentlibrary.NoSuchContentException;
-import com.liferay.portlet.documentlibrary.model.DLContent;
 import com.liferay.portlet.documentlibrary.service.base.DLContentLocalServiceBaseImpl;
-import com.liferay.portlet.documentlibrary.util.comparator.DLContentVersionComparator;
 
 import java.io.InputStream;
 
@@ -106,7 +105,6 @@ public class DLContentLocalServiceImpl extends DLContentLocalServiceBaseImpl {
 
 	@Override
 	public void deleteContents(long companyId, long repositoryId, String path) {
-
 		dlContentPersistence.removeByC_R_P(companyId, repositoryId, path);
 	}
 
@@ -126,9 +124,10 @@ public class DLContentLocalServiceImpl extends DLContentLocalServiceBaseImpl {
 
 	@Override
 	public DLContent getContent(long companyId, long repositoryId, String path)
-		throws NoSuchContentException, SystemException {
+		throws NoSuchContentException {
 
-		OrderByComparator orderByComparator = new DLContentVersionComparator();
+		OrderByComparator<DLContent> orderByComparator =
+			new DLContentVersionComparator();
 
 		List<DLContent> dlContents = dlContentPersistence.findByC_R_P(
 			companyId, repositoryId, path, 0, 1, orderByComparator);
@@ -143,7 +142,7 @@ public class DLContentLocalServiceImpl extends DLContentLocalServiceBaseImpl {
 	@Override
 	public DLContent getContent(
 			long companyId, long repositoryId, String path, String version)
-		throws NoSuchContentException, SystemException {
+		throws NoSuchContentException {
 
 		return dlContentPersistence.findByC_R_P_V(
 			companyId, repositoryId, path, version);
@@ -151,7 +150,6 @@ public class DLContentLocalServiceImpl extends DLContentLocalServiceBaseImpl {
 
 	@Override
 	public List<DLContent> getContents(long companyId, long repositoryId) {
-
 		return dlContentPersistence.findByC_R(companyId, repositoryId);
 	}
 

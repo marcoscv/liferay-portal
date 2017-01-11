@@ -18,16 +18,24 @@
 
 <%
 String url = StringPool.BLANK;
-String description = StringPool.BLANK;
 
 if (selLayout != null) {
 	UnicodeProperties typeSettingsProperties = selLayout.getTypeSettingsProperties();
 
-	url = typeSettingsProperties.getProperty("url", StringPool.BLANK);
-	description = typeSettingsProperties.getProperty("description", StringPool.BLANK);
+	url = typeSettingsProperties.getProperty("embeddedLayoutURL", StringPool.BLANK);
 }
 %>
 
-<aui:input cssClass="lfr-input-text-container" id="urlEmbedded" label="url" name="TypeSettingsProperties--url--" type="text" value="<%= url %>" />
+<aui:input cssClass="lfr-input-text-container" id="urlEmbedded" label="url" name="TypeSettingsProperties--embeddedLayoutURL--" type="text" value="<%= url %>">
+	<aui:validator errorMessage="please-enter-a-valid-url" name="required">
+		function(node) {
+			var select = AUI().one('#<portlet:namespace />template');
 
-<aui:input cssClass="layout-description" id="descriptionEmbedded" label="description" name="TypeSettingsProperties--description--" type="textarea" value="<%= description %>" wrap="soft" />
+			if (!select) {
+				select = AUI().one('#<portlet:namespace />type');
+			}
+
+			return select.val() === 'embedded';
+		}
+	</aui:validator>
+</aui:input>
