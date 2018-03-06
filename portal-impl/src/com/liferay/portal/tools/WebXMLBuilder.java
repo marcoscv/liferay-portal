@@ -20,12 +20,14 @@ import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.DocumentException;
 import com.liferay.portal.kernel.xml.Element;
-import com.liferay.portal.kernel.xml.SAXReaderUtil;
+import com.liferay.portal.kernel.xml.UnsecureSAXReaderUtil;
 import com.liferay.portal.servlet.filters.absoluteredirects.AbsoluteRedirectsFilter;
 import com.liferay.portal.xml.DocumentImpl;
 import com.liferay.util.xml.XMLMerger;
 import com.liferay.util.xml.descriptor.WebXML23Descriptor;
 import com.liferay.util.xml.descriptor.WebXML24Descriptor;
+import com.liferay.util.xml.descriptor.WebXML30Descriptor;
+import com.liferay.util.xml.descriptor.XMLDescriptor;
 
 import java.io.IOException;
 
@@ -53,7 +55,7 @@ public class WebXMLBuilder {
 
 		webXML = HtmlUtil.stripComments(webXML);
 
-		Document document = SAXReaderUtil.read(webXML);
+		Document document = UnsecureSAXReaderUtil.read(webXML);
 
 		Element rootElement = document.getRootElement();
 
@@ -62,14 +64,19 @@ public class WebXMLBuilder {
 		version = GetterUtil.getDouble(
 			rootElement.attributeValue("version"), version);
 
-		XMLMerger xmlMerger = null;
+		XMLDescriptor xmlDescriptor = null;
 
 		if (version == 2.3) {
-			xmlMerger = new XMLMerger(new WebXML23Descriptor());
+			xmlDescriptor = new WebXML23Descriptor();
+		}
+		else if (version == 2.4) {
+			xmlDescriptor = new WebXML24Descriptor();
 		}
 		else {
-			xmlMerger = new XMLMerger(new WebXML24Descriptor());
+			xmlDescriptor = new WebXML30Descriptor();
 		}
+
+		XMLMerger xmlMerger = new XMLMerger(xmlDescriptor);
 
 		DocumentImpl documentImpl = (DocumentImpl)document;
 
@@ -163,6 +170,7 @@ public class WebXMLBuilder {
 		x = content.lastIndexOf(filterName);
 
 		y = content.indexOf("</filter-mapping>", x);
+
 		y = content.indexOf(">", y) + 1;
 
 		return y;

@@ -14,9 +14,9 @@
 
 package com.liferay.portlet;
 
+import com.liferay.portal.kernel.model.PortletApp;
+import com.liferay.portal.kernel.model.PortletURLListener;
 import com.liferay.portal.kernel.util.InstanceFactory;
-import com.liferay.portal.model.PortletApp;
-import com.liferay.portal.model.PortletURLListener;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,8 +42,7 @@ public class PortletURLListenerFactory {
 	}
 
 	private PortletURLListenerFactory() {
-		_pool = new ConcurrentHashMap
-			<String, Map<String, PortletURLGenerationListener>>();
+		_pool = new ConcurrentHashMap<>();
 	}
 
 	private PortletURLGenerationListener _create(
@@ -57,8 +56,7 @@ public class PortletURLListenerFactory {
 				portletApp.getServletContextName());
 
 		if (portletURLGenerationListeners == null) {
-			portletURLGenerationListeners =
-				new ConcurrentHashMap<String, PortletURLGenerationListener>();
+			portletURLGenerationListeners = new ConcurrentHashMap<>();
 
 			_pool.put(
 				portletApp.getServletContextName(),
@@ -77,9 +75,11 @@ public class PortletURLListenerFactory {
 			PortletContextBag portletContextBag = PortletContextBagPool.get(
 				portletApp.getServletContextName());
 
-			portletURLGenerationListener =
-				portletContextBag.getPortletURLListeners().get(
-					portletURLListener.getListenerClass());
+			Map<String, PortletURLGenerationListener> portletURLListenersMap =
+				portletContextBag.getPortletURLListeners();
+
+			portletURLGenerationListener = portletURLListenersMap.get(
+				portletURLListener.getListenerClass());
 
 			portletURLGenerationListener = _init(
 				portletURLListener, portletURLGenerationListener);
@@ -144,9 +144,9 @@ public class PortletURLListenerFactory {
 		return portletURLGenerationListener;
 	}
 
-	private static PortletURLListenerFactory _instance =
+	private static final PortletURLListenerFactory _instance =
 		new PortletURLListenerFactory();
 
-	private Map<String, Map<String, PortletURLGenerationListener>> _pool;
+	private final Map<String, Map<String, PortletURLGenerationListener>> _pool;
 
 }

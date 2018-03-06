@@ -14,17 +14,17 @@
 
 package com.liferay.portlet.documentlibrary.service.http;
 
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
+import com.liferay.document.library.kernel.model.DLFolderConstants;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.model.Group;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.util.BaseJsonClientTestCase;
-import com.liferay.portal.util.test.GroupTestUtil;
-import com.liferay.portlet.documentlibrary.model.DLFolderConstants;
 
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -33,15 +33,19 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Alexander Chow
  */
-@ExecutionTestListeners(listeners = {MainServletExecutionTestListener.class})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class DLAppServiceJsonTest extends BaseJsonClientTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new LiferayIntegrationTestRule();
 
 	@Before
 	public void setUp() throws Exception {
@@ -140,6 +144,7 @@ public class DLAppServiceJsonTest extends BaseJsonClientTestCase {
 		checkException(responseContent);
 
 		String uuid = parseResponseContent(responseContent, "uuid", true);
+
 		String groupId = String.valueOf(_group.getGroupId());
 
 		String url = StringUtil.replace(
@@ -200,8 +205,9 @@ public class DLAppServiceJsonTest extends BaseJsonClientTestCase {
 		URL_JSONWS + "/dlapp/delete-folder";
 
 	private static final String _URL_GET_FILE_ENTRY_BY_UUID_AND_GROUP_ID =
-		URL_JSONWS + "/dlapp/get-file-entry-by-uuid-and-group-id/uuid/" +
-			DLAppServiceJsonTest._UUID + "/group-id/" + _GROUP_ID;
+		StringBundler.concat(
+			URL_JSONWS, "/dlapp/get-file-entry-by-uuid-and-group-id/uuid/",
+			DLAppServiceJsonTest._UUID, "/group-id/", _GROUP_ID);
 
 	private static final String _UUID = "[$UUID$]";
 

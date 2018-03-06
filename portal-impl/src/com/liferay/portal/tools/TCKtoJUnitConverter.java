@@ -14,13 +14,14 @@
 
 package com.liferay.portal.tools;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.SortedProperties;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.File;
@@ -55,20 +56,24 @@ public class TCKtoJUnitConverter {
 	}
 
 	private void _convert(File inputFile, File outputDir) throws Exception {
-		UnsyncBufferedReader unsyncBufferedReader = new UnsyncBufferedReader(
-			new FileReader(inputFile));
+		try (UnsyncBufferedReader unsyncBufferedReader =
+				new UnsyncBufferedReader(new FileReader(inputFile))) {
 
-		String s = StringPool.BLANK;
+			String s = StringPool.BLANK;
 
-		while ((s = unsyncBufferedReader.readLine()) != null) {
-			if (s.startsWith("Test finished: ")) {
+			while ((s = unsyncBufferedReader.readLine()) != null) {
+				if (!s.startsWith("Test finished: ")) {
+					continue;
+				}
+
 				int x = s.indexOf(StringPool.POUND);
+
 				int y = s.lastIndexOf(StringPool.SLASH, x);
 
 				String className = s.substring(15, y);
 
 				className = StringUtil.replace(
-					className, StringPool.SLASH, StringPool.PERIOD);
+					className, CharPool.SLASH, CharPool.PERIOD);
 
 				y = s.indexOf(StringPool.COLON, y);
 
@@ -83,8 +88,6 @@ public class TCKtoJUnitConverter {
 				_convert(className, message, outputDir);
 			}
 		}
-
-		unsyncBufferedReader.close();
 	}
 
 	private void _convert(String className, String message, File outputDir)
@@ -174,7 +177,9 @@ public class TCKtoJUnitConverter {
 		sb.append("</testsuite>");
 
 		FileUtil.write(
-			outputDir + "/TEST-" + className + ".xml", sb.toString());
+			StringBundler.concat(
+				String.valueOf(outputDir), "/TEST-", className, ".xml"),
+			sb.toString());
 	}
 
 }

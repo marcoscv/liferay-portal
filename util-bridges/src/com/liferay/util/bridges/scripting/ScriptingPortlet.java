@@ -14,25 +14,25 @@
 
 package com.liferay.util.bridges.scripting;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.scripting.ScriptingException;
 import com.liferay.portal.kernel.scripting.ScriptingHelperUtil;
 import com.liferay.portal.kernel.scripting.ScriptingUtil;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.security.permission.PermissionChecker;
-import com.liferay.portal.service.permission.PortalPermissionUtil;
-import com.liferay.portal.theme.ThemeDisplay;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -124,8 +124,7 @@ public class ScriptingPortlet extends GenericPortlet {
 				 !filePath.endsWith(StringPool.SLASH)) {
 
 			throw new PortletException(
-				"template-path " + filePath +
-					" must start and end with a /");
+				"template-path " + filePath + " must start and end with a /");
 		}
 
 		actionFile = getInitParameter("action-file");
@@ -207,8 +206,7 @@ public class ScriptingPortlet extends GenericPortlet {
 			ScriptingHelperUtil.getPortletObjects(
 				portletConfig, portletContext, portletRequest, portletResponse);
 
-		ScriptingUtil.exec(
-			null, portletObjects, language, script, StringPool.EMPTY_ARRAY);
+		ScriptingUtil.exec(null, portletObjects, language, script);
 	}
 
 	protected void doRender(
@@ -269,6 +267,7 @@ public class ScriptingPortlet extends GenericPortlet {
 				String script = new String(FileUtil.getBytes(inputStream));
 
 				sb.append(script);
+
 				sb.append(StringPool.NEW_LINE);
 			}
 		}
@@ -290,7 +289,9 @@ public class ScriptingPortlet extends GenericPortlet {
 		InputStream inputStream = portletContext.getResourceAsStream(path);
 
 		if (inputStream == null) {
-			_log.error(path + " is not a valid " + language + " file");
+			_log.error(
+				StringBundler.concat(
+					path, " is not a valid ", language, " file"));
 
 			return;
 		}
@@ -348,6 +349,7 @@ public class ScriptingPortlet extends GenericPortlet {
 
 	private static final String _ERROR = ScriptingPortlet.class + ".ERROR";
 
-	private static Log _log = LogFactoryUtil.getLog(ScriptingPortlet.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ScriptingPortlet.class);
 
 }

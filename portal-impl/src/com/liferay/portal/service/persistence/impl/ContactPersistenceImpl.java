@@ -14,35 +14,37 @@
 
 package com.liferay.portal.service.persistence.impl;
 
-import com.liferay.portal.NoSuchContactException;
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
+import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
 import com.liferay.portal.kernel.dao.orm.Query;
 import com.liferay.portal.kernel.dao.orm.QueryPos;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.Session;
+import com.liferay.portal.kernel.exception.NoSuchContactException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.InstanceFactory;
+import com.liferay.portal.kernel.model.Contact;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.service.persistence.CompanyProvider;
+import com.liferay.portal.kernel.service.persistence.CompanyProviderWrapper;
+import com.liferay.portal.kernel.service.persistence.ContactPersistence;
+import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.Contact;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.ModelListener;
 import com.liferay.portal.model.impl.ContactImpl;
 import com.liferay.portal.model.impl.ContactModelImpl;
-import com.liferay.portal.service.persistence.ContactPersistence;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -59,9 +61,10 @@ import java.util.Set;
  *
  * @author Brian Wing Shun Chan
  * @see ContactPersistence
- * @see ContactUtil
+ * @see com.liferay.portal.kernel.service.persistence.ContactUtil
  * @generated
  */
+@ProviderType
 public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	implements ContactPersistence {
 	/*
@@ -120,7 +123,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns a range of all the contacts where companyId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param companyId the company ID
@@ -137,7 +140,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns an ordered range of all the contacts where companyId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param companyId the company ID
@@ -148,7 +151,27 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 */
 	@Override
 	public List<Contact> findByCompanyId(long companyId, int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<Contact> orderByComparator) {
+		return findByCompanyId(companyId, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the contacts where companyId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param companyId the company ID
+	 * @param start the lower bound of the range of contacts
+	 * @param end the upper bound of the range of contacts (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching contacts
+	 */
+	@Override
+	public List<Contact> findByCompanyId(long companyId, int start, int end,
+		OrderByComparator<Contact> orderByComparator, boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -164,15 +187,19 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 			finderArgs = new Object[] { companyId, start, end, orderByComparator };
 		}
 
-		List<Contact> list = (List<Contact>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<Contact> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (Contact contact : list) {
-				if ((companyId != contact.getCompanyId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<Contact>)finderCache.getResult(finderPath, finderArgs,
+					this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (Contact contact : list) {
+					if ((companyId != contact.getCompanyId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -182,7 +209,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -229,10 +256,10 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -250,11 +277,12 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching contact
-	 * @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
+	 * @throws NoSuchContactException if a matching contact could not be found
 	 */
 	@Override
 	public Contact findByCompanyId_First(long companyId,
-		OrderByComparator orderByComparator) throws NoSuchContactException {
+		OrderByComparator<Contact> orderByComparator)
+		throws NoSuchContactException {
 		Contact contact = fetchByCompanyId_First(companyId, orderByComparator);
 
 		if (contact != null) {
@@ -268,7 +296,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		msg.append("companyId=");
 		msg.append(companyId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchContactException(msg.toString());
 	}
@@ -282,7 +310,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 */
 	@Override
 	public Contact fetchByCompanyId_First(long companyId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<Contact> orderByComparator) {
 		List<Contact> list = findByCompanyId(companyId, 0, 1, orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -298,11 +326,12 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching contact
-	 * @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
+	 * @throws NoSuchContactException if a matching contact could not be found
 	 */
 	@Override
 	public Contact findByCompanyId_Last(long companyId,
-		OrderByComparator orderByComparator) throws NoSuchContactException {
+		OrderByComparator<Contact> orderByComparator)
+		throws NoSuchContactException {
 		Contact contact = fetchByCompanyId_Last(companyId, orderByComparator);
 
 		if (contact != null) {
@@ -316,7 +345,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		msg.append("companyId=");
 		msg.append(companyId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchContactException(msg.toString());
 	}
@@ -330,7 +359,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 */
 	@Override
 	public Contact fetchByCompanyId_Last(long companyId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<Contact> orderByComparator) {
 		int count = countByCompanyId(companyId);
 
 		if (count == 0) {
@@ -354,11 +383,11 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next contact
-	 * @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
+	 * @throws NoSuchContactException if a contact with the primary key could not be found
 	 */
 	@Override
 	public Contact[] findByCompanyId_PrevAndNext(long contactId,
-		long companyId, OrderByComparator orderByComparator)
+		long companyId, OrderByComparator<Contact> orderByComparator)
 		throws NoSuchContactException {
 		Contact contact = findByPrimaryKey(contactId);
 
@@ -388,13 +417,14 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	}
 
 	protected Contact getByCompanyId_PrevAndNext(Session session,
-		Contact contact, long companyId, OrderByComparator orderByComparator,
-		boolean previous) {
+		Contact contact, long companyId,
+		OrderByComparator<Contact> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -517,8 +547,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 		Object[] finderArgs = new Object[] { companyId };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(2);
@@ -542,10 +571,10 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -595,7 +624,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns a range of all the contacts where accountId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param accountId the account ID
@@ -612,7 +641,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns an ordered range of all the contacts where accountId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param accountId the account ID
@@ -623,7 +652,27 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 */
 	@Override
 	public List<Contact> findByAccountId(long accountId, int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<Contact> orderByComparator) {
+		return findByAccountId(accountId, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the contacts where accountId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param accountId the account ID
+	 * @param start the lower bound of the range of contacts
+	 * @param end the upper bound of the range of contacts (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching contacts
+	 */
+	@Override
+	public List<Contact> findByAccountId(long accountId, int start, int end,
+		OrderByComparator<Contact> orderByComparator, boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -639,15 +688,19 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 			finderArgs = new Object[] { accountId, start, end, orderByComparator };
 		}
 
-		List<Contact> list = (List<Contact>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<Contact> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (Contact contact : list) {
-				if ((accountId != contact.getAccountId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<Contact>)finderCache.getResult(finderPath, finderArgs,
+					this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (Contact contact : list) {
+					if ((accountId != contact.getAccountId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -657,7 +710,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -704,10 +757,10 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -725,11 +778,12 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * @param accountId the account ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching contact
-	 * @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
+	 * @throws NoSuchContactException if a matching contact could not be found
 	 */
 	@Override
 	public Contact findByAccountId_First(long accountId,
-		OrderByComparator orderByComparator) throws NoSuchContactException {
+		OrderByComparator<Contact> orderByComparator)
+		throws NoSuchContactException {
 		Contact contact = fetchByAccountId_First(accountId, orderByComparator);
 
 		if (contact != null) {
@@ -743,7 +797,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		msg.append("accountId=");
 		msg.append(accountId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchContactException(msg.toString());
 	}
@@ -757,7 +811,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 */
 	@Override
 	public Contact fetchByAccountId_First(long accountId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<Contact> orderByComparator) {
 		List<Contact> list = findByAccountId(accountId, 0, 1, orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -773,11 +827,12 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * @param accountId the account ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching contact
-	 * @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
+	 * @throws NoSuchContactException if a matching contact could not be found
 	 */
 	@Override
 	public Contact findByAccountId_Last(long accountId,
-		OrderByComparator orderByComparator) throws NoSuchContactException {
+		OrderByComparator<Contact> orderByComparator)
+		throws NoSuchContactException {
 		Contact contact = fetchByAccountId_Last(accountId, orderByComparator);
 
 		if (contact != null) {
@@ -791,7 +846,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		msg.append("accountId=");
 		msg.append(accountId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchContactException(msg.toString());
 	}
@@ -805,7 +860,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 */
 	@Override
 	public Contact fetchByAccountId_Last(long accountId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<Contact> orderByComparator) {
 		int count = countByAccountId(accountId);
 
 		if (count == 0) {
@@ -829,11 +884,11 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * @param accountId the account ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next contact
-	 * @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
+	 * @throws NoSuchContactException if a contact with the primary key could not be found
 	 */
 	@Override
 	public Contact[] findByAccountId_PrevAndNext(long contactId,
-		long accountId, OrderByComparator orderByComparator)
+		long accountId, OrderByComparator<Contact> orderByComparator)
 		throws NoSuchContactException {
 		Contact contact = findByPrimaryKey(contactId);
 
@@ -863,13 +918,14 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	}
 
 	protected Contact getByAccountId_PrevAndNext(Session session,
-		Contact contact, long accountId, OrderByComparator orderByComparator,
-		boolean previous) {
+		Contact contact, long accountId,
+		OrderByComparator<Contact> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -992,8 +1048,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 		Object[] finderArgs = new Object[] { accountId };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(2);
@@ -1017,10 +1072,10 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1057,7 +1112,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns all the contacts where classNameId = &#63; and classPK = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @return the matching contacts
 	 */
 	@Override
@@ -1070,11 +1125,11 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns a range of all the contacts where classNameId = &#63; and classPK = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param start the lower bound of the range of contacts
 	 * @param end the upper bound of the range of contacts (not inclusive)
 	 * @return the range of matching contacts
@@ -1089,11 +1144,11 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns an ordered range of all the contacts where classNameId = &#63; and classPK = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param start the lower bound of the range of contacts
 	 * @param end the upper bound of the range of contacts (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
@@ -1101,7 +1156,30 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 */
 	@Override
 	public List<Contact> findByC_C(long classNameId, long classPK, int start,
-		int end, OrderByComparator orderByComparator) {
+		int end, OrderByComparator<Contact> orderByComparator) {
+		return findByC_C(classNameId, classPK, start, end, orderByComparator,
+			true);
+	}
+
+	/**
+	 * Returns an ordered range of all the contacts where classNameId = &#63; and classPK = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param start the lower bound of the range of contacts
+	 * @param end the upper bound of the range of contacts (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching contacts
+	 */
+	@Override
+	public List<Contact> findByC_C(long classNameId, long classPK, int start,
+		int end, OrderByComparator<Contact> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1121,16 +1199,20 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 				};
 		}
 
-		List<Contact> list = (List<Contact>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<Contact> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (Contact contact : list) {
-				if ((classNameId != contact.getClassNameId()) ||
-						(classPK != contact.getClassPK())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<Contact>)finderCache.getResult(finderPath, finderArgs,
+					this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (Contact contact : list) {
+					if ((classNameId != contact.getClassNameId()) ||
+							(classPK != contact.getClassPK())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -1140,7 +1222,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 			if (orderByComparator != null) {
 				query = new StringBundler(4 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(4);
@@ -1191,10 +1273,10 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1210,14 +1292,15 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns the first contact in the ordered set where classNameId = &#63; and classPK = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching contact
-	 * @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
+	 * @throws NoSuchContactException if a matching contact could not be found
 	 */
 	@Override
 	public Contact findByC_C_First(long classNameId, long classPK,
-		OrderByComparator orderByComparator) throws NoSuchContactException {
+		OrderByComparator<Contact> orderByComparator)
+		throws NoSuchContactException {
 		Contact contact = fetchByC_C_First(classNameId, classPK,
 				orderByComparator);
 
@@ -1235,7 +1318,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		msg.append(", classPK=");
 		msg.append(classPK);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchContactException(msg.toString());
 	}
@@ -1244,13 +1327,13 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns the first contact in the ordered set where classNameId = &#63; and classPK = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching contact, or <code>null</code> if a matching contact could not be found
 	 */
 	@Override
 	public Contact fetchByC_C_First(long classNameId, long classPK,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<Contact> orderByComparator) {
 		List<Contact> list = findByC_C(classNameId, classPK, 0, 1,
 				orderByComparator);
 
@@ -1265,14 +1348,15 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns the last contact in the ordered set where classNameId = &#63; and classPK = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching contact
-	 * @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
+	 * @throws NoSuchContactException if a matching contact could not be found
 	 */
 	@Override
 	public Contact findByC_C_Last(long classNameId, long classPK,
-		OrderByComparator orderByComparator) throws NoSuchContactException {
+		OrderByComparator<Contact> orderByComparator)
+		throws NoSuchContactException {
 		Contact contact = fetchByC_C_Last(classNameId, classPK,
 				orderByComparator);
 
@@ -1290,7 +1374,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		msg.append(", classPK=");
 		msg.append(classPK);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchContactException(msg.toString());
 	}
@@ -1299,13 +1383,13 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns the last contact in the ordered set where classNameId = &#63; and classPK = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching contact, or <code>null</code> if a matching contact could not be found
 	 */
 	@Override
 	public Contact fetchByC_C_Last(long classNameId, long classPK,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<Contact> orderByComparator) {
 		int count = countByC_C(classNameId, classPK);
 
 		if (count == 0) {
@@ -1327,14 +1411,14 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 *
 	 * @param contactId the primary key of the current contact
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next contact
-	 * @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
+	 * @throws NoSuchContactException if a contact with the primary key could not be found
 	 */
 	@Override
 	public Contact[] findByC_C_PrevAndNext(long contactId, long classNameId,
-		long classPK, OrderByComparator orderByComparator)
+		long classPK, OrderByComparator<Contact> orderByComparator)
 		throws NoSuchContactException {
 		Contact contact = findByPrimaryKey(contactId);
 
@@ -1364,16 +1448,17 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	}
 
 	protected Contact getByC_C_PrevAndNext(Session session, Contact contact,
-		long classNameId, long classPK, OrderByComparator orderByComparator,
-		boolean previous) {
+		long classNameId, long classPK,
+		OrderByComparator<Contact> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(5 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(4);
 		}
 
 		query.append(_SQL_SELECT_CONTACT_WHERE);
@@ -1476,7 +1561,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Removes all the contacts where classNameId = &#63; and classPK = &#63; from the database.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 */
 	@Override
 	public void removeByC_C(long classNameId, long classPK) {
@@ -1490,7 +1575,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns the number of contacts where classNameId = &#63; and classPK = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @return the number of matching contacts
 	 */
 	@Override
@@ -1499,8 +1584,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 		Object[] finderArgs = new Object[] { classNameId, classPK };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(3);
@@ -1528,10 +1612,10 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1557,7 +1641,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 */
 	@Override
 	public void cacheResult(Contact contact) {
-		EntityCacheUtil.putResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.putResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
 			ContactImpl.class, contact.getPrimaryKey(), contact);
 
 		contact.resetOriginalValues();
@@ -1571,8 +1655,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	@Override
 	public void cacheResult(List<Contact> contacts) {
 		for (Contact contact : contacts) {
-			if (EntityCacheUtil.getResult(
-						ContactModelImpl.ENTITY_CACHE_ENABLED,
+			if (entityCache.getResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
 						ContactImpl.class, contact.getPrimaryKey()) == null) {
 				cacheResult(contact);
 			}
@@ -1586,45 +1669,41 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Clears the cache for all contacts.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
-		if (_HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE) {
-			CacheRegistryUtil.clear(ContactImpl.class.getName());
-		}
+		entityCache.clearCache(ContactImpl.class);
 
-		EntityCacheUtil.clearCache(ContactImpl.class);
-
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
 	/**
 	 * Clears the cache for the contact.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache(Contact contact) {
-		EntityCacheUtil.removeResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.removeResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
 			ContactImpl.class, contact.getPrimaryKey());
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
 	@Override
 	public void clearCache(List<Contact> contacts) {
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
 		for (Contact contact : contacts) {
-			EntityCacheUtil.removeResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
+			entityCache.removeResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
 				ContactImpl.class, contact.getPrimaryKey());
 		}
 	}
@@ -1642,6 +1721,8 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		contact.setNew(true);
 		contact.setPrimaryKey(contactId);
 
+		contact.setCompanyId(companyProvider.getCompanyId());
+
 		return contact;
 	}
 
@@ -1650,7 +1731,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 *
 	 * @param contactId the primary key of the contact
 	 * @return the contact that was removed
-	 * @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
+	 * @throws NoSuchContactException if a contact with the primary key could not be found
 	 */
 	@Override
 	public Contact remove(long contactId) throws NoSuchContactException {
@@ -1662,7 +1743,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 *
 	 * @param primaryKey the primary key of the contact
 	 * @return the contact that was removed
-	 * @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
+	 * @throws NoSuchContactException if a contact with the primary key could not be found
 	 */
 	@Override
 	public Contact remove(Serializable primaryKey)
@@ -1675,8 +1756,8 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 			Contact contact = (Contact)session.get(ContactImpl.class, primaryKey);
 
 			if (contact == null) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+				if (_log.isDebugEnabled()) {
+					_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 				}
 
 				throw new NoSuchContactException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -1729,12 +1810,34 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	}
 
 	@Override
-	public Contact updateImpl(com.liferay.portal.model.Contact contact) {
+	public Contact updateImpl(Contact contact) {
 		contact = toUnwrappedModel(contact);
 
 		boolean isNew = contact.isNew();
 
 		ContactModelImpl contactModelImpl = (ContactModelImpl)contact;
+
+		ServiceContext serviceContext = ServiceContextThreadLocal.getServiceContext();
+
+		Date now = new Date();
+
+		if (isNew && (contact.getCreateDate() == null)) {
+			if (serviceContext == null) {
+				contact.setCreateDate(now);
+			}
+			else {
+				contact.setCreateDate(serviceContext.getCreateDate(now));
+			}
+		}
+
+		if (!contactModelImpl.hasSetModifiedDate()) {
+			if (serviceContext == null) {
+				contact.setModifiedDate(now);
+			}
+			else {
+				contact.setModifiedDate(serviceContext.getModifiedDate(now));
+			}
+		}
 
 		Session session = null;
 
@@ -1747,7 +1850,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 				contact.setNew(false);
 			}
 			else {
-				session.merge(contact);
+				contact = (Contact)session.merge(contact);
 			}
 		}
 		catch (Exception e) {
@@ -1757,10 +1860,37 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 			closeSession(session);
 		}
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 
-		if (isNew || !ContactModelImpl.COLUMN_BITMASK_ENABLED) {
-			FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		if (!ContactModelImpl.COLUMN_BITMASK_ENABLED) {
+			finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		}
+		else
+		 if (isNew) {
+			Object[] args = new Object[] { contactModelImpl.getCompanyId() };
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_COMPANYID, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_COMPANYID,
+				args);
+
+			args = new Object[] { contactModelImpl.getAccountId() };
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_ACCOUNTID, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_ACCOUNTID,
+				args);
+
+			args = new Object[] {
+					contactModelImpl.getClassNameId(),
+					contactModelImpl.getClassPK()
+				};
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_C_C, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_C_C,
+				args);
+
+			finderCache.removeResult(FINDER_PATH_COUNT_ALL, FINDER_ARGS_EMPTY);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL,
+				FINDER_ARGS_EMPTY);
 		}
 
 		else {
@@ -1770,16 +1900,14 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 						contactModelImpl.getOriginalCompanyId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_COMPANYID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_COMPANYID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_COMPANYID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_COMPANYID,
 					args);
 
 				args = new Object[] { contactModelImpl.getCompanyId() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_COMPANYID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_COMPANYID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_COMPANYID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_COMPANYID,
 					args);
 			}
 
@@ -1789,16 +1917,14 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 						contactModelImpl.getOriginalAccountId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_ACCOUNTID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_ACCOUNTID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_ACCOUNTID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_ACCOUNTID,
 					args);
 
 				args = new Object[] { contactModelImpl.getAccountId() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_ACCOUNTID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_ACCOUNTID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_ACCOUNTID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_ACCOUNTID,
 					args);
 			}
 
@@ -1809,8 +1935,8 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 						contactModelImpl.getOriginalClassPK()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_C_C, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_C_C,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_C_C, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_C_C,
 					args);
 
 				args = new Object[] {
@@ -1818,13 +1944,13 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 						contactModelImpl.getClassPK()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_C_C, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_C_C,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_C_C, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_C_C,
 					args);
 			}
 		}
 
-		EntityCacheUtil.putResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.putResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
 			ContactImpl.class, contact.getPrimaryKey(), contact, false);
 
 		contact.resetOriginalValues();
@@ -1862,15 +1988,10 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		contactImpl.setMale(contact.isMale());
 		contactImpl.setBirthday(contact.getBirthday());
 		contactImpl.setSmsSn(contact.getSmsSn());
-		contactImpl.setAimSn(contact.getAimSn());
 		contactImpl.setFacebookSn(contact.getFacebookSn());
-		contactImpl.setIcqSn(contact.getIcqSn());
 		contactImpl.setJabberSn(contact.getJabberSn());
-		contactImpl.setMsnSn(contact.getMsnSn());
-		contactImpl.setMySpaceSn(contact.getMySpaceSn());
 		contactImpl.setSkypeSn(contact.getSkypeSn());
 		contactImpl.setTwitterSn(contact.getTwitterSn());
-		contactImpl.setYmSn(contact.getYmSn());
 		contactImpl.setEmployeeStatusId(contact.getEmployeeStatusId());
 		contactImpl.setEmployeeNumber(contact.getEmployeeNumber());
 		contactImpl.setJobTitle(contact.getJobTitle());
@@ -1881,11 +2002,11 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	}
 
 	/**
-	 * Returns the contact with the primary key or throws a {@link com.liferay.portal.NoSuchModelException} if it could not be found.
+	 * Returns the contact with the primary key or throws a {@link com.liferay.portal.kernel.exception.NoSuchModelException} if it could not be found.
 	 *
 	 * @param primaryKey the primary key of the contact
 	 * @return the contact
-	 * @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
+	 * @throws NoSuchContactException if a contact with the primary key could not be found
 	 */
 	@Override
 	public Contact findByPrimaryKey(Serializable primaryKey)
@@ -1893,8 +2014,8 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		Contact contact = fetchByPrimaryKey(primaryKey);
 
 		if (contact == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+			if (_log.isDebugEnabled()) {
+				_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 			}
 
 			throw new NoSuchContactException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -1905,11 +2026,11 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	}
 
 	/**
-	 * Returns the contact with the primary key or throws a {@link com.liferay.portal.NoSuchContactException} if it could not be found.
+	 * Returns the contact with the primary key or throws a {@link NoSuchContactException} if it could not be found.
 	 *
 	 * @param contactId the primary key of the contact
 	 * @return the contact
-	 * @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
+	 * @throws NoSuchContactException if a contact with the primary key could not be found
 	 */
 	@Override
 	public Contact findByPrimaryKey(long contactId)
@@ -1925,12 +2046,14 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 */
 	@Override
 	public Contact fetchByPrimaryKey(Serializable primaryKey) {
-		Contact contact = (Contact)EntityCacheUtil.getResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
+		Serializable serializable = entityCache.getResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
 				ContactImpl.class, primaryKey);
 
-		if (contact == _nullContact) {
+		if (serializable == nullModel) {
 			return null;
 		}
+
+		Contact contact = (Contact)serializable;
 
 		if (contact == null) {
 			Session session = null;
@@ -1944,12 +2067,12 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 					cacheResult(contact);
 				}
 				else {
-					EntityCacheUtil.putResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
-						ContactImpl.class, primaryKey, _nullContact);
+					entityCache.putResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
+						ContactImpl.class, primaryKey, nullModel);
 				}
 			}
 			catch (Exception e) {
-				EntityCacheUtil.removeResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
+				entityCache.removeResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
 					ContactImpl.class, primaryKey);
 
 				throw processException(e);
@@ -1999,18 +2122,20 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		Set<Serializable> uncachedPrimaryKeys = null;
 
 		for (Serializable primaryKey : primaryKeys) {
-			Contact contact = (Contact)EntityCacheUtil.getResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
+			Serializable serializable = entityCache.getResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
 					ContactImpl.class, primaryKey);
 
-			if (contact == null) {
-				if (uncachedPrimaryKeys == null) {
-					uncachedPrimaryKeys = new HashSet<Serializable>();
-				}
+			if (serializable != nullModel) {
+				if (serializable == null) {
+					if (uncachedPrimaryKeys == null) {
+						uncachedPrimaryKeys = new HashSet<Serializable>();
+					}
 
-				uncachedPrimaryKeys.add(primaryKey);
-			}
-			else {
-				map.put(primaryKey, contact);
+					uncachedPrimaryKeys.add(primaryKey);
+				}
+				else {
+					map.put(primaryKey, (Contact)serializable);
+				}
 			}
 		}
 
@@ -2024,14 +2149,14 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		query.append(_SQL_SELECT_CONTACT_WHERE_PKS_IN);
 
 		for (Serializable primaryKey : uncachedPrimaryKeys) {
-			query.append(String.valueOf(primaryKey));
+			query.append((long)primaryKey);
 
-			query.append(StringPool.COMMA);
+			query.append(",");
 		}
 
 		query.setIndex(query.index() - 1);
 
-		query.append(StringPool.CLOSE_PARENTHESIS);
+		query.append(")");
 
 		String sql = query.toString();
 
@@ -2051,8 +2176,8 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 			}
 
 			for (Serializable primaryKey : uncachedPrimaryKeys) {
-				EntityCacheUtil.putResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
-					ContactImpl.class, primaryKey, _nullContact);
+				entityCache.putResult(ContactModelImpl.ENTITY_CACHE_ENABLED,
+					ContactImpl.class, primaryKey, nullModel);
 			}
 		}
 		catch (Exception e) {
@@ -2079,7 +2204,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns a range of all the contacts.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of contacts
@@ -2095,7 +2220,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 * Returns an ordered range of all the contacts.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of contacts
@@ -2105,7 +2230,26 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 */
 	@Override
 	public List<Contact> findAll(int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<Contact> orderByComparator) {
+		return findAll(start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the contacts.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param start the lower bound of the range of contacts
+	 * @param end the upper bound of the range of contacts (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of contacts
+	 */
+	@Override
+	public List<Contact> findAll(int start, int end,
+		OrderByComparator<Contact> orderByComparator, boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -2121,8 +2265,12 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 			finderArgs = new Object[] { start, end, orderByComparator };
 		}
 
-		List<Contact> list = (List<Contact>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<Contact> list = null;
+
+		if (retrieveFromCache) {
+			list = (List<Contact>)finderCache.getResult(finderPath, finderArgs,
+					this);
+		}
 
 		if (list == null) {
 			StringBundler query = null;
@@ -2130,7 +2278,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 			if (orderByComparator != null) {
 				query = new StringBundler(2 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 
 				query.append(_SQL_SELECT_CONTACT);
 
@@ -2169,10 +2317,10 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -2202,7 +2350,7 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)FinderCacheUtil.getResult(FINDER_PATH_COUNT_ALL,
+		Long count = (Long)finderCache.getResult(FINDER_PATH_COUNT_ALL,
 				FINDER_ARGS_EMPTY, this);
 
 		if (count == null) {
@@ -2215,11 +2363,11 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_ALL,
-					FINDER_ARGS_EMPTY, count);
+				finderCache.putResult(FINDER_PATH_COUNT_ALL, FINDER_ARGS_EMPTY,
+					count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_ALL,
+				finderCache.removeResult(FINDER_PATH_COUNT_ALL,
 					FINDER_ARGS_EMPTY);
 
 				throw processException(e);
@@ -2232,38 +2380,28 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 		return count.intValue();
 	}
 
+	@Override
+	protected Map<String, Integer> getTableColumnsMap() {
+		return ContactModelImpl.TABLE_COLUMNS_MAP;
+	}
+
 	/**
 	 * Initializes the contact persistence.
 	 */
 	public void afterPropertiesSet() {
-		String[] listenerClassNames = StringUtil.split(GetterUtil.getString(
-					com.liferay.portal.util.PropsUtil.get(
-						"value.object.listener.com.liferay.portal.model.Contact")));
-
-		if (listenerClassNames.length > 0) {
-			try {
-				List<ModelListener<Contact>> listenersList = new ArrayList<ModelListener<Contact>>();
-
-				for (String listenerClassName : listenerClassNames) {
-					listenersList.add((ModelListener<Contact>)InstanceFactory.newInstance(
-							getClassLoader(), listenerClassName));
-				}
-
-				listeners = listenersList.toArray(new ModelListener[listenersList.size()]);
-			}
-			catch (Exception e) {
-				_log.error(e);
-			}
-		}
 	}
 
 	public void destroy() {
-		EntityCacheUtil.removeCache(ContactImpl.class.getName());
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		entityCache.removeCache(ContactImpl.class.getName());
+		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
+		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
+	@BeanReference(type = CompanyProviderWrapper.class)
+	protected CompanyProvider companyProvider;
+	protected EntityCache entityCache = EntityCacheUtil.getEntityCache();
+	protected FinderCache finderCache = FinderCacheUtil.getFinderCache();
 	private static final String _SQL_SELECT_CONTACT = "SELECT contact FROM Contact contact";
 	private static final String _SQL_SELECT_CONTACT_WHERE_PKS_IN = "SELECT contact FROM Contact contact WHERE contactId IN (";
 	private static final String _SQL_SELECT_CONTACT_WHERE = "SELECT contact FROM Contact contact WHERE ";
@@ -2272,36 +2410,5 @@ public class ContactPersistenceImpl extends BasePersistenceImpl<Contact>
 	private static final String _ORDER_BY_ENTITY_ALIAS = "contact.";
 	private static final String _NO_SUCH_ENTITY_WITH_PRIMARY_KEY = "No Contact exists with the primary key ";
 	private static final String _NO_SUCH_ENTITY_WITH_KEY = "No Contact exists with the key {";
-	private static final boolean _HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE = com.liferay.portal.util.PropsValues.HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE;
-	private static Log _log = LogFactoryUtil.getLog(ContactPersistenceImpl.class);
-	private static Contact _nullContact = new ContactImpl() {
-			@Override
-			public Object clone() {
-				return this;
-			}
-
-			@Override
-			public CacheModel<Contact> toCacheModel() {
-				return _nullContactCacheModel;
-			}
-		};
-
-	private static CacheModel<Contact> _nullContactCacheModel = new NullCacheModel();
-
-	private static class NullCacheModel implements CacheModel<Contact>,
-		MVCCModel {
-		@Override
-		public long getMvccVersion() {
-			return 0;
-		}
-
-		@Override
-		public void setMvccVersion(long mvccVersion) {
-		}
-
-		@Override
-		public Contact toEntityModel() {
-			return _nullContact;
-		}
-	}
+	private static final Log _log = LogFactoryUtil.getLog(ContactPersistenceImpl.class);
 }

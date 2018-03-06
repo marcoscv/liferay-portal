@@ -14,21 +14,21 @@
 
 package com.liferay.portal.servlet;
 
-import com.liferay.portal.NoSuchLayoutException;
+import com.liferay.portal.kernel.exception.NoSuchLayoutException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.service.PortletLocalServiceUtil;
-import com.liferay.portal.util.Portal;
-import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.portal.util.WebKeys;
 
 import java.io.IOException;
 
@@ -101,26 +101,22 @@ public class NetvibesServlet extends HttpServlet {
 		String iconURL =
 			portalURL + PortalUtil.getPathContext() + portlet.getIcon();
 
-		String widgetJsURL =
-			portalURL + PortalUtil.getPathContext() +
-				"/html/js/liferay/widget.js";
-
-		String widgetURL = request.getRequestURL().toString();
+		String widgetURL = String.valueOf(request.getRequestURL());
 
 		widgetURL = widgetURL.replaceFirst(
 			PropsValues.NETVIBES_SERVLET_MAPPING,
 			PropsValues.WIDGET_SERVLET_MAPPING);
 		widgetURL = HtmlUtil.escapeJS(widgetURL);
 
-		StringBundler sb = new StringBundler(31);
+		StringBundler sb = new StringBundler(26);
 
 		sb.append("<!DOCTYPE html>");
 		sb.append("<html>");
 		sb.append("<head>");
 		sb.append("<link href=\"");
 		sb.append(_NETVIBES_CSS);
-		sb.append("\" rel=\"stylesheet\" ");
-		sb.append("type=\"text/css\" />");
+		sb.append("\" rel=\"stylesheet\" type=\"text/css\" ");
+		sb.append("/>");
 		sb.append("<script src=\"");
 		sb.append(_NETVIBES_JS);
 		sb.append("\" ");
@@ -130,19 +126,14 @@ public class NetvibesServlet extends HttpServlet {
 		sb.append("</title>");
 		sb.append("<link href=\"");
 		sb.append(iconURL);
-		sb.append("\" rel=\"icon\" ");
-		sb.append("type=\"image/png\" />");
+		sb.append("\" rel=\"icon\" type=\"image/png\" ");
+		sb.append("/>");
 		sb.append("</head>");
 		sb.append("<body>");
-		sb.append("<script src=\"");
-		sb.append(widgetJsURL);
-		sb.append("\" ");
-		sb.append("type=\"text/javascript\"></script>");
-		sb.append("<script type=\"text/javascript\">");
-		sb.append("Liferay.Widget({url:\"");
+		sb.append("<iframe frameborder=\"0\" height=\"100%\" src=\"");
 		sb.append(widgetURL);
-		sb.append("\"});");
-		sb.append("</script>");
+		sb.append("\" width=\"100%\">");
+		sb.append("</iframe>");
 		sb.append("</body>");
 		sb.append("</html>");
 
@@ -155,6 +146,7 @@ public class NetvibesServlet extends HttpServlet {
 	private static final String _NETVIBES_JS =
 		"http://www.netvibes.com/js/UWA/load.js.php?env=Standalone";
 
-	private static Log _log = LogFactoryUtil.getLog(NetvibesServlet.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		NetvibesServlet.class);
 
 }

@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.ResourceAction;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.ResourceAction;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -32,8 +34,36 @@ import java.io.ObjectOutput;
  * @see ResourceAction
  * @generated
  */
+@ProviderType
 public class ResourceActionCacheModel implements CacheModel<ResourceAction>,
 	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof ResourceActionCacheModel)) {
+			return false;
+		}
+
+		ResourceActionCacheModel resourceActionCacheModel = (ResourceActionCacheModel)obj;
+
+		if ((resourceActionId == resourceActionCacheModel.resourceActionId) &&
+				(mvccVersion == resourceActionCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, resourceActionId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -71,14 +101,14 @@ public class ResourceActionCacheModel implements CacheModel<ResourceAction>,
 		resourceActionImpl.setResourceActionId(resourceActionId);
 
 		if (name == null) {
-			resourceActionImpl.setName(StringPool.BLANK);
+			resourceActionImpl.setName("");
 		}
 		else {
 			resourceActionImpl.setName(name);
 		}
 
 		if (actionId == null) {
-			resourceActionImpl.setActionId(StringPool.BLANK);
+			resourceActionImpl.setActionId("");
 		}
 		else {
 			resourceActionImpl.setActionId(actionId);
@@ -94,9 +124,11 @@ public class ResourceActionCacheModel implements CacheModel<ResourceAction>,
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
+
 		resourceActionId = objectInput.readLong();
 		name = objectInput.readUTF();
 		actionId = objectInput.readUTF();
+
 		bitwiseValue = objectInput.readLong();
 	}
 
@@ -104,17 +136,18 @@ public class ResourceActionCacheModel implements CacheModel<ResourceAction>,
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
 		objectOutput.writeLong(resourceActionId);
 
 		if (name == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(name);
 		}
 
 		if (actionId == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(actionId);

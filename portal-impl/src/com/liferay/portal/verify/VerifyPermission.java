@@ -14,31 +14,38 @@
 
 package com.liferay.portal.verify;
 
-import com.liferay.portal.kernel.dao.orm.DynamicQuery;
-import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
+import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
+import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
+import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.LayoutConstants;
+import com.liferay.portal.kernel.model.Organization;
+import com.liferay.portal.kernel.model.PortletConstants;
+import com.liferay.portal.kernel.model.ResourceAction;
+import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.ResourcePermission;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.RoleConstants;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.UserGroup;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
+import com.liferay.portal.kernel.service.ResourceActionLocalServiceUtil;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalServiceUtil;
+import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.model.Group;
-import com.liferay.portal.model.Layout;
-import com.liferay.portal.model.Organization;
-import com.liferay.portal.model.ResourceConstants;
-import com.liferay.portal.model.ResourcePermission;
-import com.liferay.portal.model.Role;
-import com.liferay.portal.model.RoleConstants;
-import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.security.permission.PermissionCacheUtil;
-import com.liferay.portal.security.permission.ResourceActionsUtil;
-import com.liferay.portal.service.LayoutLocalServiceUtil;
-import com.liferay.portal.service.ResourceActionLocalServiceUtil;
-import com.liferay.portal.service.ResourcePermissionLocalServiceUtil;
-import com.liferay.portal.service.RoleLocalServiceUtil;
-import com.liferay.portal.service.impl.ResourcePermissionLocalServiceImpl;
+import com.liferay.portal.kernel.util.LoggingTimer;
+import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.util.PortalInstances;
-import com.liferay.portal.util.PortletKeys;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Tobias Kaefer
@@ -49,199 +56,338 @@ import java.util.List;
 public class VerifyPermission extends VerifyProcess {
 
 	protected void checkPermissions() throws Exception {
-		List<String> modelNames = ResourceActionsUtil.getModelNames();
+		try (LoggingTimer loggingTimer = new LoggingTimer()) {
+			List<String> modelNames = ResourceActionsUtil.getModelNames();
 
-		for (String modelName : modelNames) {
-			List<String> actionIds =
-				ResourceActionsUtil.getModelResourceActions(modelName);
+			for (String modelName : modelNames) {
+				List<String> actionIds =
+					ResourceActionsUtil.getModelResourceActions(modelName);
 
 				ResourceActionLocalServiceUtil.checkResourceActions(
 					modelName, actionIds, true);
-		}
-
-		List<String> portletNames = ResourceActionsUtil.getPortletNames();
-
-		for (String portletName : portletNames) {
-			List<String> actionIds =
-				ResourceActionsUtil.getPortletResourceActions(portletName);
-
-			ResourceActionLocalServiceUtil.checkResourceActions(
-				portletName, actionIds, true);
-		}
-	}
-
-	protected void deleteDefaultPrivateLayoutPermissions() throws Exception {
-		long[] companyIds = PortalInstances.getCompanyIdsBySQL();
-
-		for (long companyId : companyIds) {
-			try {
-				deleteDefaultPrivateLayoutPermissions_6(companyId);
 			}
-			catch (Exception e) {
-				if (_log.isDebugEnabled()) {
-					_log.debug(e, e);
-				}
-			}
-		}
-	}
 
-	protected void deleteDefaultPrivateLayoutPermissions_6(long companyId)
-		throws Exception {
+			List<String> portletNames = ResourceActionsUtil.getPortletNames();
 
-		Role role = RoleLocalServiceUtil.getRole(
-			companyId, RoleConstants.GUEST);
+			for (String portletName : portletNames) {
+				List<String> actionIds =
+					ResourceActionsUtil.getPortletResourceActions(portletName);
 
-		List<ResourcePermission> resourcePermissions =
-			ResourcePermissionLocalServiceUtil.getRoleResourcePermissions(
-				role.getRoleId());
-
-		for (ResourcePermission resourcePermission : resourcePermissions) {
-			if (isPrivateLayout(
-					resourcePermission.getName(),
-					resourcePermission.getPrimKey())) {
-
-				ResourcePermissionLocalServiceUtil.deleteResourcePermission(
-					resourcePermission.getResourcePermissionId());
+				ResourceActionLocalServiceUtil.checkResourceActions(
+					portletName, actionIds, true);
 			}
 		}
 	}
 
 	@Override
 	protected void doVerify() throws Exception {
-		deleteDefaultPrivateLayoutPermissions();
-
 		checkPermissions();
-		fixDockbarPermissions();
 		fixOrganizationRolePermissions();
-	}
-
-	protected void fixDockbarPermissions() throws Exception {
-		long[] companyIds = PortalInstances.getCompanyIdsBySQL();
-
-		for (long companyId : companyIds) {
-			try {
-				Role role = RoleLocalServiceUtil.getRole(
-					companyId, RoleConstants.USER);
-
-				ResourcePermissionLocalServiceUtil.addResourcePermission(
-					companyId, PortletKeys.DOCKBAR,
-					ResourceConstants.SCOPE_COMPANY,
-					String.valueOf(role.getCompanyId()), role.getRoleId(),
-					ActionKeys.VIEW);
-			}
-			catch (Exception e) {
-				if (_log.isDebugEnabled()) {
-					_log.debug(e, e);
-				}
-			}
-		}
+		fixUserDefaultRolePermissions();
 	}
 
 	protected void fixOrganizationRolePermissions() throws Exception {
-		DynamicQuery dynamicQuery = DynamicQueryFactoryUtil.forClass(
-			ResourcePermission.class);
+		try (LoggingTimer loggingTimer = new LoggingTimer()) {
+			ActionableDynamicQuery actionableDynamicQuery =
+				ResourcePermissionLocalServiceUtil.getActionableDynamicQuery();
 
-		dynamicQuery.add(
-			RestrictionsFactoryUtil.eq("name", Organization.class.getName()));
+			actionableDynamicQuery.setAddCriteriaMethod(
+				dynamicQuery -> {
+					dynamicQuery.add(
+						RestrictionsFactoryUtil.eq(
+							"name", Organization.class.getName()));
+				});
+			actionableDynamicQuery.setPerformActionMethod(
+				(ResourcePermission resourcePermission) -> {
+					long oldActionIds = resourcePermission.getActionIds();
 
-		List<ResourcePermission> resourcePermissions =
-			ResourcePermissionLocalServiceUtil.dynamicQuery(dynamicQuery);
+					long newActionIds =
+						oldActionIds & ~_DEPRECATED_ORGANIZATION_BITWISE_VALUES;
 
-		for (ResourcePermission resourcePermission : resourcePermissions) {
-			ResourcePermission groupResourcePermission = null;
+					if (newActionIds == oldActionIds) {
+						return;
+					}
 
-			try {
-				groupResourcePermission =
-					ResourcePermissionLocalServiceUtil.getResourcePermission(
-						resourcePermission.getCompanyId(),
-						Group.class.getName(), resourcePermission.getScope(),
-						resourcePermission.getPrimKey(),
-						resourcePermission.getRoleId());
-			}
-			catch (Exception e) {
-				ResourcePermissionLocalServiceUtil.setResourcePermissions(
-					resourcePermission.getCompanyId(), Group.class.getName(),
-					resourcePermission.getScope(),
-					resourcePermission.getPrimKey(),
-					resourcePermission.getRoleId(),
-					ResourcePermissionLocalServiceImpl.EMPTY_ACTION_IDS);
+					resourcePermission.setActionIds(newActionIds);
 
-				groupResourcePermission =
-					ResourcePermissionLocalServiceUtil.getResourcePermission(
-						resourcePermission.getCompanyId(),
-						Group.class.getName(), resourcePermission.getScope(),
-						resourcePermission.getPrimKey(),
-						resourcePermission.getRoleId());
-			}
+					ResourcePermissionLocalServiceUtil.updateResourcePermission(
+						resourcePermission);
 
-			long organizationActions = resourcePermission.getActionIds();
-			long groupActions = groupResourcePermission.getActionIds();
+					long newGroupActionIds = 0;
 
-			for (Object[] actionIdToMask : _ORGANIZATION_ACTION_IDS_TO_MASKS) {
-				long organizationActionMask = (Long)actionIdToMask[1];
-				long groupActionMask = (Long)actionIdToMask[2];
+					for (Map.Entry<Long, Long> entry :
+							_organizationToGroupBitwiseValues.entrySet()) {
 
-				if ((organizationActions & organizationActionMask) ==
-						organizationActionMask) {
+						long organizationBitwiseValue = entry.getKey();
+						long groupBitwiseValue = entry.getValue();
 
-					organizationActions =
-						organizationActions & (~organizationActionMask);
-					groupActions = groupActions | groupActionMask;
-				}
-			}
+						if ((oldActionIds & organizationBitwiseValue) != 0) {
+							newGroupActionIds |= groupBitwiseValue;
+						}
+					}
 
-			try {
-				resourcePermission.resetOriginalValues();
+					ResourcePermission groupResourcePermission =
+						ResourcePermissionLocalServiceUtil.
+							fetchResourcePermission(
+								resourcePermission.getCompanyId(),
+								Group.class.getName(),
+								resourcePermission.getScope(),
+								resourcePermission.getPrimKey(),
+								resourcePermission.getRoleId());
 
-				resourcePermission.setActionIds(organizationActions);
+					if (groupResourcePermission == null) {
+						long resourcePermissionId =
+							CounterLocalServiceUtil.increment(
+								ResourcePermission.class.getName());
 
-				ResourcePermissionLocalServiceUtil.updateResourcePermission(
-					resourcePermission);
+						groupResourcePermission =
+							ResourcePermissionLocalServiceUtil.
+								createResourcePermission(resourcePermissionId);
 
-				groupResourcePermission.resetOriginalValues();
-				groupResourcePermission.setActionIds(groupActions);
+						groupResourcePermission.setCompanyId(
+							resourcePermission.getCompanyId());
+						groupResourcePermission.setName(Group.class.getName());
+						groupResourcePermission.setScope(
+							resourcePermission.getScope());
+						groupResourcePermission.setPrimKey(
+							resourcePermission.getPrimKey());
+						groupResourcePermission.setPrimKeyId(
+							GetterUtil.getLong(
+								resourcePermission.getPrimKey()));
+						groupResourcePermission.setRoleId(
+							resourcePermission.getRoleId());
+						groupResourcePermission.setOwnerId(0);
+						groupResourcePermission.setViewActionId(
+							(newGroupActionIds % 2) == 1);
+					}
 
-				ResourcePermissionLocalServiceUtil.updateResourcePermission(
-					groupResourcePermission);
-			}
-			catch (Exception e) {
-				_log.error(e, e);
-			}
+					groupResourcePermission.setActionIds(
+						groupResourcePermission.getActionIds() |
+						newGroupActionIds);
+
+					ResourcePermissionLocalServiceUtil.updateResourcePermission(
+						groupResourcePermission);
+				});
+
+			actionableDynamicQuery.performActions();
 		}
-
-		PermissionCacheUtil.clearCache();
 	}
 
-	protected boolean isPrivateLayout(String name, String primKey)
+	protected void fixUserDefaultRolePermissions() throws Exception {
+		try (LoggingTimer loggingTimer = new LoggingTimer()) {
+			long userClassNameId = PortalUtil.getClassNameId(User.class);
+			long userGroupClassNameId = PortalUtil.getClassNameId(
+				UserGroup.class);
+
+			long[] companyIds = PortalInstances.getCompanyIdsBySQL();
+
+			for (long companyId : companyIds) {
+				fixUserDefaultRolePermissions(
+					userClassNameId, userGroupClassNameId, companyId);
+			}
+		}
+		finally {
+			EntityCacheUtil.clearCache();
+			FinderCacheUtil.clearCache();
+		}
+	}
+
+	protected void fixUserDefaultRolePermissions(
+			long userClassNameId, long userGroupClassNameId, long companyId)
 		throws Exception {
 
-		if (!name.equals(Layout.class.getName())) {
-			return false;
+		Role powerUserRole = RoleLocalServiceUtil.getRole(
+			companyId, RoleConstants.POWER_USER);
+		Role userRole = RoleLocalServiceUtil.getRole(
+			companyId, RoleConstants.USER);
+
+		String userPagePermissionsTableName = "TEMP_VERIFY_1";
+		String userPagePermissionsConflictsTableName = "TEMP_VERIFY_2";
+
+		try (AutoCloseable dropUserPagePermissionsTable = () -> runSQL(
+				"drop table " + userPagePermissionsTableName);
+			AutoCloseable dropUserPagePermissionsConflictsTable = () -> runSQL(
+				"drop table " + userPagePermissionsConflictsTableName)) {
+
+			runSQL(
+				StringBundler.concat(
+					"create table ", userPagePermissionsTableName,
+					" (resourcePermissionId LONG not null primary key, ",
+					"primKey VARCHAR(255), plidLength INTEGER, plidString ",
+					"VARCHAR(255), plid LONG, roleId LONG, conflict BOOLEAN)"));
+
+			runSQL(
+				StringBundler.concat(
+					"create index IX_VERIFY_1 on ",
+					userPagePermissionsTableName, " (plid)"));
+
+			runSQL(
+				StringBundler.concat(
+					"create index IX_VERIFY_2 on ",
+					userPagePermissionsTableName,
+					" (primKey[$COLUMN_LENGTH:255$])"));
+
+			runSQL(
+				StringBundler.concat(
+					"create table ", userPagePermissionsConflictsTableName,
+					" (primKey VARCHAR(255) not null)"));
+
+			runSQL(
+				StringBundler.concat(
+					"create index IX_VERIFY_3 on ",
+					userPagePermissionsConflictsTableName,
+					" (primKey[$COLUMN_LENGTH:255$])"));
+
+			if (_log.isInfoEnabled()) {
+				_log.info("Populating temporary table of portlet permissions");
+			}
+
+			runSQL(
+				StringBundler.concat(
+					"insert into ", userPagePermissionsTableName,
+					" select resourcePermissionId, primKey, 0 as plidLength, ",
+					"NULL as plidString, 0 as plid, roleId, FALSE as conflict ",
+					"from ResourcePermission where companyId = ",
+					String.valueOf(companyId),
+					" and primKey LIKE '%_LAYOUT_%' and scope = ",
+					String.valueOf(ResourceConstants.SCOPE_INDIVIDUAL),
+					" and roleId in (",
+					String.valueOf(powerUserRole.getRoleId()), ", ",
+					String.valueOf(userRole.getRoleId()), ")"));
+
+			if (_log.isInfoEnabled()) {
+				_log.info("Deriving plid for portlet permissions");
+			}
+
+			runSQL(
+				StringBundler.concat(
+					"update ", userPagePermissionsTableName,
+					" set plidLength = INSTR(primKey, '",
+					PortletConstants.LAYOUT_SEPARATOR, "') - 1"));
+
+			runSQL(
+				StringBundler.concat(
+					"update ", userPagePermissionsTableName,
+					" set plidString = SUBSTR(primKey, 1, plidLength)"));
+
+			runSQL(
+				StringBundler.concat(
+					"update ", userPagePermissionsTableName,
+					" set plid = CAST_LONG(plidString)"));
+
+			if (_log.isInfoEnabled()) {
+				_log.info("Identifying portlets on user personal pages");
+			}
+
+			runSQL(
+				StringBundler.concat(
+					"delete from ", userPagePermissionsTableName,
+					" where not exists (select 1 from Layout inner join ",
+					"Group_ on Layout.groupId = Group_.groupId where ",
+					userPagePermissionsTableName,
+					".plid = Layout.plid and Group_.classNameId in (",
+					String.valueOf(userClassNameId), ", ",
+					String.valueOf(userGroupClassNameId),
+					") and Layout.type_ = '", LayoutConstants.TYPE_PORTLET,
+					"')"));
+
+			if (_log.isInfoEnabled()) {
+				_log.info(
+					StringBundler.concat(
+						"Identifying portlets that have both user and power ",
+						"user permissions"));
+			}
+
+			runSQL(
+				StringBundler.concat(
+					"insert into ", userPagePermissionsConflictsTableName,
+					" select primKey from ", userPagePermissionsTableName,
+					" group by primKey having COUNT(*) > 1"));
+
+			runSQL(
+				StringBundler.concat(
+					"delete from ", userPagePermissionsTableName,
+					" where roleId = ", String.valueOf(userRole.getRoleId())));
+
+			runSQL(
+				StringBundler.concat(
+					"update ", userPagePermissionsTableName,
+					" set conflict = TRUE where exists (select 1 from ",
+					userPagePermissionsConflictsTableName, " where ",
+					userPagePermissionsTableName, ".primKey = ",
+					userPagePermissionsConflictsTableName, ".primKey)"));
+
+			if (_log.isInfoEnabled()) {
+				_log.info(
+					StringBundler.concat(
+						"Deleting power user permissions where the portlet ",
+						"has both user and power user permissions"));
+			}
+
+			runSQL(
+				StringBundler.concat(
+					"delete from ResourcePermission where ",
+					"resourcePermissionId in (select resourcePermissionId ",
+					"from ", userPagePermissionsTableName,
+					" where conflict = TRUE)"));
+
+			if (_log.isInfoEnabled()) {
+				_log.info(
+					StringBundler.concat(
+						"Switching remaining portlet power user permissions ",
+						"to user permissions"));
+			}
+
+			runSQL(
+				StringBundler.concat(
+					"update ResourcePermission set roleId = ",
+					String.valueOf(userRole.getRoleId()),
+					" where resourcePermissionId in (select ",
+					"resourcePermissionId from ", userPagePermissionsTableName,
+					" where conflict = FALSE)"));
 		}
-
-		long plid = GetterUtil.getLong(primKey);
-
-		Layout layout = LayoutLocalServiceUtil.getLayout(plid);
-
-		if (layout.isPublicLayout() || layout.isTypeControlPanel()) {
-			return false;
-		}
-
-		return true;
 	}
 
-	private static final Object[][] _ORGANIZATION_ACTION_IDS_TO_MASKS =
-		new Object[][] {
-			new Object[] {"APPROVE_PROPOSAL", 2L, 0L},
-			new Object[] {ActionKeys.ASSIGN_MEMBERS, 4L, 4L},
-			new Object[] {"ASSIGN_REVIEWER", 8L, 0L},
-			new Object[] {ActionKeys.MANAGE_ARCHIVED_SETUPS, 128L, 128L},
-			new Object[] {ActionKeys.MANAGE_LAYOUTS, 256L, 256L},
-			new Object[] {ActionKeys.MANAGE_STAGING, 512L, 512L},
-			new Object[] {ActionKeys.MANAGE_TEAMS, 2048L, 1024L},
-			new Object[] {ActionKeys.PUBLISH_STAGING, 16384L, 4096L}
+	private static final long _DEPRECATED_ORGANIZATION_BITWISE_VALUES;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		VerifyPermission.class);
+
+	private static final Map<Long, Long> _organizationToGroupBitwiseValues =
+		new HashMap<>();
+
+	static {
+		String[] deprecatedOrganizationActionIds = {
+			ActionKeys.MANAGE_ARCHIVED_SETUPS, ActionKeys.MANAGE_LAYOUTS,
+			ActionKeys.MANAGE_STAGING, ActionKeys.MANAGE_TEAMS,
+			ActionKeys.PUBLISH_STAGING, "APPROVE_PROPOSAL", "ASSIGN_REVIEWER"
 		};
 
-	private static Log _log = LogFactoryUtil.getLog(VerifyPermission.class);
+		long deprecatedOrganizationBitwiseValues = 0;
+
+		for (String actionId : deprecatedOrganizationActionIds) {
+			ResourceAction organizationResourceAction =
+				ResourceActionLocalServiceUtil.fetchResourceAction(
+					Organization.class.getName(), actionId);
+
+			if (organizationResourceAction != null) {
+				deprecatedOrganizationBitwiseValues |=
+					organizationResourceAction.getBitwiseValue();
+
+				ResourceAction groupResourceAction =
+					ResourceActionLocalServiceUtil.fetchResourceAction(
+						Group.class.getName(), actionId);
+
+				if (groupResourceAction != null) {
+					_organizationToGroupBitwiseValues.put(
+						organizationResourceAction.getBitwiseValue(),
+						groupResourceAction.getBitwiseValue());
+				}
+			}
+		}
+
+		_DEPRECATED_ORGANIZATION_BITWISE_VALUES =
+			deprecatedOrganizationBitwiseValues;
+	}
 
 }

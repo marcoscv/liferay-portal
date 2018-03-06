@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.Website;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.Website;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,8 +36,36 @@ import java.util.Date;
  * @see Website
  * @generated
  */
+@ProviderType
 public class WebsiteCacheModel implements CacheModel<Website>, Externalizable,
 	MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof WebsiteCacheModel)) {
+			return false;
+		}
+
+		WebsiteCacheModel websiteCacheModel = (WebsiteCacheModel)obj;
+
+		if ((websiteId == websiteCacheModel.websiteId) &&
+				(mvccVersion == websiteCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, websiteId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -48,7 +78,7 @@ public class WebsiteCacheModel implements CacheModel<Website>, Externalizable,
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(27);
+		StringBundler sb = new StringBundler(29);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -76,6 +106,8 @@ public class WebsiteCacheModel implements CacheModel<Website>, Externalizable,
 		sb.append(typeId);
 		sb.append(", primary=");
 		sb.append(primary);
+		sb.append(", lastPublishDate=");
+		sb.append(lastPublishDate);
 		sb.append("}");
 
 		return sb.toString();
@@ -88,7 +120,7 @@ public class WebsiteCacheModel implements CacheModel<Website>, Externalizable,
 		websiteImpl.setMvccVersion(mvccVersion);
 
 		if (uuid == null) {
-			websiteImpl.setUuid(StringPool.BLANK);
+			websiteImpl.setUuid("");
 		}
 		else {
 			websiteImpl.setUuid(uuid);
@@ -99,7 +131,7 @@ public class WebsiteCacheModel implements CacheModel<Website>, Externalizable,
 		websiteImpl.setUserId(userId);
 
 		if (userName == null) {
-			websiteImpl.setUserName(StringPool.BLANK);
+			websiteImpl.setUserName("");
 		}
 		else {
 			websiteImpl.setUserName(userName);
@@ -123,7 +155,7 @@ public class WebsiteCacheModel implements CacheModel<Website>, Externalizable,
 		websiteImpl.setClassPK(classPK);
 
 		if (url == null) {
-			websiteImpl.setUrl(StringPool.BLANK);
+			websiteImpl.setUrl("");
 		}
 		else {
 			websiteImpl.setUrl(url);
@@ -131,6 +163,13 @@ public class WebsiteCacheModel implements CacheModel<Website>, Externalizable,
 
 		websiteImpl.setTypeId(typeId);
 		websiteImpl.setPrimary(primary);
+
+		if (lastPublishDate == Long.MIN_VALUE) {
+			websiteImpl.setLastPublishDate(null);
+		}
+		else {
+			websiteImpl.setLastPublishDate(new Date(lastPublishDate));
+		}
 
 		websiteImpl.resetOriginalValues();
 
@@ -141,17 +180,25 @@ public class WebsiteCacheModel implements CacheModel<Website>, Externalizable,
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
 		uuid = objectInput.readUTF();
+
 		websiteId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		userId = objectInput.readLong();
 		userName = objectInput.readUTF();
 		createDate = objectInput.readLong();
 		modifiedDate = objectInput.readLong();
+
 		classNameId = objectInput.readLong();
+
 		classPK = objectInput.readLong();
 		url = objectInput.readUTF();
-		typeId = objectInput.readInt();
+
+		typeId = objectInput.readLong();
+
 		primary = objectInput.readBoolean();
+		lastPublishDate = objectInput.readLong();
 	}
 
 	@Override
@@ -160,18 +207,20 @@ public class WebsiteCacheModel implements CacheModel<Website>, Externalizable,
 		objectOutput.writeLong(mvccVersion);
 
 		if (uuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(uuid);
 		}
 
 		objectOutput.writeLong(websiteId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -179,18 +228,22 @@ public class WebsiteCacheModel implements CacheModel<Website>, Externalizable,
 
 		objectOutput.writeLong(createDate);
 		objectOutput.writeLong(modifiedDate);
+
 		objectOutput.writeLong(classNameId);
+
 		objectOutput.writeLong(classPK);
 
 		if (url == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(url);
 		}
 
-		objectOutput.writeInt(typeId);
+		objectOutput.writeLong(typeId);
+
 		objectOutput.writeBoolean(primary);
+		objectOutput.writeLong(lastPublishDate);
 	}
 
 	public long mvccVersion;
@@ -204,6 +257,7 @@ public class WebsiteCacheModel implements CacheModel<Website>, Externalizable,
 	public long classNameId;
 	public long classPK;
 	public String url;
-	public int typeId;
+	public long typeId;
 	public boolean primary;
+	public long lastPublishDate;
 }

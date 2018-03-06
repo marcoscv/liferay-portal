@@ -15,6 +15,8 @@
 package com.liferay.portal.cluster;
 
 import com.liferay.portal.kernel.cluster.Clusterable;
+import com.liferay.portal.kernel.cluster.ClusterableInvokerUtil;
+import com.liferay.portal.kernel.cluster.NullClusterable;
 import com.liferay.portal.kernel.nio.intraband.rpc.IntrabandRPCUtil;
 import com.liferay.portal.kernel.resiliency.spi.SPI;
 import com.liferay.portal.kernel.resiliency.spi.SPIUtil;
@@ -30,7 +32,9 @@ import org.aopalliance.intercept.MethodInvocation;
 
 /**
  * @author Shuyang Zhou
+ * @deprecated As of 7.0.0, moved to {@link com.liferay.portal.internal.cluster.SPIClusterableAdvice}
  */
+@Deprecated
 public class SPIClusterableAdvice
 	extends AnnotationChainableMethodAdvice<Clusterable> {
 
@@ -50,7 +54,9 @@ public class SPIClusterableAdvice
 			spi.getRegistrationReference(),
 			new MethodHandlerProcessCallable<Serializable>(
 				ClusterableInvokerUtil.createMethodHandler(
-					clusterable.acceptor(), methodInvocation)));
+					clusterable.acceptor(), methodInvocation.getThis(),
+					methodInvocation.getMethod(),
+					methodInvocation.getArguments())));
 	}
 
 	@Override
@@ -71,7 +77,9 @@ public class SPIClusterableAdvice
 			spi.getRegistrationReference(),
 			new MethodHandlerProcessCallable<Serializable>(
 				ClusterableInvokerUtil.createMethodHandler(
-					clusterable.acceptor(), methodInvocation)));
+					clusterable.acceptor(), methodInvocation.getThis(),
+					methodInvocation.getMethod(),
+					methodInvocation.getArguments())));
 
 		Object result = futureResult.get();
 

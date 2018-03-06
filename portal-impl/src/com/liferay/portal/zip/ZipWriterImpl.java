@@ -14,23 +14,23 @@
 
 package com.liferay.portal.zip;
 
+import com.liferay.petra.memory.DeleteFileFinalizeAction;
+import com.liferay.petra.memory.FinalizeManager;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
-import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.memory.DeleteFileFinalizeAction;
-import com.liferay.portal.kernel.memory.FinalizeManager;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.kernel.zip.ZipWriter;
+import com.liferay.portal.util.PropsValues;
 
 import de.schlichtherle.io.ArchiveDetector;
 import de.schlichtherle.io.ArchiveException;
 import de.schlichtherle.io.DefaultArchiveDetector;
 import de.schlichtherle.io.File;
-import de.schlichtherle.io.FileInputStream;
 import de.schlichtherle.io.FileOutputStream;
 import de.schlichtherle.io.archive.zip.ZipDriver;
 
@@ -43,40 +43,32 @@ import java.io.OutputStream;
  */
 public class ZipWriterImpl implements ZipWriter {
 
-	static {
-		File.setDefaultArchiveDetector(
-			new DefaultArchiveDetector(
-				ArchiveDetector.ALL, "lar|" + ArchiveDetector.ALL.getSuffixes(),
-				new ZipDriver()));
-	}
-
 	public ZipWriterImpl() {
 		_file = new File(
-			SystemProperties.get(SystemProperties.TMP_DIR) + StringPool.SLASH +
-				PortalUUIDUtil.generate() + ".zip");
+			StringBundler.concat(
+				SystemProperties.get(SystemProperties.TMP_DIR),
+				StringPool.SLASH, PortalUUIDUtil.generate(), ".zip"));
 
 		_file.mkdir();
 
 		FinalizeManager.register(
-			_file, new DeleteFileFinalizeAction(_file.getAbsolutePath()));
+			_file.getDelegate(),
+			new DeleteFileFinalizeAction(_file.getAbsolutePath()),
+			FinalizeManager.PHANTOM_REFERENCE_FACTORY);
 	}
 
 	public ZipWriterImpl(java.io.File file) {
-		_file = new File(file);
+		_file = new File(file.getAbsolutePath());
 
 		_file.mkdir();
 	}
 
 	@Override
 	public void addEntry(String name, byte[] bytes) throws IOException {
-		UnsyncByteArrayInputStream unsyncByteArrayInputStream =
-			new UnsyncByteArrayInputStream(bytes);
+		try (UnsyncByteArrayInputStream unsyncByteArrayInputStream =
+				new UnsyncByteArrayInputStream(bytes)) {
 
-		try {
 			addEntry(name, unsyncByteArrayInputStream);
-		}
-		finally {
-			unsyncByteArrayInputStream.close();
 		}
 	}
 
@@ -96,45 +88,36 @@ public class ZipWriterImpl implements ZipWriter {
 			_log.debug("Adding " + name);
 		}
 
-		FileUtil.mkdirs(getPath());
+		try (OutputStream outputStream = new FileOutputStream(
+				new File(getPath() + StringPool.SLASH + name))) {
 
-		OutputStream outputStream = new FileOutputStream(
-			new File(getPath() + StringPool.SLASH + name));
-
-		try {
 			File.cat(inputStream, outputStream);
-		}
-		finally {
-			outputStream.close();
 		}
 	}
 
 	@Override
 	public void addEntry(String name, String s) throws IOException {
+		if (s == null) {
+			return;
+		}
+
 		addEntry(name, s.getBytes(StringPool.UTF8));
 	}
 
 	@Override
 	public void addEntry(String name, StringBuilder sb) throws IOException {
+		if (sb == null) {
+			return;
+		}
+
 		addEntry(name, sb.toString());
 	}
 
 	@Override
 	public byte[] finish() throws IOException {
-		UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
-			new UnsyncByteArrayOutputStream();
+		java.io.File file = getFile();
 
-		InputStream inputStream = new FileInputStream(_file);
-
-		try {
-			File.cat(inputStream, unsyncByteArrayOutputStream);
-		}
-		finally {
-			unsyncByteArrayOutputStream.close();
-			inputStream.close();
-		}
-
-		return unsyncByteArrayOutputStream.toByteArray();
+		return FileUtil.getBytes(file);
 	}
 
 	@Override
@@ -154,8 +137,17 @@ public class ZipWriterImpl implements ZipWriter {
 		return _file.getPath();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ZipWriterImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(ZipWriterImpl.class);
 
-	private File _file;
+	static {
+		File.setDefaultArchiveDetector(
+			new DefaultArchiveDetector(
+				ArchiveDetector.ALL, "lar|" + ArchiveDetector.ALL.getSuffixes(),
+				new ZipDriver(PropsValues.ZIP_FILE_NAME_ENCODING)));
+
+		TrueZIPHelperUtil.initialize();
+	}
+
+	private final File _file;
 
 }

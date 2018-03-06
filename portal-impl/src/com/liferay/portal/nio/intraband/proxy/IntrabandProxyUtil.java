@@ -14,6 +14,9 @@
 
 package com.liferay.portal.nio.intraband.proxy;
 
+import com.liferay.petra.reflect.ReflectionUtil;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.asm.ASMUtil;
 import com.liferay.portal.asm.MethodNodeGenerator;
 import com.liferay.portal.kernel.io.Deserializer;
@@ -30,11 +33,8 @@ import com.liferay.portal.kernel.nio.intraband.proxy.TargetLocator;
 import com.liferay.portal.kernel.nio.intraband.proxy.annotation.Id;
 import com.liferay.portal.kernel.nio.intraband.proxy.annotation.Proxy;
 import com.liferay.portal.kernel.nio.intraband.rpc.RPCResponse;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.kernel.util.ReflectionUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
 import com.liferay.portal.kernel.util.TextFormatter;
@@ -108,8 +108,10 @@ public class IntrabandProxyUtil {
 
 			validate(classLoader, clazz, false);
 
-			return generateStubClass(classLoader, clazz, skeletonId);
+			stubClass = generateStubClass(classLoader, clazz, skeletonId);
 		}
+
+		return stubClass;
 	}
 
 	public static <T> T newStubInstance(
@@ -139,9 +141,11 @@ public class IntrabandProxyUtil {
 					(Modifier.isStatic(field.getModifiers()) != isStatic)) {
 
 					throw new IllegalArgumentException(
-						"Field " + field + " is expected to be of type " +
-							clazz + " and " + (!isStatic ? "not " : "") +
-								"static");
+						StringBundler.concat(
+							"Field ", String.valueOf(field),
+							" is expected to be of type ",
+							String.valueOf(clazz), " and ",
+							String.valueOf(!isStatic ? "not " : ""), "static"));
 				}
 
 				break;
@@ -296,11 +300,11 @@ public class IntrabandProxyUtil {
 	}
 
 	protected static MethodsBag extractMethods(Class<?> clazz) {
-		List<Method> idMethods = new ArrayList<Method>();
-		List<Method> proxyMethods = new ArrayList<Method>();
-		List<Method> emptyMethods = new ArrayList<Method>();
+		List<Method> idMethods = new ArrayList<>();
+		List<Method> proxyMethods = new ArrayList<>();
+		List<Method> emptyMethods = new ArrayList<>();
 
-		for (Method method : ReflectionUtil.getVisibleMethods(clazz)) {
+		for (Method method : _getVisibleMethods(clazz)) {
 			Id id = method.getAnnotation(Id.class);
 
 			if (id != null) {
@@ -364,7 +368,7 @@ public class IntrabandProxyUtil {
 		classNode.access |= Opcodes.ACC_PUBLIC;
 
 		FieldNode proxyMethodsMappingFieldNode = ASMUtil.findFieldNode(
-			classNode.fields, "_proxyMethodsMapping");
+			classNode.fields, "_PROXY_METHODS_MAPPING");
 
 		proxyMethodsMappingFieldNode.access |= Opcodes.ACC_FINAL;
 
@@ -599,8 +603,10 @@ public class IntrabandProxyUtil {
 
 			validate(classLoader, clazz, true);
 
-			return generateSkeletonClass(classLoader, clazz);
+			skeletonClass = generateSkeletonClass(classLoader, clazz);
 		}
+
+		return skeletonClass;
 	}
 
 	protected static Class<?> loadClass(
@@ -694,8 +700,8 @@ public class IntrabandProxyUtil {
 			return (Class<?>)_defineClassMethod.invoke(
 				classLoader,
 				StringUtil.replace(
-					classNode.name, CharPool.SLASH, CharPool.PERIOD), data, 0,
-				data.length);
+					classNode.name, CharPool.SLASH, CharPool.PERIOD),
+				data, 0, data.length);
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
@@ -855,8 +861,8 @@ public class IntrabandProxyUtil {
 			try {
 				Datagram responseDatagram = _intraband.sendSyncDatagram(
 					_registrationReference,
-						Datagram.createRequestDatagram(
-							_PROXY_TYPE, serializer.toByteBuffer()));
+					Datagram.createRequestDatagram(
+						_PROXY_TYPE, serializer.toByteBuffer()));
 
 				Deserializer deserializer = new Deserializer(
 					responseDatagram.getDataByteBuffer());
@@ -887,12 +893,12 @@ public class IntrabandProxyUtil {
 		@SuppressWarnings("unused")
 		private String _id;
 
-		private Intraband _intraband;
-		private RegistrationReference _registrationReference;
+		private final Intraband _intraband;
+		private final RegistrationReference _registrationReference;
 
 	}
 
-	protected static abstract class TemplateSkeleton
+	protected abstract static class TemplateSkeleton
 		implements IntrabandProxySkeleton {
 
 		public static final String[] PROXY_METHOD_SIGNATURES =
@@ -974,18 +980,41 @@ public class IntrabandProxyUtil {
 		@SuppressWarnings("unused")
 		private void _unknownMethodIndex(int methodIndex) {
 			throw new IllegalArgumentException(
-				"Unknow method index " + methodIndex +
-					" for proxy methods mappings " + _proxyMethodsMapping);
+				StringBundler.concat(
+					"Unknow method index ", String.valueOf(methodIndex),
+					" for proxy methods mappings ", _PROXY_METHODS_MAPPING));
 		}
 
-		private static Log _log = LogFactoryUtil.getLog(TemplateSkeleton.class);
+		private static final String _PROXY_METHODS_MAPPING =
+			_getProxyMethodsMapping(PROXY_METHOD_SIGNATURES);
 
-		private static String _proxyMethodsMapping = _getProxyMethodsMapping(
-			PROXY_METHOD_SIGNATURES);
+		private static final Log _log = LogFactoryUtil.getLog(
+			TemplateSkeleton.class);
 
 		@SuppressWarnings("unused")
 		private TargetLocator _targetLocator;
 
+	}
+
+	private static Set<Method> _getVisibleMethods(Class<?> clazz) {
+		Set<Method> visibleMethods = new HashSet<>(
+			Arrays.asList(clazz.getMethods()));
+
+		Collections.addAll(visibleMethods, clazz.getDeclaredMethods());
+
+		while ((clazz = clazz.getSuperclass()) != null) {
+			for (Method method : clazz.getDeclaredMethods()) {
+				int modifiers = method.getModifiers();
+
+				if (!Modifier.isPrivate(modifiers) &
+					!Modifier.isPublic(modifiers)) {
+
+					visibleMethods.add(method);
+				}
+			}
+		}
+
+		return visibleMethods;
 	}
 
 	private static final Type _DATAGRAM_TYPE = Type.getType(Datagram.class);
@@ -1006,7 +1035,7 @@ public class IntrabandProxyUtil {
 		"PROXY_METHOD_SIGNATURES";
 
 	private static final String _PROXY_METHODS_MAPPING_FIELD_NAME =
-		"_proxyMethodsMapping";
+		"_PROXY_METHODS_MAPPING";
 
 	private static final Type _REGISTRATION_REFERENCE_TYPE = Type.getType(
 		RegistrationReference.class);
@@ -1026,13 +1055,15 @@ public class IntrabandProxyUtil {
 	private static final Type _TARGET_LOCATOR_TYPE = Type.getType(
 		TargetLocator.class);
 
-	private static Log _log = LogFactoryUtil.getLog(IntrabandProxyUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		IntrabandProxyUtil.class);
 
-	private static Set<String> _annotationDescriptors = new HashSet<String>(
+	private static final Set<String> _annotationDescriptors = new HashSet<>(
 		Arrays.asList(
 			Type.getDescriptor(Id.class), Type.getDescriptor(Proxy.class)));
-
-	private static Method _defineClassMethod;
+	private static final Method _defineClassMethod;
+	private static final Comparator<Method> _methodComparator =
+		new MethodComparator();
 
 	static {
 		try {
@@ -1040,13 +1071,10 @@ public class IntrabandProxyUtil {
 				ClassLoader.class, "defineClass", String.class, byte[].class,
 				int.class, int.class);
 		}
-		catch (Exception e) {
-			throw new ExceptionInInitializerError(e);
+		catch (Throwable t) {
+			throw new ExceptionInInitializerError(t);
 		}
 	}
-
-	private static Comparator<Method> _methodComparator =
-		new MethodComparator();
 
 	private static class SkeletonDispatchTableSwitchGenerator
 		implements TableSwitchGenerator {
@@ -1138,11 +1166,11 @@ public class IntrabandProxyUtil {
 				_owner, "_unknownMethodIndex", Type.VOID_TYPE, Type.INT_TYPE);
 		}
 
-		private int _indexIndex;
-		private MethodNodeGenerator _methodNodeGenerator;
-		private String _owner;
-		private List<Method> _proxyMethods;
-		private int _typedTargetIndex;
+		private final int _indexIndex;
+		private final MethodNodeGenerator _methodNodeGenerator;
+		private final String _owner;
+		private final List<Method> _proxyMethods;
+		private final int _typedTargetIndex;
 
 	}
 

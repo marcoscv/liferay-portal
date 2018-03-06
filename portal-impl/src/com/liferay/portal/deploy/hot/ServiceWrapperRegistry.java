@@ -14,11 +14,12 @@
 
 package com.liferay.portal.deploy.hot;
 
+import com.liferay.portal.kernel.bean.BeanLocatorException;
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.service.ServiceWrapper;
 import com.liferay.portal.kernel.util.ProxyUtil;
-import com.liferay.portal.service.ServiceWrapper;
 import com.liferay.portal.spring.aop.ServiceBeanAopCacheManagerUtil;
 import com.liferay.portal.spring.aop.ServiceBeanAopProxy;
 import com.liferay.registry.Registry;
@@ -51,16 +52,17 @@ public class ServiceWrapperRegistry {
 		_serviceTracker.close();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ServiceWrapperRegistry.class);
 
-	private ServiceTracker<ServiceWrapper<?>, ServiceBag> _serviceTracker;
+	private final ServiceTracker<ServiceWrapper<?>, ServiceBag<?>>
+		_serviceTracker;
 
-	private class ServiceWrapperServiceTrackerCustomizer
-		implements ServiceTrackerCustomizer<ServiceWrapper<?>, ServiceBag> {
+	private static class ServiceWrapperServiceTrackerCustomizer
+		implements ServiceTrackerCustomizer<ServiceWrapper<?>, ServiceBag<?>> {
 
 		@Override
-		public ServiceBag addingService(
+		public ServiceBag<?> addingService(
 			ServiceReference<ServiceWrapper<?>> serviceReference) {
 
 			Registry registry = RegistryUtil.getRegistry();
@@ -72,7 +74,10 @@ public class ServiceWrapperRegistry {
 				return _getServiceBag(serviceWrapper);
 			}
 			catch (Throwable t) {
-				_log.error(t, t);
+				_log.error(
+					"Unable to get service bag for " +
+						serviceWrapper.getClass(),
+					t);
 			}
 			finally {
 				ServiceBeanAopCacheManagerUtil.reset();
@@ -84,13 +89,13 @@ public class ServiceWrapperRegistry {
 		@Override
 		public void modifiedService(
 			ServiceReference<ServiceWrapper<?>> serviceReference,
-			ServiceBag serviceHolder) {
+			ServiceBag<?> serviceHolder) {
 		}
 
 		@Override
 		public void removedService(
 			ServiceReference<ServiceWrapper<?>> serviceReference,
-			ServiceBag serviceBag) {
+			ServiceBag<?> serviceBag) {
 
 			Registry registry = RegistryUtil.getRegistry();
 
@@ -106,7 +111,8 @@ public class ServiceWrapperRegistry {
 			}
 		}
 
-		private <T> ServiceBag _getServiceBag(ServiceWrapper<T> serviceWrapper)
+		private <T> ServiceBag<?> _getServiceBag(
+				ServiceWrapper<T> serviceWrapper)
 			throws Throwable {
 
 			Class<?> clazz = serviceWrapper.getClass();
@@ -118,28 +124,53 @@ public class ServiceWrapperRegistry {
 
 			Class<?> serviceTypeClass = method.getReturnType();
 
-			Object serviceProxy = PortalBeanLocatorUtil.locate(
-				serviceTypeClass.getName());
+			Object service = null;
+			ServiceReference<?> serviceReference = null;
+
+			Registry registry = RegistryUtil.getRegistry();
+
+			try {
+				service = PortalBeanLocatorUtil.locate(
+					serviceTypeClass.getName());
+			}
+			catch (BeanLocatorException ble) {
+				serviceReference = registry.getServiceReference(
+					serviceTypeClass);
+
+				service = registry.getService(serviceReference);
+			}
+
+			Object serviceProxy = service;
 
 			if (!ProxyUtil.isProxyClass(serviceProxy.getClass())) {
 				_log.error(
 					"Service hooks require Spring to be configured to use " +
 						"JdkDynamicProxy and will not work with CGLIB");
 
+				if (serviceReference != null) {
+					registry.ungetService(serviceReference);
+				}
+
 				return null;
 			}
 
-			AdvisedSupport advisedSupport =
-				ServiceBeanAopProxy.getAdvisedSupport(serviceProxy);
+			try {
+				AdvisedSupport advisedSupport =
+					ServiceBeanAopProxy.getAdvisedSupport(serviceProxy);
 
-			TargetSource targetSource = advisedSupport.getTargetSource();
+				TargetSource targetSource = advisedSupport.getTargetSource();
 
-			Object previousService = targetSource.getTarget();
+				serviceWrapper.setWrappedService((T)targetSource.getTarget());
 
-			serviceWrapper.setWrappedService((T)previousService);
-
-			return new ServiceBag(
-				classLoader, advisedSupport, serviceTypeClass, serviceWrapper);
+				return new ServiceBag<>(
+					classLoader, advisedSupport, serviceTypeClass,
+					serviceWrapper);
+			}
+			finally {
+				if (serviceReference != null) {
+					registry.ungetService(serviceReference);
+				}
+			}
 		}
 
 	}

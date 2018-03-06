@@ -14,8 +14,8 @@
 
 package com.liferay.util.servlet;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.Collections;
@@ -26,6 +26,7 @@ import java.util.Map;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionContext;
 
 /**
  * @author Brian Wing Shun Chan
@@ -33,7 +34,7 @@ import javax.servlet.http.HttpSession;
 public class NullSession implements HttpSession {
 
 	public NullSession() {
-		_attributes = new HashMap<String, Object>();
+		_attributes = new HashMap<>();
 		_creationTime = System.currentTimeMillis();
 		_id =
 			NullSession.class.getName() + StringPool.POUND +
@@ -84,15 +85,23 @@ public class NullSession implements HttpSession {
 	 */
 	@Deprecated
 	@Override
-	public javax.servlet.http.HttpSessionContext getSessionContext() {
+	public HttpSessionContext getSessionContext() {
 		return null;
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public Object getValue(String name) {
 		return getAttribute(name);
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public String[] getValueNames() {
 		List<String> names = ListUtil.fromEnumeration(getAttributeNames());
@@ -110,6 +119,10 @@ public class NullSession implements HttpSession {
 		return _new;
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public void putValue(String name, Object value) {
 		setAttribute(name, value);
@@ -120,6 +133,10 @@ public class NullSession implements HttpSession {
 		_attributes.remove(name);
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public void removeValue(String name) {
 		removeAttribute(name);
@@ -135,12 +152,12 @@ public class NullSession implements HttpSession {
 		_maxInactiveInterval = maxInactiveInterval;
 	}
 
-	private Map<String, Object> _attributes;
-	private long _creationTime;
-	private String _id;
-	private long _lastAccessedTime;
+	private final Map<String, Object> _attributes;
+	private final long _creationTime;
+	private final String _id;
+	private final long _lastAccessedTime;
 	private int _maxInactiveInterval;
-	private boolean _new;
-	private ServletContext _servletContext;
+	private final boolean _new;
+	private final ServletContext _servletContext;
 
 }

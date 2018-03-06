@@ -14,12 +14,13 @@
 
 package com.liferay.portal.workflow;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.lock.LockManagerUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.workflow.WorkflowDefinition;
 import com.liferay.portal.kernel.workflow.WorkflowException;
-import com.liferay.portal.service.LockLocalServiceUtil;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
@@ -47,11 +48,13 @@ public class WorkflowLockingAdvice {
 			String key = _encodeKey(
 				workflowDefinitionName, workflowDefinitionVersion);
 
-			if (LockLocalServiceUtil.isLocked(className, key)) {
+			if (LockManagerUtil.isLocked(className, key)) {
 				throw new WorkflowException(
-					"Workflow definition name " + workflowDefinitionName +
-						" and version " + workflowDefinitionVersion +
-							" is being undeployed");
+					StringBundler.concat(
+						"Workflow definition name ", workflowDefinitionName,
+						" and version ",
+						String.valueOf(workflowDefinitionVersion),
+						" is being undeployed"));
 			}
 
 			return proceedingJoinPoint.proceed();
@@ -69,21 +72,22 @@ public class WorkflowLockingAdvice {
 		String className = WorkflowDefinition.class.getName();
 		String key = _encodeKey(name, version);
 
-		if (LockLocalServiceUtil.isLocked(className, key)) {
+		if (LockManagerUtil.isLocked(className, key)) {
 			throw new WorkflowException(
-				"Workflow definition name " + name + " and version " + version +
-					" is being undeployed");
+				StringBundler.concat(
+					"Workflow definition name ", name, " and version ",
+					String.valueOf(version), " is being undeployed"));
 		}
 
 		try {
-			LockLocalServiceUtil.lock(
+			LockManagerUtil.lock(
 				userId, className, key, String.valueOf(userId), false,
 				Time.HOUR);
 
 			return proceedingJoinPoint.proceed();
 		}
 		finally {
-			LockLocalServiceUtil.unlock(className, key);
+			LockManagerUtil.unlock(className, key);
 		}
 	}
 

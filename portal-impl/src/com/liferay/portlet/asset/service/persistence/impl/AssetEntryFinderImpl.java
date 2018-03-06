@@ -14,28 +14,29 @@
 
 package com.liferay.portlet.asset.service.persistence.impl;
 
+import com.liferay.asset.kernel.model.AssetCategory;
+import com.liferay.asset.kernel.model.AssetEntry;
+import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
+import com.liferay.asset.kernel.service.persistence.AssetEntryFinder;
+import com.liferay.asset.kernel.service.persistence.AssetEntryQuery;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryPos;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.SQLQuery;
 import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.dao.orm.Type;
+import com.liferay.portal.kernel.dao.orm.WildcardMode;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.util.CalendarUtil;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.Layout;
-import com.liferay.portal.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.portlet.asset.model.AssetCategory;
-import com.liferay.portlet.asset.model.AssetEntry;
 import com.liferay.portlet.asset.model.impl.AssetEntryImpl;
-import com.liferay.portlet.asset.service.persistence.AssetCategoryUtil;
-import com.liferay.portlet.asset.service.persistence.AssetEntryFinder;
-import com.liferay.portlet.asset.service.persistence.AssetEntryQuery;
+import com.liferay.portlet.documentlibrary.service.persistence.impl.DLFileEntryFinderImpl;
+import com.liferay.portlet.documentlibrary.service.persistence.impl.DLFolderFinderImpl;
 import com.liferay.util.dao.orm.CustomSQLUtil;
 
 import java.sql.Timestamp;
@@ -52,13 +53,19 @@ import java.util.List;
  * @author Shuyang Zhou
  */
 public class AssetEntryFinderImpl
-	extends BasePersistenceImpl<AssetEntry> implements AssetEntryFinder {
+	extends AssetEntryFinderBaseImpl implements AssetEntryFinder {
 
 	public static final String FIND_BY_AND_CATEGORY_IDS =
 		AssetEntryFinder.class.getName() + ".findByAndCategoryIds";
 
 	public static final String FIND_BY_AND_TAG_IDS =
 		AssetEntryFinder.class.getName() + ".findByAndTagIds";
+
+	public static final String FIND_BY_CLASS_NAME_ID =
+		AssetEntryFinder.class.getName() + ".findByClassNameId";
+
+	public static final String FIND_PRIORITY_BY_C_C =
+		AssetEntryFinder.class.getName() + ".findPriorityByC_C";
 
 	@Override
 	public int countEntries(AssetEntryQuery entryQuery) {
@@ -89,9 +96,91 @@ public class AssetEntryFinderImpl
 		}
 	}
 
+	/**
+	 * @deprecated As of 7.0.0, with no direct replacement
+	 */
+	@Deprecated
+	@Override
+	public List<AssetEntry> findByDLFileEntryC_T(
+		long classNameId, String treePath) {
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			String sql = CustomSQLUtil.get(FIND_BY_CLASS_NAME_ID);
+
+			sql = StringUtil.replace(
+				sql, "[$JOIN$]",
+				CustomSQLUtil.get(
+					DLFileEntryFinderImpl.JOIN_AE_BY_DL_FILE_ENTRY));
+			sql = StringUtil.replace(
+				sql, "[$WHERE$]", "DLFileEntry.treePath LIKE ? AND");
+
+			SQLQuery q = session.createSynchronizedSQLQuery(sql);
+
+			QueryPos qPos = QueryPos.getInstance(q);
+
+			qPos.add(
+				CustomSQLUtil.keywords(treePath, WildcardMode.TRAILING)[0]);
+			qPos.add(classNameId);
+
+			q.addEntity(AssetEntryImpl.TABLE_NAME, AssetEntryImpl.class);
+
+			return q.list(true);
+		}
+		catch (Exception e) {
+			throw new SystemException(e);
+		}
+		finally {
+			closeSession(session);
+		}
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, with no direct replacement
+	 */
+	@Deprecated
+	@Override
+	public List<AssetEntry> findByDLFolderC_T(
+		long classNameId, String treePath) {
+
+		Session session = null;
+
+		try {
+			session = openSession();
+
+			String sql = CustomSQLUtil.get(FIND_BY_CLASS_NAME_ID);
+
+			sql = StringUtil.replace(
+				sql, "[$JOIN$]",
+				CustomSQLUtil.get(DLFolderFinderImpl.JOIN_AE_BY_DL_FOLDER));
+			sql = StringUtil.replace(
+				sql, "[$WHERE$]", "DLFolder.treePath LIKE ? AND");
+
+			SQLQuery q = session.createSynchronizedSQLQuery(sql);
+
+			QueryPos qPos = QueryPos.getInstance(q);
+
+			qPos.add(
+				CustomSQLUtil.keywords(treePath, WildcardMode.TRAILING)[0]);
+			qPos.add(classNameId);
+
+			q.addEntity(AssetEntryImpl.TABLE_NAME, AssetEntryImpl.class);
+
+			return q.list(true);
+		}
+		catch (Exception e) {
+			throw new SystemException(e);
+		}
+		finally {
+			closeSession(session);
+		}
+	}
+
 	@Override
 	public List<AssetEntry> findEntries(AssetEntryQuery entryQuery) {
-
 		Session session = null;
 
 		try {
@@ -110,8 +199,45 @@ public class AssetEntryFinderImpl
 		}
 	}
 
-	protected void buildAllCategoriesSQL(long[] categoryIds, StringBundler sb) {
+	@Override
+	public double findPriorityByC_C(long classNameId, long classPK) {
+		Session session = null;
 
+		try {
+			session = openSession();
+
+			String sql = CustomSQLUtil.get(FIND_PRIORITY_BY_C_C);
+
+			SQLQuery q = session.createSynchronizedSQLQuery(sql);
+
+			q.addScalar("priority", Type.DOUBLE);
+
+			QueryPos qPos = QueryPos.getInstance(q);
+
+			qPos.add(classNameId);
+			qPos.add(classPK);
+
+			Iterator<Double> itr = q.iterate();
+
+			if (itr.hasNext()) {
+				Double priority = itr.next();
+
+				if (priority != null) {
+					return priority;
+				}
+			}
+
+			return 0;
+		}
+		catch (Exception e) {
+			throw new SystemException(e);
+		}
+		finally {
+			closeSession(session);
+		}
+	}
+
+	protected void buildAllCategoriesSQL(long[] categoryIds, StringBundler sb) {
 		String findByAndCategoryIdsSQL = CustomSQLUtil.get(
 			FIND_BY_AND_CATEGORY_IDS);
 
@@ -171,13 +297,12 @@ public class AssetEntryFinderImpl
 	}
 
 	protected void buildAnyCategoriesSQL(long[] categoryIds, StringBundler sb) {
-
 		String sql = CustomSQLUtil.get(FIND_BY_AND_CATEGORY_IDS);
 
 		String categoryIdsString = null;
 
 		if (PropsValues.ASSET_CATEGORIES_SEARCH_HIERARCHICAL) {
-			List<Long> categoryIdsList = new ArrayList<Long>();
+			List<Long> categoryIdsList = new ArrayList<>();
 
 			for (long categoryId : categoryIds) {
 				categoryIdsList.addAll(getSubcategoryIds(categoryId));
@@ -219,14 +344,16 @@ public class AssetEntryFinderImpl
 	protected SQLQuery buildAssetQuerySQL(
 		AssetEntryQuery entryQuery, boolean count, Session session) {
 
-		StringBundler sb = new StringBundler(64);
+		StringBundler sb = new StringBundler(52);
 
 		if (count) {
 			sb.append(
 				"SELECT COUNT(DISTINCT AssetEntry.entryId) AS COUNT_VALUE ");
 		}
 		else {
-			sb.append("SELECT DISTINCT {AssetEntry.*} ");
+			sb.append("SELECT {AssetEntry.*} ");
+
+			boolean selectRatings = false;
 
 			String orderByCol1 = entryQuery.getOrderByCol1();
 			String orderByCol2 = entryQuery.getOrderByCol2();
@@ -234,6 +361,14 @@ public class AssetEntryFinderImpl
 			if (orderByCol1.equals("ratings") ||
 				orderByCol2.equals("ratings")) {
 
+				selectRatings = true;
+
+				sb.append(", TEMP_TABLE.averageScore ");
+			}
+
+			sb.append("FROM (SELECT DISTINCT AssetEntry.entryId ");
+
+			if (selectRatings) {
 				sb.append(", RatingsStats.averageScore ");
 			}
 		}
@@ -241,30 +376,25 @@ public class AssetEntryFinderImpl
 		sb.append("FROM AssetEntry ");
 
 		if (entryQuery.getAnyTagIds().length > 0) {
-			sb.append("INNER JOIN ");
-			sb.append("AssetEntries_AssetTags ON ");
-			sb.append("(AssetEntries_AssetTags.entryId = ");
-			sb.append("AssetEntry.entryId) ");
-			sb.append("INNER JOIN ");
-			sb.append("AssetTag ON ");
-			sb.append("(AssetTag.tagId = AssetEntries_AssetTags.tagId) ");
+			sb.append("INNER JOIN AssetEntries_AssetTags ON ");
+			sb.append("(AssetEntries_AssetTags.entryId = AssetEntry.entryId) ");
+			sb.append("INNER JOIN AssetTag ON (AssetTag.tagId = ");
+			sb.append("AssetEntries_AssetTags.tagId) ");
 		}
 
 		if (entryQuery.getLinkedAssetEntryId() > 0) {
-			sb.append("INNER JOIN ");
-			sb.append("AssetLink ON ");
-			sb.append("(AssetEntry.entryId = AssetLink.entryId1) ");
-			sb.append("OR (AssetEntry.entryId = AssetLink.entryId2)");
+			sb.append("INNER JOIN AssetLink ON (AssetEntry.entryId = ");
+			sb.append("AssetLink.entryId1) OR (AssetEntry.entryId = ");
+			sb.append("AssetLink.entryId2)");
 		}
 
-		if (entryQuery.getOrderByCol1().equals("ratings") ||
-			entryQuery.getOrderByCol2().equals("ratings")) {
+		String orderByCol1 = entryQuery.getOrderByCol1();
+		String orderByCol2 = entryQuery.getOrderByCol2();
 
-			sb.append(" LEFT JOIN ");
-			sb.append("RatingsStats ON ");
-			sb.append("(RatingsStats.classNameId = ");
-			sb.append("AssetEntry.classNameId) AND ");
-			sb.append("(RatingsStats.classPK = AssetEntry.classPK)");
+		if (orderByCol1.equals("ratings") || orderByCol2.equals("ratings")) {
+			sb.append(" LEFT JOIN RatingsStats ON (RatingsStats.classNameId ");
+			sb.append("= AssetEntry.classNameId) AND (RatingsStats.classPK = ");
+			sb.append("AssetEntry.classPK)");
 		}
 
 		sb.append("WHERE ");
@@ -272,9 +402,12 @@ public class AssetEntryFinderImpl
 		int whereIndex = sb.index();
 
 		if (entryQuery.getLinkedAssetEntryId() > 0) {
-			sb.append(" AND ((AssetLink.entryId1 = ?) OR ");
-			sb.append("(AssetLink.entryId2 = ?))");
-			sb.append(" AND (AssetEntry.entryId != ?)");
+			sb.append(" AND ((AssetLink.entryId1 = ?) OR (AssetLink.entryId2 ");
+			sb.append("= ?)) AND (AssetEntry.entryId != ?)");
+		}
+
+		if (entryQuery.isListable() != null) {
+			sb.append(" AND (listable = ?)");
 		}
 
 		if (entryQuery.isVisible() != null) {
@@ -288,17 +421,43 @@ public class AssetEntryFinderImpl
 		// Keywords
 
 		if (Validator.isNotNull(entryQuery.getKeywords())) {
-			sb.append(" AND ((AssetEntry.title LIKE ?) OR");
-			sb.append(" (AssetEntry.description LIKE ?))");
+			sb.append(" AND ((AssetEntry.userName LIKE ?) OR ");
+			sb.append("(AssetEntry.title LIKE ?) OR (AssetEntry.description ");
+			sb.append("LIKE ?))");
 		}
-		else {
+		else if (Validator.isNotNull(entryQuery.getUserName()) ||
+				 Validator.isNotNull(entryQuery.getTitle()) ||
+				 Validator.isNotNull(entryQuery.getDescription())) {
+
+			sb.append(" AND (");
+
+			boolean requiresOperator = false;
+
+			if (Validator.isNotNull(entryQuery.getUserName())) {
+				sb.append("(AssetEntry.userName LIKE ?)");
+
+				requiresOperator = true;
+			}
+
 			if (Validator.isNotNull(entryQuery.getTitle())) {
-				sb.append(" AND (AssetEntry.title LIKE ?)");
+				if (requiresOperator) {
+					sb.append(entryQuery.isAndOperator() ? " AND " : " OR ");
+				}
+
+				sb.append("(AssetEntry.title LIKE ?)");
+
+				requiresOperator = true;
 			}
 
 			if (Validator.isNotNull(entryQuery.getDescription())) {
-				sb.append(" AND (AssetEntry.description LIKE ?)");
+				if (requiresOperator) {
+					sb.append(entryQuery.isAndOperator() ? " AND " : " OR ");
+				}
+
+				sb.append("(AssetEntry.description LIKE ?)");
 			}
+
+			sb.append(")");
 		}
 
 		// Layout
@@ -360,29 +519,29 @@ public class AssetEntryFinderImpl
 		sb.append(getClassNameIds(entryQuery.getClassNameIds()));
 
 		if (!count) {
-			sb.append(" ORDER BY ");
+			sb.append(") TEMP_TABLE INNER JOIN AssetEntry AssetEntry ON ");
+			sb.append("TEMP_TABLE.entryId = AssetEntry.entryId ORDER BY ");
 
-			if (entryQuery.getOrderByCol1().equals("ratings")) {
-				sb.append("RatingsStats.averageScore");
+			if (orderByCol1.equals("ratings")) {
+				sb.append("TEMP_TABLE.averageScore");
 			}
 			else {
 				sb.append("AssetEntry.");
-				sb.append(entryQuery.getOrderByCol1());
+				sb.append(orderByCol1);
 			}
 
 			sb.append(StringPool.SPACE);
 			sb.append(entryQuery.getOrderByType1());
 
-			if (Validator.isNotNull(entryQuery.getOrderByCol2()) &&
-				!entryQuery.getOrderByCol1().equals(
-					entryQuery.getOrderByCol2())) {
+			if (Validator.isNotNull(orderByCol2) &&
+				!orderByCol1.equals(orderByCol2)) {
 
-				if (entryQuery.getOrderByCol2().equals("ratings")) {
-					sb.append(", RatingsStats.averageScore");
+				if (orderByCol2.equals("ratings")) {
+					sb.append(", TEMP_TABLE.averageScore");
 				}
 				else {
 					sb.append(", AssetEntry.");
-					sb.append(entryQuery.getOrderByCol2());
+					sb.append(orderByCol2);
 				}
 
 				sb.append(StringPool.SPACE);
@@ -417,21 +576,39 @@ public class AssetEntryFinderImpl
 			qPos.add(entryQuery.getLinkedAssetEntryId());
 		}
 
+		if (entryQuery.isListable() != null) {
+			qPos.add(entryQuery.isListable());
+		}
+
 		if (entryQuery.isVisible() != null) {
 			qPos.add(entryQuery.isVisible());
 		}
 
 		if (Validator.isNotNull(entryQuery.getKeywords())) {
-			qPos.add(entryQuery.getKeywords() + CharPool.PERCENT);
-			qPos.add(entryQuery.getKeywords() + CharPool.PERCENT);
+			qPos.add(
+				StringUtil.quote(entryQuery.getKeywords(), StringPool.PERCENT));
+			qPos.add(
+				StringUtil.quote(entryQuery.getKeywords(), StringPool.PERCENT));
+			qPos.add(
+				StringUtil.quote(entryQuery.getKeywords(), StringPool.PERCENT));
 		}
 		else {
+			if (Validator.isNotNull(entryQuery.getUserName())) {
+				qPos.add(
+					StringUtil.quote(
+						entryQuery.getUserName(), StringPool.PERCENT));
+			}
+
 			if (Validator.isNotNull(entryQuery.getTitle())) {
-				qPos.add(entryQuery.getTitle() + CharPool.PERCENT);
+				qPos.add(
+					StringUtil.quote(
+						entryQuery.getTitle(), StringPool.PERCENT));
 			}
 
 			if (Validator.isNotNull(entryQuery.getDescription())) {
-				qPos.add(entryQuery.getDescription() + CharPool.PERCENT);
+				qPos.add(
+					StringUtil.quote(
+						entryQuery.getDescription(), StringPool.PERCENT));
 			}
 		}
 
@@ -514,6 +691,7 @@ public class AssetEntryFinderImpl
 			sql = StringUtil.replace(sql, "[$TAG_ID$]", getTagIds(tagIds[i]));
 
 			sb.append(sql);
+
 			sb.append(StringPool.CLOSE_PARENTHESIS);
 
 			if (((i + 1) < tagIds.length) && (tagIds[i + 1].length > 0)) {
@@ -534,7 +712,7 @@ public class AssetEntryFinderImpl
 		String notCategoryIdsString = null;
 
 		if (PropsValues.ASSET_CATEGORIES_SEARCH_HIERARCHICAL) {
-			List<Long> notCategoryIdsList = new ArrayList<Long>();
+			List<Long> notCategoryIdsList = new ArrayList<>();
 
 			for (long notCategoryId : notCategoryIds) {
 				notCategoryIdsList.addAll(getSubcategoryIds(notCategoryId));
@@ -562,6 +740,7 @@ public class AssetEntryFinderImpl
 			sql = StringUtil.replace(sql, "[$TAG_ID$]", getTagIds(notTagIds));
 
 			sb.append(sql);
+
 			sb.append(StringPool.CLOSE_PARENTHESIS);
 
 			if ((i + 1) < notTagIds.length) {
@@ -627,16 +806,16 @@ public class AssetEntryFinderImpl
 	}
 
 	protected List<Long> getSubcategoryIds(long parentCategoryId) {
-
-		AssetCategory parentAssetCategory = AssetCategoryUtil.fetchByPrimaryKey(
-			parentCategoryId);
+		AssetCategory parentAssetCategory =
+			AssetCategoryLocalServiceUtil.fetchAssetCategory(parentCategoryId);
 
 		if (parentAssetCategory == null) {
 			return Collections.emptyList();
 		}
 
 		return ListUtil.toList(
-			AssetCategoryUtil.getDescendants(parentAssetCategory),
+			AssetCategoryLocalServiceUtil.getDescendantCategories(
+				parentAssetCategory),
 			AssetCategory.CATEGORY_ID_ACCESSOR);
 	}
 

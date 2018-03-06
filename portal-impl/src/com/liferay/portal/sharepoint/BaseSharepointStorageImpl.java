@@ -14,11 +14,11 @@
 
 package com.liferay.portal.sharepoint;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.xml.Element;
 
 import java.io.InputStream;
@@ -217,7 +217,7 @@ public abstract class BaseSharepointStorageImpl implements SharepointStorage {
 			long groupId, String path, long defaultParentFolderId)
 		throws Exception {
 
-		List<Long> folderIds = new ArrayList<Long>();
+		List<Long> folderIds = new ArrayList<>();
 
 		folderIds.add(defaultParentFolderId);
 

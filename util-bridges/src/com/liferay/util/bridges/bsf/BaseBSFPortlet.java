@@ -14,11 +14,11 @@
 
 package com.liferay.util.bridges.bsf;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.io.IOException;
@@ -233,8 +233,9 @@ public abstract class BaseBSFPortlet extends GenericPortlet {
 
 		if (inputStream == null) {
 			_log.error(
-				path + " is not a valid " + getScriptingEngineLanguage() +
-					" file");
+				StringBundler.concat(
+					path, " is not a valid ", getScriptingEngineLanguage(),
+					" file"));
 
 			return;
 		}
@@ -267,6 +268,6 @@ public abstract class BaseBSFPortlet extends GenericPortlet {
 	protected String resourceFile;
 	protected String viewFile;
 
-	private static Log _log = LogFactoryUtil.getLog(BaseBSFPortlet.class);
+	private static final Log _log = LogFactoryUtil.getLog(BaseBSFPortlet.class);
 
 }

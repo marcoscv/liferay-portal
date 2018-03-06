@@ -15,10 +15,10 @@
 package com.liferay.portlet.social.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portlet.social.model.SocialActivity;
-import com.liferay.portlet.social.model.SocialActivitySet;
 import com.liferay.portlet.social.service.base.SocialActivitySetLocalServiceBaseImpl;
-import com.liferay.portlet.social.util.comparator.SocialActivitySetModifiedDateComparator;
+import com.liferay.social.kernel.model.SocialActivity;
+import com.liferay.social.kernel.model.SocialActivitySet;
+import com.liferay.social.kernel.util.comparator.SocialActivitySetModifiedDateComparator;
 
 import java.util.List;
 
@@ -129,6 +129,19 @@ public class SocialActivitySetLocalServiceImpl
 	}
 
 	@Override
+	public List<SocialActivitySet> getOrganizationActivitySets(
+		long organizationId, int start, int end) {
+
+		return socialActivitySetFinder.findByOrganizationId(
+			organizationId, start, end);
+	}
+
+	@Override
+	public int getOrganizationActivitySetsCount(long organizationId) {
+		return socialActivitySetFinder.countByOrganizationId(organizationId);
+	}
+
+	@Override
 	public List<SocialActivitySet> getRelationActivitySets(
 		long userId, int start, int end) {
 
@@ -145,13 +158,11 @@ public class SocialActivitySetLocalServiceImpl
 
 	@Override
 	public int getRelationActivitySetsCount(long userId) {
-
 		return socialActivitySetFinder.countByRelation(userId);
 	}
 
 	@Override
 	public int getRelationActivitySetsCount(long userId, int type) {
-
 		return socialActivitySetFinder.countByRelationType(userId, type);
 	}
 
@@ -194,7 +205,6 @@ public class SocialActivitySetLocalServiceImpl
 
 	@Override
 	public int getUserGroupsActivitySetsCount(long userId) {
-
 		return socialActivitySetFinder.countByUserGroups(userId);
 	}
 
@@ -207,7 +217,6 @@ public class SocialActivitySetLocalServiceImpl
 
 	@Override
 	public int getUserViewableActivitySetsCount(long userId) {
-
 		return socialActivitySetFinder.countByUser(userId);
 	}
 

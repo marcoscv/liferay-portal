@@ -14,11 +14,13 @@
 
 package com.liferay.portlet.documentlibrary.model.impl;
 
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
+import aQute.bnd.annotation.ProviderType;
 
-import com.liferay.portlet.documentlibrary.model.DLFileShortcut;
+import com.liferay.document.library.kernel.model.DLFileShortcut;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.util.HashUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,11 +36,36 @@ import java.util.Date;
  * @see DLFileShortcut
  * @generated
  */
+@ProviderType
 public class DLFileShortcutCacheModel implements CacheModel<DLFileShortcut>,
 	Externalizable {
 	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof DLFileShortcutCacheModel)) {
+			return false;
+		}
+
+		DLFileShortcutCacheModel dlFileShortcutCacheModel = (DLFileShortcutCacheModel)obj;
+
+		if (fileShortcutId == dlFileShortcutCacheModel.fileShortcutId) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return HashUtil.hash(0, fileShortcutId);
+	}
+
+	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(35);
+		StringBundler sb = new StringBundler(37);
 
 		sb.append("{uuid=");
 		sb.append(uuid);
@@ -66,6 +93,8 @@ public class DLFileShortcutCacheModel implements CacheModel<DLFileShortcut>,
 		sb.append(treePath);
 		sb.append(", active=");
 		sb.append(active);
+		sb.append(", lastPublishDate=");
+		sb.append(lastPublishDate);
 		sb.append(", status=");
 		sb.append(status);
 		sb.append(", statusByUserId=");
@@ -84,7 +113,7 @@ public class DLFileShortcutCacheModel implements CacheModel<DLFileShortcut>,
 		DLFileShortcutImpl dlFileShortcutImpl = new DLFileShortcutImpl();
 
 		if (uuid == null) {
-			dlFileShortcutImpl.setUuid(StringPool.BLANK);
+			dlFileShortcutImpl.setUuid("");
 		}
 		else {
 			dlFileShortcutImpl.setUuid(uuid);
@@ -96,7 +125,7 @@ public class DLFileShortcutCacheModel implements CacheModel<DLFileShortcut>,
 		dlFileShortcutImpl.setUserId(userId);
 
 		if (userName == null) {
-			dlFileShortcutImpl.setUserName(StringPool.BLANK);
+			dlFileShortcutImpl.setUserName("");
 		}
 		else {
 			dlFileShortcutImpl.setUserName(userName);
@@ -121,18 +150,26 @@ public class DLFileShortcutCacheModel implements CacheModel<DLFileShortcut>,
 		dlFileShortcutImpl.setToFileEntryId(toFileEntryId);
 
 		if (treePath == null) {
-			dlFileShortcutImpl.setTreePath(StringPool.BLANK);
+			dlFileShortcutImpl.setTreePath("");
 		}
 		else {
 			dlFileShortcutImpl.setTreePath(treePath);
 		}
 
 		dlFileShortcutImpl.setActive(active);
+
+		if (lastPublishDate == Long.MIN_VALUE) {
+			dlFileShortcutImpl.setLastPublishDate(null);
+		}
+		else {
+			dlFileShortcutImpl.setLastPublishDate(new Date(lastPublishDate));
+		}
+
 		dlFileShortcutImpl.setStatus(status);
 		dlFileShortcutImpl.setStatusByUserId(statusByUserId);
 
 		if (statusByUserName == null) {
-			dlFileShortcutImpl.setStatusByUserName(StringPool.BLANK);
+			dlFileShortcutImpl.setStatusByUserName("");
 		}
 		else {
 			dlFileShortcutImpl.setStatusByUserName(statusByUserName);
@@ -153,19 +190,30 @@ public class DLFileShortcutCacheModel implements CacheModel<DLFileShortcut>,
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		uuid = objectInput.readUTF();
+
 		fileShortcutId = objectInput.readLong();
+
 		groupId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		userId = objectInput.readLong();
 		userName = objectInput.readUTF();
 		createDate = objectInput.readLong();
 		modifiedDate = objectInput.readLong();
+
 		repositoryId = objectInput.readLong();
+
 		folderId = objectInput.readLong();
+
 		toFileEntryId = objectInput.readLong();
 		treePath = objectInput.readUTF();
+
 		active = objectInput.readBoolean();
+		lastPublishDate = objectInput.readLong();
+
 		status = objectInput.readInt();
+
 		statusByUserId = objectInput.readLong();
 		statusByUserName = objectInput.readUTF();
 		statusDate = objectInput.readLong();
@@ -175,19 +223,22 @@ public class DLFileShortcutCacheModel implements CacheModel<DLFileShortcut>,
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		if (uuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(uuid);
 		}
 
 		objectOutput.writeLong(fileShortcutId);
+
 		objectOutput.writeLong(groupId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -195,23 +246,29 @@ public class DLFileShortcutCacheModel implements CacheModel<DLFileShortcut>,
 
 		objectOutput.writeLong(createDate);
 		objectOutput.writeLong(modifiedDate);
+
 		objectOutput.writeLong(repositoryId);
+
 		objectOutput.writeLong(folderId);
+
 		objectOutput.writeLong(toFileEntryId);
 
 		if (treePath == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(treePath);
 		}
 
 		objectOutput.writeBoolean(active);
+		objectOutput.writeLong(lastPublishDate);
+
 		objectOutput.writeInt(status);
+
 		objectOutput.writeLong(statusByUserId);
 
 		if (statusByUserName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(statusByUserName);
@@ -233,6 +290,7 @@ public class DLFileShortcutCacheModel implements CacheModel<DLFileShortcut>,
 	public long toFileEntryId;
 	public String treePath;
 	public boolean active;
+	public long lastPublishDate;
 	public int status;
 	public long statusByUserId;
 	public String statusByUserName;

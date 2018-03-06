@@ -14,13 +14,16 @@
 
 package com.liferay.portlet.documentlibrary.messaging;
 
+import com.liferay.document.library.kernel.service.DLFileRankLocalServiceUtil;
 import com.liferay.portal.kernel.messaging.BaseMessageListener;
 import com.liferay.portal.kernel.messaging.Message;
-import com.liferay.portlet.documentlibrary.service.DLFileRankLocalServiceUtil;
 
 /**
  * @author Alexander Chow
+
+ * @deprecated As of 7.0.0, with no direct replacement
  */
+@Deprecated
 public class CheckFileRankMessageListener extends BaseMessageListener {
 
 	@Override

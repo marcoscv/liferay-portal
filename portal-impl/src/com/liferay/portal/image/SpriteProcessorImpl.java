@@ -22,13 +22,15 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.servlet.ServletContextUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.ContextPathUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.PropertiesUtil;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.SortedProperties;
+import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.kernel.util.URLUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.util.PropertyComparator;
 
 import java.awt.Point;
 import java.awt.Transparency;
@@ -48,9 +50,11 @@ import java.net.URLConnection;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 
+import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 
 import javax.media.jai.LookupTableJAI;
@@ -77,32 +81,42 @@ public class SpriteProcessorImpl implements SpriteProcessor {
 			int maxWidth, int maxSize)
 		throws IOException {
 
-		if (imageURLs.size() < 1) {
+		if (imageURLs.isEmpty()) {
 			return null;
 		}
 
-		Collections.sort(imageURLs, new PropertyComparator("path"));
+		Collections.sort(imageURLs, _urlPathComparator);
 
 		File spriteRootDir = null;
 
 		if (Validator.isNull(spriteRootDirName)) {
-			File tempDir = (File)servletContext.getAttribute(
-				JavaConstants.JAVAX_SERVLET_CONTEXT_TEMPDIR);
+			String servletContextName = servletContext.getServletContextName();
 
-			spriteRootDir = new File(tempDir, SpriteProcessor.PATH);
+			if (servletContextName != null) {
+				spriteRootDir = new File(
+					StringBundler.concat(
+						PropsUtil.get(PropsKeys.LIFERAY_HOME), "/work",
+						SpriteProcessor.PATH, "/", servletContextName));
+			}
+			else {
+				File tempDir = (File)servletContext.getAttribute(
+					JavaConstants.JAVAX_SERVLET_CONTEXT_TEMPDIR);
+
+				spriteRootDir = new File(tempDir, SpriteProcessor.PATH);
+			}
 		}
 		else {
 			spriteRootDir = new File(spriteRootDirName);
 		}
 
-		spriteRootDir.mkdirs();
+		FileUtil.mkdirs(spriteRootDir);
 
 		File spritePropertiesFile = new File(
 			spriteRootDir, spritePropertiesFileName);
 
 		File spritePropertiesParentFile = spritePropertiesFile.getParentFile();
 
-		spritePropertiesParentFile.mkdirs();
+		FileUtil.mkdirs(spritePropertiesParentFile);
 
 		boolean build = false;
 
@@ -111,14 +125,8 @@ public class SpriteProcessorImpl implements SpriteProcessor {
 		if (spritePropertiesFile.exists()) {
 			lastModified = spritePropertiesFile.lastModified();
 
-			URLConnection urlConnection = null;
-
 			for (URL imageURL : imageURLs) {
-				urlConnection = imageURL.openConnection();
-
-				if ((urlConnection != null) &&
-					(urlConnection.getLastModified() > lastModified)) {
-
+				if (URLUtil.getLastModifiedTime(imageURL) > lastModified) {
 					build = true;
 
 					break;
@@ -140,7 +148,7 @@ public class SpriteProcessorImpl implements SpriteProcessor {
 			}
 		}
 
-		List<RenderedImage> renderedImages = new ArrayList<RenderedImage>();
+		List<RenderedImage> renderedImages = new ArrayList<>();
 
 		Properties spriteProperties = new SortedProperties();
 
@@ -183,12 +191,13 @@ public class SpriteProcessorImpl implements SpriteProcessor {
 						key = key.substring(rootPath.length());
 					}
 
-					String contextPath = ContextPathUtil.getContextPath(
-						servletContext);
+					String contextPath = servletContext.getContextPath();
 
 					key = contextPath.concat(key);
 
-					String value = (int)y + "," + height + "," + width;
+					String value = StringBundler.concat(
+						String.valueOf((int)y), ",", String.valueOf(height),
+						",", String.valueOf(width));
 
 					spriteProperties.setProperty(key, value);
 
@@ -224,9 +233,31 @@ public class SpriteProcessorImpl implements SpriteProcessor {
 
 			File spriteDir = spriteFile.getParentFile();
 
-			spriteDir.mkdirs();
+			FileUtil.mkdirs(spriteDir);
 
-			ImageIO.write(renderedImage, "png", spriteFile);
+			try {
+				ImageIO.write(renderedImage, "png", spriteFile);
+			}
+			catch (Exception e) {
+				if (e instanceof IIOException ||
+					e instanceof NullPointerException) {
+
+					if (_log.isWarnEnabled()) {
+						StringBundler sb = new StringBundler(4);
+
+						sb.append("Unable to generate ");
+						sb.append(spriteFileName);
+						sb.append(" for ");
+						sb.append(servletContext.getServletContextName());
+
+						_log.warn(sb.toString());
+					}
+
+					return null;
+				}
+
+				throw e;
+			}
 
 			if (lastModified > 0) {
 				spriteFile.setLastModified(lastModified);
@@ -273,11 +304,38 @@ public class SpriteProcessorImpl implements SpriteProcessor {
 			renderedImage = LookupDescriptor.create(
 				renderedImage, lookupTableJAI, null);
 		}
-		else if (sampleModel.getNumBands() == 2) {
-			List<Byte> bytesList = new ArrayList<Byte>(
+		else if (sampleModel.getNumBands() == 1) {
+			List<Byte> bytesList = new ArrayList<>(
 				height * width * _NUM_OF_BANDS);
 
-			List<Byte> tempBytesList = new ArrayList<Byte>(_NUM_OF_BANDS);
+			for (int i = 0; i < dataBuffer.getSize(); i++) {
+				byte elem = (byte)dataBuffer.getElem(i);
+
+				if (elem == -1) {
+					bytesList.add((byte)0);
+				}
+				else {
+					bytesList.add((byte)255);
+				}
+
+				bytesList.add(elem);
+				bytesList.add(elem);
+				bytesList.add(elem);
+			}
+
+			byte[] data = ArrayUtil.toArray(
+				bytesList.toArray(new Byte[bytesList.size()]));
+
+			DataBuffer newDataBuffer = new DataBufferByte(data, data.length);
+
+			renderedImage = createRenderedImage(
+				renderedImage, height, width, newDataBuffer);
+		}
+		else if (sampleModel.getNumBands() == 2) {
+			List<Byte> bytesList = new ArrayList<>(
+				height * width * _NUM_OF_BANDS);
+
+			List<Byte> tempBytesList = new ArrayList<>(_NUM_OF_BANDS);
 
 			for (int i = 0; i < dataBuffer.getSize(); i++) {
 				int mod = (i + 1) % 2;
@@ -309,10 +367,10 @@ public class SpriteProcessorImpl implements SpriteProcessor {
 				renderedImage, height, width, newDataBuffer);
 		}
 		else if (colorModel.getTransparency() != Transparency.TRANSLUCENT) {
-			List<Byte> bytesList = new ArrayList<Byte>(
+			List<Byte> bytesList = new ArrayList<>(
 				height * width * _NUM_OF_BANDS);
 
-			List<Byte> tempBytesList = new ArrayList<Byte>(_NUM_OF_BANDS);
+			List<Byte> tempBytesList = new ArrayList<>(_NUM_OF_BANDS);
 
 			for (int i = 0; i < dataBuffer.getSize(); i++) {
 				int mod = (i + 1) % 3;
@@ -351,6 +409,7 @@ public class SpriteProcessorImpl implements SpriteProcessor {
 		SampleModel sampleModel =
 			RasterFactory.createPixelInterleavedSampleModel(
 				DataBuffer.TYPE_BYTE, width, height, _NUM_OF_BANDS);
+
 		ColorModel colorModel = PlanarImage.createColorModel(sampleModel);
 
 		TiledImage tiledImage = new TiledImage(
@@ -389,7 +448,10 @@ public class SpriteProcessorImpl implements SpriteProcessor {
 			for (int w = 0; w < width; w++) {
 				offset = (h * width * numOfBands) + (w * numOfBands);
 
-				System.out.print("[" + w + ", " + h + "] = ");
+				System.out.print(
+					StringBundler.concat(
+						"[", String.valueOf(w), ", ", String.valueOf(h),
+						"] = "));
 
 				for (int b = 0; b < numOfBands; b++) {
 					System.out.print(pixels[offset + b] + " ");
@@ -402,6 +464,20 @@ public class SpriteProcessorImpl implements SpriteProcessor {
 
 	private static final int _NUM_OF_BANDS = 4;
 
-	private static Log _log = LogFactoryUtil.getLog(SpriteProcessorImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		SpriteProcessorImpl.class);
+
+	private static final Comparator<URL> _urlPathComparator =
+		new Comparator<URL>() {
+
+			@Override
+			public int compare(URL url1, URL url2) {
+				String path1 = url1.getPath();
+				String path2 = url2.getPath();
+
+				return path1.compareToIgnoreCase(path2);
+			}
+
+		};
 
 }

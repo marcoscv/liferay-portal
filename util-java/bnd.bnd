@@ -1,9 +1,11 @@
-Bundle-Version: 6.2.0
+Bundle-Name: ${manifest.bundle.name}
+Bundle-SymbolicName: ${manifest.bundle.symbolic.name}
+Bundle-Version: 2.5.10
 Export-Package: com.liferay.util.*
 Import-Package:\
 	com.liferay.*,\
+	\
 	*;resolution:=optional
-Include-Resource: classes
-Private-Package: *
-
--baseline: *;version="6.2.0"
+Include-Resource:\
+	classes,\
+	@../tmp/lib-pre/com.liferay.util.java.compat.jar

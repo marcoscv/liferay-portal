@@ -1,0 +1,69 @@
+{namespace DDMNumeric}
+
+/**
+ * Defines the delegated template for the numeric field.
+ */
+{deltemplate ddm.field variant="'numeric'"}
+	{call .render data="all" /}
+{/deltemplate}
+
+/**
+ * Prints the DDM form numeric field.
+ */
+{template .render}
+	{@param name: string}
+	{@param placeholder: string}
+	{@param readOnly: bool}
+	{@param showLabel: bool}
+	{@param value: any}
+	{@param visible: bool}
+	{@param? dir: string}
+	{@param? label: string}
+	{@param? predefinedValue: any}
+	{@param? required: bool}
+	{@param? tip: string}
+	{@param? tooltip: string}
+
+	{let $displayValue: $value ? $value : $predefinedValue ? $predefinedValue : '' /}
+
+	<div class="form-group{$visible ? '' : ' hide'} liferay-ddm-form-field-numeric {$tip ? 'liferay-ddm-form-field-has-tip' : ''}" data-fieldname="{$name}">
+		{if $showLabel}
+			<label for="{$name}">
+				{$label}
+
+				{if $required}
+					<span class="icon-asterisk text-warning"></span>
+				{/if}
+			</label>
+
+			{if $tip}
+				<span class="form-text">{$tip}</span>
+			{/if}
+		{/if}
+
+		<div class="input-group input-group-container {if $tooltip}input-group-default{/if}">
+			<div class="input-group-item">
+				<input class="field form-control"
+				{if $dir}dir="{$dir}"{/if}
+				{if $readOnly}disabled{/if}
+				id="{$name}" name="{$name}"
+				placeholder="{$placeholder}"
+				type="text"
+				value="{$displayValue}">
+			</div>
+			{if $tooltip}
+			<div class="input-group-item input-group-item-shrink">
+				<button class="btn btn-monospaced btn-unstyled" type="button">
+					<a class="help-icon rounded-circle sticker sticker-secondary"
+						data-original-title="{$tooltip}"
+						data-toggle="popover"
+						href="javascript:;"
+						title="{$tooltip}">
+						<span class="icon-question"></span>
+					</a>
+				</button>
+				</div>
+			{/if}
+		</div>
+	</div>
+{/template}

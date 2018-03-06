@@ -16,6 +16,9 @@ package com.liferay.portal.service;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.service.PermissionedModelLocalService;
+import com.liferay.portal.kernel.service.PersistedModelLocalService;
+import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
 import com.liferay.portal.kernel.util.ListUtil;
 
 import java.util.List;
@@ -41,6 +44,10 @@ public class PersistedModelLocalServiceRegistryImpl
 		return ListUtil.fromMapValues(_persistedModelLocalServices);
 	}
 
+	/**
+	 * @deprecated As of 7.0.0, with no direct replacement
+	 */
+	@Deprecated
 	@Override
 	public boolean isPermissionedModelLocalService(String className) {
 		PersistedModelLocalService persistedModelLocalService =
@@ -78,11 +85,10 @@ public class PersistedModelLocalServiceRegistryImpl
 		_persistedModelLocalServices.remove(className);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		PersistedModelLocalServiceRegistryImpl.class);
 
-	private Map<String, PersistedModelLocalService>
-		_persistedModelLocalServices =
-			new ConcurrentHashMap<String, PersistedModelLocalService>();
+	private final Map<String, PersistedModelLocalService>
+		_persistedModelLocalServices = new ConcurrentHashMap<>();
 
 }

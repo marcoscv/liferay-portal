@@ -14,8 +14,8 @@
 
 package com.liferay.portlet.portletconfiguration.util;
 
-import com.liferay.portal.model.PublicRenderParameter;
-import com.liferay.portlet.PortletQNameUtil;
+import com.liferay.portal.kernel.model.PublicRenderParameter;
+import com.liferay.portal.kernel.portlet.PortletQNameUtil;
 
 /**
  * @author Alberto Montero
@@ -26,6 +26,10 @@ public class PublicRenderParameterConfiguration {
 
 	public static final String MAPPING_PREFIX = "lfr-prp-mapping-";
 
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #getIgnoreKey(String)}
+	 */
+	@Deprecated
 	public static String getIgnoreKey(
 		PublicRenderParameter publicRenderParameter) {
 
@@ -36,6 +40,14 @@ public class PublicRenderParameterConfiguration {
 		return IGNORE_PREFIX.concat(publicRenderParameterName);
 	}
 
+	public static String getIgnoreKey(String publicRenderParameterName) {
+		return IGNORE_PREFIX.concat(publicRenderParameterName);
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #getMappingKey(String)}
+	 */
+	@Deprecated
 	public static String getMappingKey(
 		PublicRenderParameter publicRenderParameter) {
 
@@ -46,16 +58,21 @@ public class PublicRenderParameterConfiguration {
 		return MAPPING_PREFIX.concat(publicRenderParameterName);
 	}
 
+	public static String getMappingKey(String publicRenderParameterName) {
+		return MAPPING_PREFIX.concat(publicRenderParameterName);
+	}
+
 	public PublicRenderParameterConfiguration(
 		PublicRenderParameter publicRenderParameter, String mappingValue,
 		boolean ignoreValue) {
 
 		_publicRenderParameter = publicRenderParameter;
+		_mappingValue = mappingValue;
+		_ignoreValue = ignoreValue;
+
 		_publicRenderParameterName =
 			PortletQNameUtil.getPublicRenderParameterName(
 				publicRenderParameter.getQName());
-		_mappingValue = mappingValue;
-		_ignoreValue = ignoreValue;
 	}
 
 	public String getIgnoreKey() {
@@ -82,9 +99,9 @@ public class PublicRenderParameterConfiguration {
 		return _publicRenderParameterName;
 	}
 
-	private boolean _ignoreValue;
-	private String _mappingValue;
-	private PublicRenderParameter _publicRenderParameter;
-	private String _publicRenderParameterName;
+	private final boolean _ignoreValue;
+	private final String _mappingValue;
+	private final PublicRenderParameter _publicRenderParameter;
+	private final String _publicRenderParameterName;
 
 }

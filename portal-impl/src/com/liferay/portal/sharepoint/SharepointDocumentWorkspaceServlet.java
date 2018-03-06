@@ -16,33 +16,34 @@ package com.liferay.portal.sharepoint;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.GroupServiceUtil;
+import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
-import com.liferay.portal.model.Group;
-import com.liferay.portal.model.Role;
-import com.liferay.portal.model.User;
-import com.liferay.portal.service.GroupServiceUtil;
-import com.liferay.portal.service.RoleLocalServiceUtil;
-import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.sharepoint.dws.MemberResponseElement;
 import com.liferay.portal.sharepoint.dws.ResponseElement;
 import com.liferay.portal.sharepoint.dws.RoleResponseElement;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.WebKeys;
 
 import java.util.List;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  * @author Bruno Farache
@@ -55,8 +56,9 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 
 		if (_log.isInfoEnabled()) {
 			_log.info(
-				request.getHeader(HttpHeaders.USER_AGENT) + " " +
-					request.getMethod() + " " + request.getRequestURI());
+				StringBundler.concat(
+					request.getHeader(HttpHeaders.USER_AGENT), " ",
+					request.getMethod(), " ", request.getRequestURI()));
 		}
 
 		try {
@@ -89,8 +91,8 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 			results = results.substring(pos + 1);
 		}
 
-		results = results.replaceAll("<", "&lt;");
-		results = results.replaceAll(">", "&gt;");
+		results = StringUtil.replace(results, '<', "&lt;");
+		results = StringUtil.replace(results, '>', "&gt;");
 
 		sb.append(results);
 
@@ -147,15 +149,27 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 
 		Element root = doc.addElement("Results");
 
-		String url =
-			"http://" + request.getLocalAddr() + ":" + request.getServerPort() +
-				"/sharepoint";
+		String url = StringBundler.concat(
+			"http://", request.getLocalAddr(), ":",
+			String.valueOf(request.getServerPort()), "/sharepoint");
 
-		root.addElement("SubscribeUrl").setText(url);
+		Element subscribeUrlEl = root.addElement("SubscribeUrl");
+
+		subscribeUrlEl.setText(url);
+
 		root.addElement("MtgInstance");
-		root.addElement("SettingUrl").setText(url);
-		root.addElement("PermsUrl").setText(url);
-		root.addElement("UserInfoUrl").setText(url);
+
+		Element settingUrlEl = root.addElement("SettingUrl");
+
+		settingUrlEl.setText(url);
+
+		Element permsUrlEl = root.addElement("PermsUrl");
+
+		permsUrlEl.setText(url);
+
+		Element userInfoUrlEl = root.addElement("UserInfoUrl");
+
+		userInfoUrlEl.setText(url);
 
 		Element rolesEl = root.addElement("Roles");
 
@@ -172,7 +186,7 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 			Element schemaEl = root.addElement("Schema");
 
 			schemaEl.addAttribute("Name", "Documents");
-			schemaEl.addAttribute("Url", group.getName());
+			schemaEl.addAttribute("Url", group.getDescriptiveName());
 
 			Element fieldEl = schemaEl.addElement("Field");
 
@@ -218,7 +232,9 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 
 			listInfoEl.addAttribute("Name", "Links");
 
-			listInfoEl.addElement("Moderated").setText(String.valueOf(false));
+			Element moderatedEl = listInfoEl.addElement("Moderated");
+
+			moderatedEl.setText(String.valueOf(false));
 
 			Element listPermissionsEl = listInfoEl.addElement(
 				"ListPermissions");
@@ -240,18 +256,37 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 			permissionsEl.addElement("ManageWeb");
 		}
 
-		root.addElement("HasUniquePerm").setText(String.valueOf(true));
-		root.addElement("WorkspaceType").setText("DWS");
-		root.addElement("IsADMode").setText(String.valueOf(false));
-		root.addElement("DocUrl").setText(documentName);
-		root.addElement("Minimal").setText(String.valueOf(true));
+		Element hasUniquePermEl = root.addElement("HasUniquePerm");
+
+		hasUniquePermEl.setText(String.valueOf(true));
+
+		Element workspaceTypeEl = root.addElement("WorkspaceType");
+
+		workspaceTypeEl.setText("DWS");
+
+		Element isADModeEl = root.addElement("IsADMode");
+
+		isADModeEl.setText(String.valueOf(false));
+
+		Element docUrlEl = root.addElement("DocUrl");
+
+		docUrlEl.setText(documentName);
+
+		Element minimalEl = root.addElement("Minimal");
+
+		minimalEl.setText(String.valueOf(true));
 
 		Element resultsEl = root.addElement("Results");
 
-		resultsEl.addElement("Title").setText(group.getName());
+		Element titleElement = resultsEl.addElement("Title");
+
+		titleElement.setText(group.getDescriptiveName());
+
 		resultsEl.addElement("LastUpdate");
 
-		User user = (User)request.getSession().getAttribute(WebKeys.USER);
+		HttpSession session = request.getSession();
+
+		User user = (User)session.getAttribute(WebKeys.USER);
 
 		ResponseElement responseElement = new MemberResponseElement(
 			user, false);
@@ -305,7 +340,7 @@ public class SharepointDocumentWorkspaceServlet extends HttpServlet {
 		return doc.asXML();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		SharepointDocumentWorkspaceServlet.class);
 
 }

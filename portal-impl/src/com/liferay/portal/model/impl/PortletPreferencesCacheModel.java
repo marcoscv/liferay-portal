@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.PortletPreferences;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.PortletPreferences;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -32,8 +34,36 @@ import java.io.ObjectOutput;
  * @see PortletPreferences
  * @generated
  */
+@ProviderType
 public class PortletPreferencesCacheModel implements CacheModel<PortletPreferences>,
 	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof PortletPreferencesCacheModel)) {
+			return false;
+		}
+
+		PortletPreferencesCacheModel portletPreferencesCacheModel = (PortletPreferencesCacheModel)obj;
+
+		if ((portletPreferencesId == portletPreferencesCacheModel.portletPreferencesId) &&
+				(mvccVersion == portletPreferencesCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, portletPreferencesId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -46,12 +76,14 @@ public class PortletPreferencesCacheModel implements CacheModel<PortletPreferenc
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(15);
+		StringBundler sb = new StringBundler(17);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
 		sb.append(", portletPreferencesId=");
 		sb.append(portletPreferencesId);
+		sb.append(", companyId=");
+		sb.append(companyId);
 		sb.append(", ownerId=");
 		sb.append(ownerId);
 		sb.append(", ownerType=");
@@ -73,19 +105,20 @@ public class PortletPreferencesCacheModel implements CacheModel<PortletPreferenc
 
 		portletPreferencesImpl.setMvccVersion(mvccVersion);
 		portletPreferencesImpl.setPortletPreferencesId(portletPreferencesId);
+		portletPreferencesImpl.setCompanyId(companyId);
 		portletPreferencesImpl.setOwnerId(ownerId);
 		portletPreferencesImpl.setOwnerType(ownerType);
 		portletPreferencesImpl.setPlid(plid);
 
 		if (portletId == null) {
-			portletPreferencesImpl.setPortletId(StringPool.BLANK);
+			portletPreferencesImpl.setPortletId("");
 		}
 		else {
 			portletPreferencesImpl.setPortletId(portletId);
 		}
 
 		if (preferences == null) {
-			portletPreferencesImpl.setPreferences(StringPool.BLANK);
+			portletPreferencesImpl.setPreferences("");
 		}
 		else {
 			portletPreferencesImpl.setPreferences(preferences);
@@ -99,9 +132,15 @@ public class PortletPreferencesCacheModel implements CacheModel<PortletPreferenc
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
+
 		portletPreferencesId = objectInput.readLong();
+
+		companyId = objectInput.readLong();
+
 		ownerId = objectInput.readLong();
+
 		ownerType = objectInput.readInt();
+
 		plid = objectInput.readLong();
 		portletId = objectInput.readUTF();
 		preferences = objectInput.readUTF();
@@ -111,20 +150,26 @@ public class PortletPreferencesCacheModel implements CacheModel<PortletPreferenc
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
 		objectOutput.writeLong(portletPreferencesId);
+
+		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(ownerId);
+
 		objectOutput.writeInt(ownerType);
+
 		objectOutput.writeLong(plid);
 
 		if (portletId == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(portletId);
 		}
 
 		if (preferences == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(preferences);
@@ -133,6 +178,7 @@ public class PortletPreferencesCacheModel implements CacheModel<PortletPreferenc
 
 	public long mvccVersion;
 	public long portletPreferencesId;
+	public long companyId;
 	public long ownerId;
 	public int ownerType;
 	public long plid;

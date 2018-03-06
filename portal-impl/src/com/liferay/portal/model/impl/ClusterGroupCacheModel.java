@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.ClusterGroup;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.ClusterGroup;
-import com.liferay.portal.model.MVCCModel;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -32,8 +34,36 @@ import java.io.ObjectOutput;
  * @see ClusterGroup
  * @generated
  */
+@ProviderType
 public class ClusterGroupCacheModel implements CacheModel<ClusterGroup>,
 	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof ClusterGroupCacheModel)) {
+			return false;
+		}
+
+		ClusterGroupCacheModel clusterGroupCacheModel = (ClusterGroupCacheModel)obj;
+
+		if ((clusterGroupId == clusterGroupCacheModel.clusterGroupId) &&
+				(mvccVersion == clusterGroupCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, clusterGroupId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -71,14 +101,14 @@ public class ClusterGroupCacheModel implements CacheModel<ClusterGroup>,
 		clusterGroupImpl.setClusterGroupId(clusterGroupId);
 
 		if (name == null) {
-			clusterGroupImpl.setName(StringPool.BLANK);
+			clusterGroupImpl.setName("");
 		}
 		else {
 			clusterGroupImpl.setName(name);
 		}
 
 		if (clusterNodeIds == null) {
-			clusterGroupImpl.setClusterNodeIds(StringPool.BLANK);
+			clusterGroupImpl.setClusterNodeIds("");
 		}
 		else {
 			clusterGroupImpl.setClusterNodeIds(clusterNodeIds);
@@ -94,9 +124,11 @@ public class ClusterGroupCacheModel implements CacheModel<ClusterGroup>,
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
+
 		clusterGroupId = objectInput.readLong();
 		name = objectInput.readUTF();
 		clusterNodeIds = objectInput.readUTF();
+
 		wholeCluster = objectInput.readBoolean();
 	}
 
@@ -104,17 +136,18 @@ public class ClusterGroupCacheModel implements CacheModel<ClusterGroup>,
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
 		objectOutput.writeLong(clusterGroupId);
 
 		if (name == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(name);
 		}
 
 		if (clusterNodeIds == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(clusterNodeIds);

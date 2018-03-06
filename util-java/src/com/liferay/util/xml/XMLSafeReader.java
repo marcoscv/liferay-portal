@@ -14,6 +14,7 @@
 
 package com.liferay.util.xml;
 
+import com.liferay.petra.xml.XMLUtil;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 
 /**
@@ -22,7 +23,7 @@ import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 public class XMLSafeReader extends UnsyncStringReader {
 
 	public XMLSafeReader(String xml) {
-		super(XMLFormatter.fixProlog(xml));
+		super(XMLUtil.fixProlog(xml));
 	}
 
 }

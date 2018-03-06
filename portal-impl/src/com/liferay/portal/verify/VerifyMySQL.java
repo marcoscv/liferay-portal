@@ -15,67 +15,40 @@
 package com.liferay.portal.verify;
 
 import com.liferay.portal.kernel.dao.db.DB;
-import com.liferay.portal.kernel.dao.db.DBFactoryUtil;
-import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.LoggingTimer;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.util.PropsValues;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 
 /**
  * @author Brian Wing Shun Chan
+ * @author Shuyang Zhou
  */
 public class VerifyMySQL extends VerifyProcess {
 
-	protected void alterTableEngine(String tableName) throws Exception {
-		if (_log.isInfoEnabled()) {
-			_log.info(
-				"Updating table " + tableName + " to use engine " +
-					PropsValues.DATABASE_MYSQL_ENGINE);
-		}
+	@Override
+	protected void doVerify() throws Exception {
+		DB db = DBManagerUtil.getDB();
 
-		Connection con = null;
-		PreparedStatement ps = null;
+		if ((db.getDBType() == DBType.MARIADB) ||
+			(db.getDBType() == DBType.MYSQL)) {
 
-		try {
-			con = DataAccess.getUpgradeOptimizedConnection();
-
-			ps = con.prepareStatement(
-				"alter table " + tableName + " engine " +
-					PropsValues.DATABASE_MYSQL_ENGINE);
-
-			ps.executeUpdate();
-		}
-		finally {
-			DataAccess.cleanUp(con, ps);
+			verifyTableEngine();
 		}
 	}
 
-	@Override
-	protected void doVerify() throws Exception {
-		DB db = DBFactoryUtil.getDB();
-
-		String dbType = db.getType();
-
-		if (!dbType.equals(DB.TYPE_MYSQL)) {
-			return;
-		}
-
-		Connection con = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-
-		try {
-			con = DataAccess.getUpgradeOptimizedConnection();
-
-			ps = con.prepareStatement("show table status");
-
-			rs = ps.executeQuery();
+	protected void verifyTableEngine() throws Exception {
+		try (LoggingTimer loggingTimer = new LoggingTimer();
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery("show table status")) {
 
 			while (rs.next()) {
 				String tableName = rs.getString("Name");
@@ -97,14 +70,21 @@ public class VerifyMySQL extends VerifyProcess {
 					continue;
 				}
 
-				alterTableEngine(tableName);
+				if (_log.isInfoEnabled()) {
+					_log.info(
+						StringBundler.concat(
+							"Updating table ", tableName, " to use engine ",
+							PropsValues.DATABASE_MYSQL_ENGINE));
+				}
+
+				statement.executeUpdate(
+					StringBundler.concat(
+						"alter table ", tableName, " engine ",
+						PropsValues.DATABASE_MYSQL_ENGINE));
 			}
-		}
-		finally {
-			DataAccess.cleanUp(con, ps, rs);
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(VerifyMySQL.class);
+	private static final Log _log = LogFactoryUtil.getLog(VerifyMySQL.class);
 
 }

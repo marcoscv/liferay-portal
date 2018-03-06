@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.UserTracker;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.UserTracker;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,8 +36,36 @@ import java.util.Date;
  * @see UserTracker
  * @generated
  */
+@ProviderType
 public class UserTrackerCacheModel implements CacheModel<UserTracker>,
 	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof UserTrackerCacheModel)) {
+			return false;
+		}
+
+		UserTrackerCacheModel userTrackerCacheModel = (UserTrackerCacheModel)obj;
+
+		if ((userTrackerId == userTrackerCacheModel.userTrackerId) &&
+				(mvccVersion == userTrackerCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, userTrackerId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -90,28 +120,28 @@ public class UserTrackerCacheModel implements CacheModel<UserTracker>,
 		}
 
 		if (sessionId == null) {
-			userTrackerImpl.setSessionId(StringPool.BLANK);
+			userTrackerImpl.setSessionId("");
 		}
 		else {
 			userTrackerImpl.setSessionId(sessionId);
 		}
 
 		if (remoteAddr == null) {
-			userTrackerImpl.setRemoteAddr(StringPool.BLANK);
+			userTrackerImpl.setRemoteAddr("");
 		}
 		else {
 			userTrackerImpl.setRemoteAddr(remoteAddr);
 		}
 
 		if (remoteHost == null) {
-			userTrackerImpl.setRemoteHost(StringPool.BLANK);
+			userTrackerImpl.setRemoteHost("");
 		}
 		else {
 			userTrackerImpl.setRemoteHost(remoteHost);
 		}
 
 		if (userAgent == null) {
-			userTrackerImpl.setUserAgent(StringPool.BLANK);
+			userTrackerImpl.setUserAgent("");
 		}
 		else {
 			userTrackerImpl.setUserAgent(userAgent);
@@ -125,8 +155,11 @@ public class UserTrackerCacheModel implements CacheModel<UserTracker>,
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
+
 		userTrackerId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		userId = objectInput.readLong();
 		modifiedDate = objectInput.readLong();
 		sessionId = objectInput.readUTF();
@@ -139,34 +172,37 @@ public class UserTrackerCacheModel implements CacheModel<UserTracker>,
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
 		objectOutput.writeLong(userTrackerId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(userId);
 		objectOutput.writeLong(modifiedDate);
 
 		if (sessionId == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(sessionId);
 		}
 
 		if (remoteAddr == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(remoteAddr);
 		}
 
 		if (remoteHost == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(remoteHost);
 		}
 
 		if (userAgent == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userAgent);

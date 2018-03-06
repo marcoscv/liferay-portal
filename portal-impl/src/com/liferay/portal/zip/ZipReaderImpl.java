@@ -14,12 +14,13 @@
 
 package com.liferay.portal.zip;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.zip.ZipReader;
+import com.liferay.portal.util.PropsValues;
 
 import de.schlichtherle.io.ArchiveBusyWarningException;
 import de.schlichtherle.io.ArchiveDetector;
@@ -43,23 +44,13 @@ import java.util.List;
  */
 public class ZipReaderImpl implements ZipReader {
 
-	static {
-		File.setDefaultArchiveDetector(
-			new DefaultArchiveDetector(
-				ArchiveDetector.ALL, "lar|" + ArchiveDetector.ALL.getSuffixes(),
-				new ZipDriver()));
-	}
-
 	public ZipReaderImpl(InputStream inputStream) throws IOException {
 		_zipFile = new File(FileUtil.createTempFile("zip"));
 
-		OutputStream outputStream = new FileOutputStream(_zipFile);
-
-		try {
+		try (OutputStream outputStream = new FileOutputStream(_zipFile)) {
 			File.cat(inputStream, outputStream);
 		}
 		finally {
-			outputStream.close();
 			inputStream.close();
 		}
 	}
@@ -85,9 +76,13 @@ public class ZipReaderImpl implements ZipReader {
 
 	@Override
 	public List<String> getEntries() {
-		List<String> folderEntries = new ArrayList<String>();
+		List<String> folderEntries = new ArrayList<>();
 
 		File[] files = (File[])_zipFile.listFiles();
+
+		if (files == null) {
+			return null;
+		}
 
 		for (File file : files) {
 			if (!file.isDirectory()) {
@@ -172,7 +167,7 @@ public class ZipReaderImpl implements ZipReader {
 			return Collections.emptyList();
 		}
 
-		List<String> folderEntries = new ArrayList<String>();
+		List<String> folderEntries = new ArrayList<>();
 
 		File directory = new File(_zipFile.getPath() + StringPool.SLASH + path);
 
@@ -206,8 +201,17 @@ public class ZipReaderImpl implements ZipReader {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ZipReaderImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(ZipReaderImpl.class);
 
-	private File _zipFile;
+	static {
+		File.setDefaultArchiveDetector(
+			new DefaultArchiveDetector(
+				ArchiveDetector.ALL, "lar|" + ArchiveDetector.ALL.getSuffixes(),
+				new ZipDriver(PropsValues.ZIP_FILE_NAME_ENCODING)));
+
+		TrueZIPHelperUtil.initialize();
+	}
+
+	private final File _zipFile;
 
 }

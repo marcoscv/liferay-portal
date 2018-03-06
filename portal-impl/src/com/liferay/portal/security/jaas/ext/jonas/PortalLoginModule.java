@@ -14,9 +14,9 @@
 
 package com.liferay.portal.security.jaas.ext.jonas;
 
+import com.liferay.petra.lang.ClassResolverUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.ClassResolverUtil;
 import com.liferay.portal.kernel.util.InstanceFactory;
 import com.liferay.portal.kernel.util.MethodKey;
 import com.liferay.portal.security.jaas.ext.BasicLoginModule;
@@ -59,8 +59,11 @@ public class PortalLoginModule extends BasicLoginModule {
 			Object role = InstanceFactory.newInstance(
 				_JROLE, String.class, "users");
 
+			Thread thread = Thread.currentThread();
+
 			MethodKey methodKey = new MethodKey(
-				ClassResolverUtil.resolveByContextClassLoader(_JGROUP),
+				ClassResolverUtil.resolve(
+					_JGROUP, thread.getContextClassLoader()),
 				"addMember", role.getClass());
 
 			Method method = methodKey.getMethod();
@@ -96,6 +99,7 @@ public class PortalLoginModule extends BasicLoginModule {
 	private static final String _JROLE =
 		"org.objectweb.jonas.security.auth.JRole";
 
-	private static Log _log = LogFactoryUtil.getLog(PortalLoginModule.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		PortalLoginModule.class);
 
 }

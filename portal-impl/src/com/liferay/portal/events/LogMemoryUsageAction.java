@@ -17,6 +17,7 @@ package com.liferay.portal.events;
 import com.liferay.portal.kernel.events.Action;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 
 import java.text.NumberFormat;
 
@@ -40,11 +41,13 @@ public class LogMemoryUsageAction extends Action {
 
 		if (_log.isDebugEnabled()) {
 			_log.debug(
-				"Memory Usage:\t" + freeMemory + "\t" + totalMemory + "\t" +
-					maxMemory);
+				StringBundler.concat(
+					"Memory Usage:\t", freeMemory, "\t", totalMemory, "\t",
+					maxMemory));
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(LogMemoryUsageAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		LogMemoryUsageAction.class);
 
 }

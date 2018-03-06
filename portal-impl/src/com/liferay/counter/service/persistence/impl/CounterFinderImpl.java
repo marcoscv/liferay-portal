@@ -14,24 +14,24 @@
 
 package com.liferay.counter.service.persistence.impl;
 
-import com.liferay.counter.model.Counter;
+import com.liferay.counter.kernel.model.Counter;
+import com.liferay.counter.kernel.service.persistence.CounterFinder;
 import com.liferay.counter.model.CounterHolder;
 import com.liferay.counter.model.CounterRegister;
 import com.liferay.counter.model.impl.CounterImpl;
-import com.liferay.counter.service.persistence.CounterFinder;
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.cache.CacheRegistryItem;
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
 import com.liferay.portal.kernel.concurrent.CompeteLatch;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dao.orm.LockMode;
 import com.liferay.portal.kernel.dao.orm.ObjectNotFoundException;
 import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.portal.kernel.model.Dummy;
+import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.model.Dummy;
-import com.liferay.portal.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
 
@@ -57,11 +57,6 @@ public class CounterFinderImpl
 	implements CacheRegistryItem, CounterFinder {
 
 	@Override
-	public void afterPropertiesSet() {
-		CacheRegistryUtil.register(this);
-	}
-
-	@Override
 	public List<String> getNames() {
 		Connection connection = null;
 		PreparedStatement preparedStatement = null;
@@ -74,7 +69,7 @@ public class CounterFinderImpl
 
 			resultSet = preparedStatement.executeQuery();
 
-			List<String> list = new ArrayList<String>();
+			List<String> list = new ArrayList<>();
 
 			while (resultSet.next()) {
 				list.add(resultSet.getString(1));
@@ -128,7 +123,8 @@ public class CounterFinderImpl
 		synchronized (counterRegister) {
 			if (_counterRegisterMap.containsKey(newName)) {
 				throw new SystemException(
-					"Cannot rename " + oldName + " to " + newName);
+					StringBundler.concat(
+						"Cannot rename ", oldName, " to ", newName));
 			}
 
 			Connection connection = null;
@@ -198,52 +194,40 @@ public class CounterFinderImpl
 	}
 
 	protected CounterRegister createCounterRegister(String name) {
-
 		return createCounterRegister(name, -1);
 	}
 
 	protected CounterRegister createCounterRegister(String name, long size) {
-
 		long rangeMin = -1;
 		int rangeSize = getRangeSize(name);
 
-		Connection connection = null;
-		PreparedStatement preparedStatement = null;
-		ResultSet resultSet = null;
+		try (Connection connection = getConnection();
+			PreparedStatement ps1 = connection.prepareStatement(
+				_SQL_SELECT_ID_BY_NAME)) {
 
-		try {
-			connection = getConnection();
+			ps1.setString(1, name);
 
-			preparedStatement = connection.prepareStatement(
-				_SQL_SELECT_ID_BY_NAME);
+			try (ResultSet resultSet = ps1.executeQuery()) {
+				if (!resultSet.next()) {
+					rangeMin = _DEFAULT_CURRENT_ID;
 
-			preparedStatement.setString(1, name);
+					if (size > rangeMin) {
+						rangeMin = size;
+					}
 
-			resultSet = preparedStatement.executeQuery();
+					try (PreparedStatement ps2 = connection.prepareStatement(
+							_SQL_INSERT)) {
 
-			if (!resultSet.next()) {
-				rangeMin = _DEFAULT_CURRENT_ID;
+						ps2.setString(1, name);
+						ps2.setLong(2, rangeMin);
 
-				if (size > rangeMin) {
-					rangeMin = size;
+						ps2.executeUpdate();
+					}
 				}
-
-				resultSet.close();
-				preparedStatement.close();
-
-				preparedStatement = connection.prepareStatement(_SQL_INSERT);
-
-				preparedStatement.setString(1, name);
-				preparedStatement.setLong(2, rangeMin);
-
-				preparedStatement.executeUpdate();
 			}
 		}
 		catch (Exception e) {
 			throw processException(e);
-		}
-		finally {
-			DataAccess.cleanUp(connection, preparedStatement, resultSet);
 		}
 
 		CounterHolder counterHolder = _obtainIncrement(name, rangeSize, size);
@@ -258,7 +242,6 @@ public class CounterFinderImpl
 	}
 
 	protected CounterRegister getCounterRegister(String name) {
-
 		CounterRegister counterRegister = _counterRegisterMap.get(name);
 
 		if (counterRegister != null) {
@@ -312,7 +295,6 @@ public class CounterFinderImpl
 	}
 
 	private long _competeIncrement(CounterRegister counterRegister, int size) {
-
 		CounterHolder counterHolder = counterRegister.getCounterHolder();
 
 		// Try to use the fast path
@@ -325,14 +307,14 @@ public class CounterFinderImpl
 
 		// Use the slow path
 
-		CompeteLatch completeLatch = counterRegister.getCompeteLatch();
+		CompeteLatch competeLatch = counterRegister.getCompeteLatch();
 
-		if (!completeLatch.compete()) {
+		if (!competeLatch.compete()) {
 
 			// Loser thread has to wait for the winner thread to finish its job
 
 			try {
-				completeLatch.await();
+				competeLatch.await();
 			}
 			catch (InterruptedException ie) {
 				throw processException(ie);
@@ -350,6 +332,7 @@ public class CounterFinderImpl
 			// Double check
 
 			counterHolder = counterRegister.getCounterHolder();
+
 			newValue = counterHolder.addAndGet(size);
 
 			if (newValue > counterHolder.getRangeMax()) {
@@ -369,7 +352,7 @@ public class CounterFinderImpl
 
 			// Winner thread opens the latch so that loser threads can continue
 
-			completeLatch.done();
+			competeLatch.done();
 		}
 
 		return newValue;
@@ -430,9 +413,9 @@ public class CounterFinderImpl
 	private static final String _SQL_UPDATE_NAME_BY_NAME =
 		"update Counter set name = ? where name = ?";
 
-	private Map<String, CounterRegister> _counterRegisterMap =
-		new ConcurrentHashMap<String, CounterRegister>();
-	private Map<String, Integer> _rangeSizeMap =
-		new ConcurrentHashMap<String, Integer>();
+	private final Map<String, CounterRegister> _counterRegisterMap =
+		new ConcurrentHashMap<>();
+	private final Map<String, Integer> _rangeSizeMap =
+		new ConcurrentHashMap<>();
 
 }

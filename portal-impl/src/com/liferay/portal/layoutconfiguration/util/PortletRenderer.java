@@ -14,18 +14,22 @@
 
 package com.liferay.portal.layoutconfiguration.util;
 
-import com.liferay.portal.kernel.executor.CopyThreadLocalCallable;
+import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.PortletContainerException;
 import com.liferay.portal.kernel.portlet.PortletContainerUtil;
 import com.liferay.portal.kernel.portlet.RestrictPortletServletRequest;
 import com.liferay.portal.kernel.servlet.BufferCacheServletResponse;
+import com.liferay.portal.kernel.util.Mergeable;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.theme.ThemeDisplay;
-import com.liferay.portal.util.WebKeys;
+import com.liferay.portal.kernel.util.ThreadLocalBinder;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import java.io.IOException;
 
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,8 +45,8 @@ public class PortletRenderer {
 		Integer columnPos) {
 
 		_portlet = portlet;
-		_columnCount = columnCount;
 		_columnId = columnId;
+		_columnCount = columnCount;
 		_columnPos = columnPos;
 	}
 
@@ -88,11 +92,11 @@ public class PortletRenderer {
 			HttpServletRequest request, HttpServletResponse response)
 		throws PortletContainerException {
 
-		request.setAttribute(
-			WebKeys.PARALLEL_RENDERING_TIMEOUT_ERROR, Boolean.TRUE);
-
 		request = PortletContainerUtil.setupOptionalRenderParameters(
 			request, null, _columnId, _columnPos, _columnCount);
+
+		request.setAttribute(
+			WebKeys.PARALLEL_RENDERING_TIMEOUT_ERROR, Boolean.TRUE);
 
 		_restrictPortletServletRequest = (RestrictPortletServletRequest)request;
 
@@ -140,11 +144,78 @@ public class PortletRenderer {
 	private static final String _RENDER_PATH =
 		"/html/portal/load_render_portlet.jsp";
 
-	private Integer _columnCount;
-	private String _columnId;
-	private Integer _columnPos;
-	private Portlet _portlet;
+	private final Integer _columnCount;
+	private final String _columnId;
+	private final Integer _columnPos;
+	private final Portlet _portlet;
 	private RestrictPortletServletRequest _restrictPortletServletRequest;
+
+	private abstract class CopyThreadLocalCallable<T> implements Callable<T> {
+
+		public CopyThreadLocalCallable(boolean readOnly, boolean clearOnExit) {
+			this(null, readOnly, clearOnExit);
+		}
+
+		public CopyThreadLocalCallable(
+			ThreadLocalBinder threadLocalBinder, boolean readOnly,
+			boolean clearOnExit) {
+
+			_threadLocalBinder = threadLocalBinder;
+
+			if (_threadLocalBinder != null) {
+				_threadLocalBinder.record();
+			}
+
+			if (readOnly) {
+				_longLivedThreadLocals = Collections.unmodifiableMap(
+					CentralizedThreadLocal.getLongLivedThreadLocals());
+				_shortLivedlThreadLocals = Collections.unmodifiableMap(
+					CentralizedThreadLocal.getShortLivedThreadLocals());
+			}
+			else {
+				_longLivedThreadLocals =
+					CentralizedThreadLocal.getLongLivedThreadLocals();
+				_shortLivedlThreadLocals =
+					CentralizedThreadLocal.getShortLivedThreadLocals();
+			}
+
+			_clearOnExit = clearOnExit;
+		}
+
+		@Override
+		public final T call() throws Exception {
+			CentralizedThreadLocal.setThreadLocals(
+				_longLivedThreadLocals, _shortLivedlThreadLocals);
+
+			if (_threadLocalBinder != null) {
+				_threadLocalBinder.bind();
+			}
+
+			try {
+				return doCall();
+			}
+			finally {
+				if (_clearOnExit) {
+					if (_threadLocalBinder != null) {
+						_threadLocalBinder.cleanUp();
+					}
+
+					CentralizedThreadLocal.clearLongLivedThreadLocals();
+					CentralizedThreadLocal.clearShortLivedThreadLocals();
+				}
+			}
+		}
+
+		public abstract T doCall() throws Exception;
+
+		private final boolean _clearOnExit;
+		private final Map<CentralizedThreadLocal<?>, Object>
+			_longLivedThreadLocals;
+		private final Map<CentralizedThreadLocal<?>, Object>
+			_shortLivedlThreadLocals;
+		private final ThreadLocalBinder _threadLocalBinder;
+
+	}
 
 	private class PortletRendererCallable
 		extends CopyThreadLocalCallable<StringBundler> {
@@ -162,9 +233,6 @@ public class PortletRenderer {
 
 		@Override
 		public StringBundler doCall() throws Exception {
-			ThemeDisplay themeDisplay = (ThemeDisplay)_request.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
 			HttpServletRequest request =
 				PortletContainerUtil.setupOptionalRenderParameters(
 					_request, null, _columnId, _columnPos, _columnCount);
@@ -173,9 +241,7 @@ public class PortletRenderer {
 				(RestrictPortletServletRequest)request;
 
 			try {
-				themeDisplay = (ThemeDisplay)themeDisplay.clone();
-
-				request.setAttribute(WebKeys.THEME_DISPLAY, themeDisplay);
+				_split(_request, _restrictPortletServletRequest);
 
 				return _render(request, _response);
 			}
@@ -195,8 +261,34 @@ public class PortletRenderer {
 			}
 		}
 
-		private HttpServletRequest _request;
-		private HttpServletResponse _response;
+		private void _split(
+			HttpServletRequest request,
+			RestrictPortletServletRequest restrictPortletServletRequest) {
+
+			Enumeration<String> attributeNames = request.getAttributeNames();
+
+			while (attributeNames.hasMoreElements()) {
+				String attributeName = attributeNames.nextElement();
+
+				Object attribute = request.getAttribute(attributeName);
+
+				if (!(attribute instanceof Mergeable<?>) ||
+						!RestrictPortletServletRequest.isSharedRequestAttribute(
+							attributeName)) {
+
+					continue;
+				}
+
+				Mergeable<?> mergeable = (Mergeable<?>)attribute;
+
+				restrictPortletServletRequest.setAttribute(
+					attributeName, mergeable.split());
+			}
+		}
+
+		private final HttpServletRequest _request;
+		private final HttpServletResponse _response;
+
 	}
 
 }

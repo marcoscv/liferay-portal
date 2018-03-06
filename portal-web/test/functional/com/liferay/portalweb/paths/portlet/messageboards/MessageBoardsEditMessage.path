@@ -1,0 +1,50 @@
+<html>
+<head>
+<title>MessageBoardsEditMessage</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">MessageBoardsEditMessage</td></tr>
+</thead>
+<tbody>
+<tr>
+	<td>MARK_AS_A_QUESTION_CHECKBOX</td>
+	<td>//input[contains(.,'Mark as a Question')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ANONYMOUS_CHECKBOX</td>
+	<td>//input[contains(.,'Anonymous')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SUBSCRIBE_ME_CHECKBOX</td>
+	<td>//input[contains(.,'Subscribe Me')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PRIORITY_SELECT</td>
+	<td>//select[@class='form-control']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ALLOW_PINGBACKS_CHECKBOX</td>
+	<td>//input[contains(.,'Allow Pingbacks')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td></td>
+	<td></td>
+	<td></td>
+</tr>
+<!--ATTACHMENTS-->
+<tr>
+	<td>ATTACHMENTS_REMOVE_LINK</td>
+	<td>//*[@data-qa-id='row'][contains(.,'${key_attachmentName}')]//span[contains(@class,'item-remove')]</td>
+	<td></td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

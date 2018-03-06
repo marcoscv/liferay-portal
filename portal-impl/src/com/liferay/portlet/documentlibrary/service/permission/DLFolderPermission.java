@@ -14,24 +14,25 @@
 
 package com.liferay.portlet.documentlibrary.service.permission;
 
+import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.repository.model.Folder;
-import com.liferay.portal.kernel.staging.permission.StagingPermissionUtil;
-import com.liferay.portal.security.auth.PrincipalException;
-import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.security.permission.BaseModelPermissionChecker;
-import com.liferay.portal.security.permission.PermissionChecker;
-import com.liferay.portal.util.PortletKeys;
-import com.liferay.portal.util.PropsValues;
-import com.liferay.portlet.documentlibrary.NoSuchFolderException;
-import com.liferay.portlet.documentlibrary.model.DLFolder;
-import com.liferay.portlet.documentlibrary.model.DLFolderConstants;
-import com.liferay.portlet.documentlibrary.service.DLAppLocalServiceUtil;
-import com.liferay.portlet.documentlibrary.service.DLFolderLocalServiceUtil;
+import com.liferay.portal.kernel.security.permission.BaseModelPermissionChecker;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermissionHelper;
+import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
+import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 /**
  * @author Brian Wing Shun Chan
+ * @deprecated As of 7.0.0, with no direct replacement
  */
+@Deprecated
+@OSGiBeanProperties(
+	property =
+		{"model.class.name=com.liferay.document.library.kernel.model.DLFolder"}
+)
 public class DLFolderPermission implements BaseModelPermissionChecker {
 
 	public static void check(
@@ -39,18 +40,16 @@ public class DLFolderPermission implements BaseModelPermissionChecker {
 			String actionId)
 		throws PortalException {
 
-		if (!contains(permissionChecker, dlFolder, actionId)) {
-			throw new PrincipalException();
-		}
+		_dlFolderModelResourcePermission.check(
+			permissionChecker, dlFolder, actionId);
 	}
 
 	public static void check(
 			PermissionChecker permissionChecker, Folder folder, String actionId)
 		throws PortalException {
 
-		if (!folder.containsPermission(permissionChecker, actionId)) {
-			throw new PrincipalException();
-		}
+		_folderModelResourcePermission.check(
+			permissionChecker, folder, actionId);
 	}
 
 	public static void check(
@@ -58,9 +57,9 @@ public class DLFolderPermission implements BaseModelPermissionChecker {
 			String actionId)
 		throws PortalException {
 
-		if (!contains(permissionChecker, groupId, folderId, actionId)) {
-			throw new PrincipalException();
-		}
+		ModelResourcePermissionHelper.check(
+			_folderModelResourcePermission, permissionChecker, groupId,
+			folderId, actionId);
 	}
 
 	public static boolean contains(
@@ -68,56 +67,16 @@ public class DLFolderPermission implements BaseModelPermissionChecker {
 			String actionId)
 		throws PortalException {
 
-		if (actionId.equals(ActionKeys.ADD_FOLDER)) {
-			actionId = ActionKeys.ADD_SUBFOLDER;
-		}
-
-		Boolean hasPermission = StagingPermissionUtil.hasPermission(
-			permissionChecker, dlFolder.getGroupId(), DLFolder.class.getName(),
-			dlFolder.getFolderId(), PortletKeys.DOCUMENT_LIBRARY, actionId);
-
-		if (hasPermission != null) {
-			return hasPermission.booleanValue();
-		}
-
-		if (actionId.equals(ActionKeys.VIEW) &&
-			PropsValues.PERMISSIONS_VIEW_DYNAMIC_INHERITANCE) {
-
-			try {
-				long dlFolderId = dlFolder.getFolderId();
-
-				while (dlFolderId !=
-							DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
-
-					dlFolder = DLFolderLocalServiceUtil.getFolder(dlFolderId);
-
-					if (!_hasPermission(
-							permissionChecker, dlFolder, actionId)) {
-
-						return false;
-					}
-
-					dlFolderId = dlFolder.getParentFolderId();
-				}
-			}
-			catch (NoSuchFolderException nsfe) {
-				if (!dlFolder.isInTrash()) {
-					throw nsfe;
-				}
-			}
-
-			return DLPermission.contains(
-				permissionChecker, dlFolder.getGroupId(), actionId);
-		}
-
-		return _hasPermission(permissionChecker, dlFolder, actionId);
+		return _dlFolderModelResourcePermission.contains(
+			permissionChecker, dlFolder, actionId);
 	}
 
 	public static boolean contains(
 			PermissionChecker permissionChecker, Folder folder, String actionId)
 		throws PortalException {
 
-		return folder.containsPermission(permissionChecker, actionId);
+		return _folderModelResourcePermission.contains(
+			permissionChecker, folder, actionId);
 	}
 
 	public static boolean contains(
@@ -125,24 +84,9 @@ public class DLFolderPermission implements BaseModelPermissionChecker {
 			String actionId)
 		throws PortalException {
 
-		if (folderId == DLFolderConstants.DEFAULT_PARENT_FOLDER_ID) {
-
-			// Prevent the propagation of checks for actions that are not
-			// supported at the application resource level. See LPS-24245.
-
-			if (actionId.equals(ActionKeys.ACCESS) ||
-				actionId.equals(ActionKeys.ADD_SUBFOLDER) ||
-				actionId.equals(ActionKeys.DELETE)) {
-
-				return false;
-			}
-
-			return DLPermission.contains(permissionChecker, groupId, actionId);
-		}
-
-		Folder folder = DLAppLocalServiceUtil.getFolder(folderId);
-
-		return folder.containsPermission(permissionChecker, actionId);
+		return ModelResourcePermissionHelper.contains(
+			_folderModelResourcePermission, permissionChecker, groupId,
+			folderId, actionId);
 	}
 
 	@Override
@@ -151,24 +95,22 @@ public class DLFolderPermission implements BaseModelPermissionChecker {
 			String actionId)
 		throws PortalException {
 
-		check(permissionChecker, groupId, primaryKey, actionId);
+		ModelResourcePermissionHelper.check(
+			_folderModelResourcePermission, permissionChecker, groupId,
+			primaryKey, actionId);
 	}
 
-	private static boolean _hasPermission(
-		PermissionChecker permissionChecker, DLFolder dlFolder,
-		String actionId) {
-
-		if (permissionChecker.hasOwnerPermission(
-				dlFolder.getCompanyId(), DLFolder.class.getName(),
-				dlFolder.getFolderId(), dlFolder.getUserId(), actionId) ||
-			permissionChecker.hasPermission(
-				dlFolder.getGroupId(), DLFolder.class.getName(),
-				dlFolder.getFolderId(), actionId)) {
-
-			return true;
-		}
-
-		return false;
-	}
+	private static volatile ModelResourcePermission<DLFolder>
+		_dlFolderModelResourcePermission =
+			ServiceProxyFactory.newServiceTrackedInstance(
+				ModelResourcePermission.class, DLFolderPermission.class,
+				"_dlFolderModelResourcePermission",
+				"(model.class.name=" + DLFolder.class.getName() + ")", true);
+	private static volatile ModelResourcePermission<Folder>
+		_folderModelResourcePermission =
+			ServiceProxyFactory.newServiceTrackedInstance(
+				ModelResourcePermission.class, DLFolderPermission.class,
+				"_folderModelResourcePermission",
+				"(model.class.name=" + Folder.class.getName() + ")", true);
 
 }

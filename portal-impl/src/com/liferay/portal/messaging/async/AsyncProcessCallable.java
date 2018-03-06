@@ -14,7 +14,7 @@
 
 package com.liferay.portal.messaging.async;
 
-import com.liferay.portal.bean.IdentifiableBeanInvokerUtil;
+import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiServiceInvokerUtil;
 import com.liferay.portal.kernel.process.ProcessCallable;
 import com.liferay.portal.kernel.util.MethodHandler;
 
@@ -28,11 +28,14 @@ import org.aopalliance.intercept.MethodInvocation;
 
 /**
  * @author Shuyang Zhou
+ * @deprecated As of 7.0.0, moved to {@link com.liferay.portal.internal.messaging.async.AsyncProcessCallable}
  */
+@Deprecated
 public class AsyncProcessCallable
 	implements Externalizable, ProcessCallable<Serializable> {
 
 	public AsyncProcessCallable() {
+		this(null);
 	}
 
 	public AsyncProcessCallable(MethodInvocation methodInvocation) {
@@ -75,14 +78,16 @@ public class AsyncProcessCallable
 		MethodHandler methodHandler = _methodHandler;
 
 		if (methodHandler == null) {
-			methodHandler = IdentifiableBeanInvokerUtil.createMethodHandler(
-				_methodInvocation);
+			methodHandler =
+				IdentifiableOSGiServiceInvokerUtil.createMethodHandler(
+					_methodInvocation.getThis(), _methodInvocation.getMethod(),
+					_methodInvocation.getArguments());
 		}
 
 		objectOutput.writeObject(methodHandler);
 	}
 
 	private MethodHandler _methodHandler;
-	private MethodInvocation _methodInvocation;
+	private final MethodInvocation _methodInvocation;
 
 }

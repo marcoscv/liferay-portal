@@ -14,19 +14,23 @@
 
 package com.liferay.util;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanPropertiesUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * @author Brian Wing Shun Chan
+ * @author     Brian Wing Shun Chan
+ * @deprecated As of 7.0.0, moved to {@link
+ *             com.liferay.portal.kernel.util.Autocomplete}
  */
+@Deprecated
 public class Autocomplete {
 
 	public static JSONArray arrayToJson(String[] array, int max) {
@@ -44,12 +48,12 @@ public class Autocomplete {
 			String text = array[i][0];
 			String value = array[i][1];
 
-			JSONObject jsonObj = JSONFactoryUtil.createJSONObject();
+			Map<String, String> map = new HashMap<>();
 
-			jsonObj.put("text", text);
-			jsonObj.put("value", value);
+			map.put("text", text);
+			map.put("value", value);
 
-			jsonArray.put(jsonObj);
+			jsonArray.put(map);
 		}
 
 		return jsonArray;

@@ -14,6 +14,8 @@
 
 package com.liferay.portal.poller;
 
+import com.liferay.petra.encryptor.Encryptor;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
@@ -22,20 +24,19 @@ import com.liferay.portal.kernel.messaging.DestinationNames;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.messaging.MessageBusUtil;
 import com.liferay.portal.kernel.messaging.MessageListener;
+import com.liferay.portal.kernel.model.BrowserTracker;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.poller.PollerHeader;
 import com.liferay.portal.kernel.poller.PollerProcessor;
 import com.liferay.portal.kernel.poller.PollerRequest;
 import com.liferay.portal.kernel.poller.PollerResponse;
+import com.liferay.portal.kernel.service.BrowserTrackerLocalServiceUtil;
+import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
-import com.liferay.portal.model.BrowserTracker;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.service.BrowserTrackerLocalServiceUtil;
-import com.liferay.portal.service.CompanyLocalServiceUtil;
-import com.liferay.util.Encryptor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -84,8 +85,7 @@ public class PollerRequestHandlerImpl
 		if (!isValidPollerHeader(pollerHeader)) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
-					"Invalid poller header for request " +
-						pollerRequestString);
+					"Invalid poller header for request " + pollerRequestString);
 			}
 
 			return null;
@@ -184,13 +184,13 @@ public class PollerRequestHandlerImpl
 
 		Map<String, Boolean> portletIdsMap = pollerHeader.getPortletIdsMap();
 
-		List<PollerRequest> pollerRequests = new ArrayList<PollerRequest>(
+		List<PollerRequest> pollerRequests = new ArrayList<>(
 			portletIdsMap.size());
 
 		Set<String> receiveRequestPortletIds = null;
 
 		if (receiveRequest) {
-			receiveRequestPortletIds = new HashSet<String>(
+			receiveRequestPortletIds = new HashSet<>(
 				(int)(pollerRequestChunks.length / 0.75) + 1);
 		}
 
@@ -241,7 +241,6 @@ public class PollerRequestHandlerImpl
 	}
 
 	protected JSONObject createPollerResponseHeader(PollerHeader pollerHeader) {
-
 		if (pollerHeader == null) {
 			return null;
 		}
@@ -267,8 +266,8 @@ public class PollerRequestHandlerImpl
 		JSONObject pollerResponseHeaderJSONObject =
 			JSONFactoryUtil.createJSONObject();
 
-		pollerResponseHeaderJSONObject.put("userId", pollerHeader.getUserId());
 		pollerResponseHeaderJSONObject.put("suspendPolling", suspendPolling);
+		pollerResponseHeaderJSONObject.put("userId", pollerHeader.getUserId());
 
 		return pollerResponseHeaderJSONObject;
 	}
@@ -277,6 +276,10 @@ public class PollerRequestHandlerImpl
 		PollerSession pollerSession, List<PollerRequest> pollerRequests) {
 
 		for (PollerRequest pollerRequest : pollerRequests) {
+			if (pollerRequest == null) {
+				continue;
+			}
+
 			String responseId = null;
 
 			if (pollerRequest.isReceiveRequest()) {
@@ -336,8 +339,9 @@ public class PollerRequestHandlerImpl
 		}
 		catch (Exception e) {
 			_log.error(
-				"Invalid credentials for company id " + companyId +
-					" and user id " + userIdString);
+				StringBundler.concat(
+					"Invalid credentials for company id ",
+					String.valueOf(companyId), " and user id ", userIdString));
 		}
 
 		return userId;
@@ -373,7 +377,7 @@ public class PollerRequestHandlerImpl
 		Map<String, Object> oldParameterMap =
 			(Map<String, Object>)pollerRequestChunk.get("data");
 
-		Map<String, String> newParameterMap = new HashMap<String, String>();
+		Map<String, String> newParameterMap = new HashMap<>();
 
 		if (oldParameterMap == null) {
 			return newParameterMap;
@@ -438,10 +442,9 @@ public class PollerRequestHandlerImpl
 
 	private static final String _PATH_RECEIVE = "/receive";
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		PollerRequestHandlerImpl.class);
 
-	private Map<String, PollerSession> _pollerSessions =
-		new HashMap<String, PollerSession>();
+	private final Map<String, PollerSession> _pollerSessions = new HashMap<>();
 
 }

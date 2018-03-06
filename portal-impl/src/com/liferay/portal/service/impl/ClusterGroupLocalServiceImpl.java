@@ -14,8 +14,8 @@
 
 package com.liferay.portal.service.impl;
 
+import com.liferay.portal.kernel.model.ClusterGroup;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.model.ClusterGroup;
 import com.liferay.portal.service.base.ClusterGroupLocalServiceBaseImpl;
 
 import java.util.List;
@@ -44,7 +44,6 @@ public class ClusterGroupLocalServiceImpl
 
 	@Override
 	public ClusterGroup addWholeClusterGroup(String name) {
-
 		long clusterGroupId = counterLocalService.increment();
 
 		ClusterGroup clusterGroup = clusterGroupPersistence.create(

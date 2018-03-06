@@ -28,6 +28,7 @@ import java.util.Map;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionContext;
 
 /**
  * @author Brian Wing Shun Chan
@@ -44,8 +45,10 @@ public class SharedSessionWrapper implements HttpSession {
 				_log.warn("Wrapped portal session is null");
 			}
 		}
+		else {
+			_portalSession = portalSession;
+		}
 
-		_portalSession = portalSession;
 		_portletSession = portletSession;
 	}
 
@@ -122,17 +125,25 @@ public class SharedSessionWrapper implements HttpSession {
 	 */
 	@Deprecated
 	@Override
-	public javax.servlet.http.HttpSessionContext getSessionContext() {
+	public HttpSessionContext getSessionContext() {
 		HttpSession session = getSessionDelegate();
 
 		return session.getSessionContext();
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public Object getValue(String name) {
 		return getAttribute(name);
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public String[] getValueNames() {
 		List<String> names = ListUtil.fromEnumeration(getAttributeNames());
@@ -154,6 +165,10 @@ public class SharedSessionWrapper implements HttpSession {
 		return session.isNew();
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public void putValue(String name, Object value) {
 		setAttribute(name, value);
@@ -166,6 +181,10 @@ public class SharedSessionWrapper implements HttpSession {
 		session.removeAttribute(name);
 	}
 
+	/**
+	 * @deprecated As of 7.0.0
+	 */
+	@Deprecated
 	@Override
 	public void removeValue(String name) {
 		removeAttribute(name);
@@ -220,19 +239,20 @@ public class SharedSessionWrapper implements HttpSession {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(SharedSessionWrapper.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		SharedSessionWrapper.class);
 
-	private static Map<String, String> _sharedSessionAttributesExcludes;
+	private static final Map<String, String> _sharedSessionAttributesExcludes;
 
 	static {
-		_sharedSessionAttributesExcludes = new HashMap<String, String>();
+		_sharedSessionAttributesExcludes = new HashMap<>();
 
 		for (String name : PropsValues.SESSION_SHARED_ATTRIBUTES_EXCLUDES) {
 			_sharedSessionAttributesExcludes.put(name, name);
 		}
 	}
 
-	private HttpSession _portalSession;
+	private final HttpSession _portalSession;
 	private HttpSession _portletSession;
 
 }

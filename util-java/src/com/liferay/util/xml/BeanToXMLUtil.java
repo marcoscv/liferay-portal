@@ -14,10 +14,11 @@
 
 package com.liferay.util.xml;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
+import com.liferay.petra.xml.DocUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.kernel.xml.Element;
@@ -32,8 +33,10 @@ import java.util.List;
 public class BeanToXMLUtil {
 
 	public static void addBean(Object obj, Element parentEl) {
+		Class<?> clazz = obj.getClass();
+
 		String classNameWithoutPackage = getClassNameWithoutPackage(
-			obj.getClass().getName());
+			clazz.getName());
 
 		Element el = parentEl.addElement(classNameWithoutPackage);
 
@@ -41,22 +44,24 @@ public class BeanToXMLUtil {
 	}
 
 	public static void addFields(Object obj, Element parentEl) {
-		Method[] methods = obj.getClass().getMethods();
+		Class<?> clazz = obj.getClass();
 
-		for (int i = 0; i < methods.length; i++) {
-			Method method = methods[i];
+		Method[] methods = clazz.getMethods();
 
-			if (method.getName().startsWith("get") &&
-				!method.getName().equals("getClass")) {
+		for (Method method : methods) {
+			String methodName = method.getName();
+
+			if (methodName.startsWith("get") &&
+				!methodName.equals("getClass")) {
 
 				String memberName = StringUtil.replace(
-					method.getName(), "get", StringPool.BLANK);
+					methodName, "get", StringPool.BLANK);
 
 				memberName = TextFormatter.format(memberName, TextFormatter.I);
 				memberName = TextFormatter.format(memberName, TextFormatter.K);
 
 				try {
-					Object returnValue = method.invoke(obj, new Object[] {});
+					Object returnValue = method.invoke(obj, new Object[0]);
 
 					if (returnValue instanceof List<?>) {
 						List<Object> list = (List<Object>)returnValue;
@@ -95,6 +100,6 @@ public class BeanToXMLUtil {
 		return classNameWithoutPackage;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(BeanToXMLUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(BeanToXMLUtil.class);
 
 }

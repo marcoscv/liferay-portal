@@ -14,6 +14,8 @@
 
 package com.liferay.portal.model.impl;
 
+import com.liferay.portal.kernel.model.ResourceAction;
+
 /**
  * Stores the actions a role has permission to perform on all resources of the
  * type within the group/company.
@@ -75,8 +77,21 @@ package com.liferay.portal.model.impl;
  * </p>
  *
  * @author Connor McKay
+ * @deprecated As of 7.0.0, with no direct replacement
  */
+@Deprecated
 public class ResourceTypePermissionImpl extends ResourceTypePermissionBaseImpl {
+
+	@Override
+	public boolean hasAction(ResourceAction resourceAction) {
+		if ((resourceAction != null) &&
+			((getActionIds() & resourceAction.getBitwiseValue()) != 0)) {
+
+			return true;
+		}
+
+		return false;
+	}
 
 	@Override
 	public boolean isCompanyScope() {

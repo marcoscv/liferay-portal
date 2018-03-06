@@ -14,11 +14,13 @@
 
 package com.liferay.portlet.social.model.impl;
 
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
+import aQute.bnd.annotation.ProviderType;
 
-import com.liferay.portlet.social.model.SocialActivitySet;
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.util.HashUtil;
+import com.liferay.portal.kernel.util.StringBundler;
+
+import com.liferay.social.kernel.model.SocialActivitySet;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -32,8 +34,33 @@ import java.io.ObjectOutput;
  * @see SocialActivitySet
  * @generated
  */
+@ProviderType
 public class SocialActivitySetCacheModel implements CacheModel<SocialActivitySet>,
 	Externalizable {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof SocialActivitySetCacheModel)) {
+			return false;
+		}
+
+		SocialActivitySetCacheModel socialActivitySetCacheModel = (SocialActivitySetCacheModel)obj;
+
+		if (activitySetId == socialActivitySetCacheModel.activitySetId) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return HashUtil.hash(0, activitySetId);
+	}
+
 	@Override
 	public String toString() {
 		StringBundler sb = new StringBundler(23);
@@ -80,7 +107,7 @@ public class SocialActivitySetCacheModel implements CacheModel<SocialActivitySet
 		socialActivitySetImpl.setType(type);
 
 		if (extraData == null) {
-			socialActivitySetImpl.setExtraData(StringPool.BLANK);
+			socialActivitySetImpl.setExtraData("");
 		}
 		else {
 			socialActivitySetImpl.setExtraData(extraData);
@@ -96,15 +123,24 @@ public class SocialActivitySetCacheModel implements CacheModel<SocialActivitySet
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		activitySetId = objectInput.readLong();
+
 		groupId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		userId = objectInput.readLong();
+
 		createDate = objectInput.readLong();
+
 		modifiedDate = objectInput.readLong();
+
 		classNameId = objectInput.readLong();
+
 		classPK = objectInput.readLong();
+
 		type = objectInput.readInt();
 		extraData = objectInput.readUTF();
+
 		activityCount = objectInput.readInt();
 	}
 
@@ -112,17 +148,25 @@ public class SocialActivitySetCacheModel implements CacheModel<SocialActivitySet
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(activitySetId);
+
 		objectOutput.writeLong(groupId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(userId);
+
 		objectOutput.writeLong(createDate);
+
 		objectOutput.writeLong(modifiedDate);
+
 		objectOutput.writeLong(classNameId);
+
 		objectOutput.writeLong(classPK);
+
 		objectOutput.writeInt(type);
 
 		if (extraData == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(extraData);

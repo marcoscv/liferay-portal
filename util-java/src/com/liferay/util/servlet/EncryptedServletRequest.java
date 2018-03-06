@@ -14,11 +14,11 @@
 
 package com.liferay.util.servlet;
 
+import com.liferay.petra.encryptor.Encryptor;
+import com.liferay.petra.encryptor.EncryptorException;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.util.Encryptor;
-import com.liferay.util.EncryptorException;
 
 import java.security.Key;
 
@@ -37,7 +37,7 @@ public class EncryptedServletRequest extends HttpServletRequestWrapper {
 	public EncryptedServletRequest(HttpServletRequest request, Key key) {
 		super(request);
 
-		_params = new HashMap<String, String[]>();
+		_params = new HashMap<>();
 		_key = key;
 
 		Map<String, String[]> parameters = request.getParameterMap();
@@ -83,7 +83,7 @@ public class EncryptedServletRequest extends HttpServletRequestWrapper {
 		return _params.get(name);
 	}
 
-	private Key _key;
-	private Map<String, String[]> _params;
+	private final Key _key;
+	private final Map<String, String[]> _params;
 
 }

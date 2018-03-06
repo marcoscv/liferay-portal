@@ -14,7 +14,7 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.webdav.WebDAVUtil;
 import com.liferay.portal.kernel.xml.Document;
@@ -26,15 +26,13 @@ import com.liferay.portal.kernel.xml.SAXReaderUtil;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 /**
  * @author Alexander Chow
  */
 public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
-
-	public WebDAVPropsImpl() {
-	}
 
 	@Override
 	public void addProp(String name, String prefix, String uri)
@@ -59,7 +57,9 @@ public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
 
 		Element root = _removeExisting(qname);
 
-		root.addElement(qname).addText(text);
+		Element element = root.addElement(qname);
+
+		element.addText(text);
 	}
 
 	@Override
@@ -76,7 +76,7 @@ public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
 
 	@Override
 	public Set<QName> getPropsSet() throws Exception {
-		Set<QName> propsSet = new HashSet<QName>();
+		Set<QName> propsSet = new HashSet<>();
 
 		Document doc = _getPropsDocument();
 
@@ -146,7 +146,9 @@ public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
 
 		Element root = doc.getRootElement();
 
-		Iterator<Element> itr = root.elements(qname).iterator();
+		List<Element> elementsList = root.elements(qname);
+
+		Iterator<Element> itr = elementsList.iterator();
 
 		while (itr.hasNext()) {
 			Element el = itr.next();
@@ -159,6 +161,6 @@ public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
 
 	private static final String _PROPS = "<properties />";
 
-	private Document _document = null;
+	private Document _document;
 
 }

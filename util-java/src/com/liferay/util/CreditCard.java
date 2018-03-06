@@ -14,11 +14,11 @@
 
 package com.liferay.util;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.CalendarUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TimeZoneUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -26,8 +26,11 @@ import com.liferay.portal.kernel.util.Validator;
 import java.util.Calendar;
 
 /**
- * @author Brian Wing Shun Chan
+ * @author     Brian Wing Shun Chan
+ * @deprecated As of 7.0.0, replaced by {@link
+ *             com.liferay.shopping.util.CreditCard)}
  */
+@Deprecated
 public class CreditCard {
 
 	public static String hide(String number) {
@@ -87,10 +90,8 @@ public class CreditCard {
 			}
 		}
 		else if (type.equals("mastercard")) {
-			if (!number.startsWith("51") &&
-				!number.startsWith("52") &&
-				!number.startsWith("53") &&
-				!number.startsWith("54") &&
+			if (!number.startsWith("51") && !number.startsWith("52") &&
+				!number.startsWith("53") && !number.startsWith("54") &&
 				!number.startsWith("55")) {
 
 				return false;
@@ -110,10 +111,8 @@ public class CreditCard {
 			}
 		}
 		else if (type.equals("amex")) {
-			if (!number.startsWith("34") &&
-				!number.startsWith("35") &&
-				!number.startsWith("36") &&
-				!number.startsWith("37")) {
+			if (!number.startsWith("34") && !number.startsWith("35") &&
+				!number.startsWith("36") && !number.startsWith("37")) {
 
 				return false;
 			}

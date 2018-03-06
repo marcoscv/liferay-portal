@@ -14,7 +14,7 @@
 
 package com.liferay.portal.security.lang;
 
-import com.liferay.portal.kernel.util.AutoResetThreadLocal;
+import com.liferay.petra.lang.CentralizedThreadLocal;
 
 /**
  * @author     Brian Wing Shun Chan
@@ -32,8 +32,9 @@ public class PortalSecurityManagerThreadLocal {
 		_enabled.set(enabled);
 	}
 
-	private static ThreadLocal<Boolean> _enabled =
-		new AutoResetThreadLocal<Boolean>(
-			PortalSecurityManagerThreadLocal.class + "._enabled", true);
+	private static final ThreadLocal<Boolean> _enabled =
+		new CentralizedThreadLocal<>(
+			PortalSecurityManagerThreadLocal.class + "._enabled",
+			() -> Boolean.TRUE);
 
 }

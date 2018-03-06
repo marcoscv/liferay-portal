@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.Region;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.Region;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -32,8 +34,36 @@ import java.io.ObjectOutput;
  * @see Region
  * @generated
  */
+@ProviderType
 public class RegionCacheModel implements CacheModel<Region>, Externalizable,
 	MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof RegionCacheModel)) {
+			return false;
+		}
+
+		RegionCacheModel regionCacheModel = (RegionCacheModel)obj;
+
+		if ((regionId == regionCacheModel.regionId) &&
+				(mvccVersion == regionCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, regionId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -74,14 +104,14 @@ public class RegionCacheModel implements CacheModel<Region>, Externalizable,
 		regionImpl.setCountryId(countryId);
 
 		if (regionCode == null) {
-			regionImpl.setRegionCode(StringPool.BLANK);
+			regionImpl.setRegionCode("");
 		}
 		else {
 			regionImpl.setRegionCode(regionCode);
 		}
 
 		if (name == null) {
-			regionImpl.setName(StringPool.BLANK);
+			regionImpl.setName("");
 		}
 		else {
 			regionImpl.setName(name);
@@ -97,10 +127,13 @@ public class RegionCacheModel implements CacheModel<Region>, Externalizable,
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
+
 		regionId = objectInput.readLong();
+
 		countryId = objectInput.readLong();
 		regionCode = objectInput.readUTF();
 		name = objectInput.readUTF();
+
 		active = objectInput.readBoolean();
 	}
 
@@ -108,18 +141,20 @@ public class RegionCacheModel implements CacheModel<Region>, Externalizable,
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
 		objectOutput.writeLong(regionId);
+
 		objectOutput.writeLong(countryId);
 
 		if (regionCode == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(regionCode);
 		}
 
 		if (name == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(name);

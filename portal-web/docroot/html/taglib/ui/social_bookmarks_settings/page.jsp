@@ -17,9 +17,7 @@
 <%@ include file="/html/taglib/init.jsp" %>
 
 <%
-String displayPosition = (String)request.getAttribute("liferay-ui:social-bookmarks-settings:displayPosition");
 String displayStyle = (String)request.getAttribute("liferay-ui:social-bookmarks-settings:displayStyle");
-boolean enabled = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:social-bookmarks-settings:enabled"));
 String types = (String)request.getAttribute("liferay-ui:social-bookmarks-settings:types");
 
 String[] displayStyles = PropsUtil.getArray(PropsKeys.SOCIAL_BOOKMARK_DISPLAY_STYLES);
@@ -27,51 +25,83 @@ String[] displayStyles = PropsUtil.getArray(PropsKeys.SOCIAL_BOOKMARK_DISPLAY_ST
 if (Validator.isNull(displayStyle)) {
 	displayStyle = displayStyles[0];
 }
+
+// Left list
+
+List leftList = new ArrayList();
+
+String[] typesArray = StringUtil.split(types);
+
+for (int i = 0; i < typesArray.length; i++) {
+	String type = typesArray[i];
+
+	leftList.add(new KeyValuePair(type, LanguageUtil.get(request, type)));
+}
+
+// Right list
+
+List rightList = new ArrayList();
+
+Arrays.sort(typesArray);
+
+String[] allTypes = PropsUtil.getArray(PropsKeys.SOCIAL_BOOKMARK_TYPES);
+
+for (String curType : allTypes) {
+	if (Arrays.binarySearch(typesArray, curType) < 0) {
+		rightList.add(new KeyValuePair(curType, LanguageUtil.get(request, curType)));
+	}
+}
+
+rightList = ListUtil.sort(rightList, new KeyValuePairComparator(false, true));
 %>
 
-<aui:fieldset>
-	<aui:input name="preferences--enableSocialBookmarks--" type="checkbox" value="<%= enabled %>" />
+<aui:input name="preferences--socialBookmarksTypes--" type="hidden" value="<%= types %>" />
 
-	<div class="social-boomarks-options" id="<portlet:namespace />socialBookmarksOptions">
-		<aui:select label="display-style" name="preferences--socialBookmarksDisplayStyle--">
+<liferay-ui:input-move-boxes
+	leftBoxName="currentTypes"
+	leftList="<%= leftList %>"
+	leftReorder="<%= Boolean.TRUE.toString() %>"
+	leftTitle="current"
+	rightBoxName="availableTypes"
+	rightList="<%= rightList %>"
+	rightTitle="available"
+/>
 
-			<%
-			for (String curDisplayStyle : PropsUtil.getArray(PropsKeys.SOCIAL_BOOKMARK_DISPLAY_STYLES)) {
-			%>
+<h5>
+	<liferay-ui:message key="display-style" />
+</h5>
 
-			<aui:option label="<%= curDisplayStyle %>" selected="<%= displayStyle.equals(curDisplayStyle) %>" />
+<div class="form-group" id="<portlet:namespace />typesOptions">
 
-			<%
-			}
-			%>
+	<%
+	for (String curDisplayStyle : PropsUtil.getArray(PropsKeys.SOCIAL_BOOKMARK_DISPLAY_STYLES)) {
+	%>
 
-		</aui:select>
+		<aui:input checked="<%= displayStyle.equals(curDisplayStyle) %>" label="<%= curDisplayStyle %>" name="preferences--socialBookmarksDisplayStyle--" type="radio" value="<%= curDisplayStyle %>" />
 
-		<aui:select label="display-position" name="preferences--socialBookmarksDisplayPosition--" value="<%= displayPosition %>">
-			<aui:option label="top" />
-			<aui:option label="bottom" />
-		</aui:select>
+	<%
+	}
+	%>
 
-		<c:if test="<%= Validator.isNotNull(types) %>">
-			<aui:field-wrapper label="social-bookmarks">
+</div>
 
-				<%
-				String[] typesArray = StringUtil.split(types);
+<aui:script sandbox="<%= true %>">
+	var Util = Liferay.Util;
 
-				for (String type : PropsUtil.getArray(PropsKeys.SOCIAL_BOOKMARK_TYPES)) {
-				%>
+	var socialBookmarksTypes = AUI.$('#<portlet:namespace />socialBookmarksTypes');
+	var currentTypes = AUI.$('#<portlet:namespace />currentTypes');
 
-					<aui:input checked="<%= ArrayUtil.contains(typesArray, type) %>" id='<%= "socialBookmarksTypes" + type %>' ignoreRequestValue="<%= true %>" label="<%= type %>" name="preferences--socialBookmarksTypes--" type="checkbox" value="<%= type %>" />
+	Liferay.after(
+		'inputmoveboxes:moveItem',
+		function(event) {
+			socialBookmarksTypes.val(Util.listSelect(currentTypes));
+		}
+	);
 
-				<%
-				}
-				%>
-
-			</aui:field-wrapper>
-		</c:if>
-	</div>
-</aui:fieldset>
-
-<aui:script use="aui-base">
-	Liferay.Util.toggleBoxes('<portlet:namespace />enableSocialBookmarks','<portlet:namespace />socialBookmarksOptions');
+	Liferay.after(
+		'inputmoveboxes:orderItem',
+		function(event) {
+			socialBookmarksTypes.val(Util.listSelect(currentTypes));
+		}
+	);
 </aui:script>

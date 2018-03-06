@@ -32,6 +32,14 @@ public class LiferayLoggerAdapter
 
 	public LiferayLoggerAdapter(Log log) {
 		_log = log;
+
+		_log.setLogWrapperClassName(LiferayLoggerAdapter.class.getName());
+	}
+
+	public LiferayLoggerAdapter(Log log, String name) {
+		this(log);
+
+		this.name = name;
 	}
 
 	@Override
@@ -196,34 +204,20 @@ public class LiferayLoggerAdapter
 		FormattingTuple formattingTuple = MessageFormatter.arrayFormat(
 			message, arguments);
 
-		switch (level) {
-			case LocationAwareLogger.DEBUG_INT:
-				_log.debug(formattingTuple.getMessage(), t);
-
-				break;
-
-			case LocationAwareLogger.ERROR_INT:
-				_log.error(formattingTuple.getMessage(), t);
-
-				break;
-
-			case LocationAwareLogger.INFO_INT:
-				_log.info(formattingTuple.getMessage(), t);
-
-				break;
-
-			case LocationAwareLogger.TRACE_INT:
-				_log.trace(formattingTuple.getMessage(), t);
-
-				break;
-
-			case LocationAwareLogger.WARN_INT:
-				_log.warn(formattingTuple.getMessage(), t);
-
-				break;
-
-			default:
-				_log.info(formattingTuple.getMessage(), t);
+		if (level == LocationAwareLogger.DEBUG_INT) {
+			_log.debug(formattingTuple.getMessage(), t);
+		}
+		else if (level == LocationAwareLogger.ERROR_INT) {
+			_log.error(formattingTuple.getMessage(), t);
+		}
+		else if (level == LocationAwareLogger.TRACE_INT) {
+			_log.trace(formattingTuple.getMessage(), t);
+		}
+		else if (level == LocationAwareLogger.WARN_INT) {
+			_log.warn(formattingTuple.getMessage(), t);
+		}
+		else {
+			_log.info(formattingTuple.getMessage(), t);
 		}
 	}
 
@@ -313,6 +307,6 @@ public class LiferayLoggerAdapter
 		_log.warn(message, t);
 	}
 
-	private transient Log _log;
+	private final transient Log _log;
 
 }

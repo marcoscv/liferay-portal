@@ -14,8 +14,8 @@
 
 package com.liferay.portal.template;
 
+import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.portal.kernel.template.TemplateResource;
-import com.liferay.portal.kernel.util.InitialThreadLocal;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,11 +41,9 @@ public class TemplateResourceThreadLocal {
 		templateResources.put(templateType, templateResource);
 	}
 
-	private static ThreadLocal<Map<String, TemplateResource>>
-		_templateResources =
-			new InitialThreadLocal<Map<String, TemplateResource>>(
-				TemplateResourceThreadLocal.class.getName() +
-					"._templateResources",
-				new HashMap<String, TemplateResource>());
+	private static final ThreadLocal<Map<String, TemplateResource>>
+		_templateResources = new CentralizedThreadLocal<>(
+			TemplateResourceThreadLocal.class.getName() + "._templateResources",
+			HashMap::new, false);
 
 }
