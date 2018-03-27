@@ -14,29 +14,39 @@
 
 package com.liferay.portal.verify;
 
+import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.portal.kernel.dao.db.BaseDBProcess;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.ReleaseConstants;
+import com.liferay.portal.kernel.util.ClassLoaderUtil;
+import com.liferay.portal.kernel.util.ClassUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.model.ReleaseConstants;
-import com.liferay.portal.util.ClassLoaderUtil;
+import com.liferay.portal.util.PropsValues;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * This abstract class should be extended for startup processes that verify the
  * integrity of the database. They can be added as part of
- * <code>com.liferay.portal.verify.VerifyProcessSuite</code> or be executed
- * independently by being set in the portal.properties file. Each of these
- * processes should not cause any problems if run multiple times.
+ * <code>VerifyProcessSuite</code> or be executed independently by being set in
+ * the portal.properties file. Each of these processes should not cause any
+ * problems if run multiple times.
  *
  * @author Alexander Chow
  * @author Hugo Huijser
@@ -50,15 +60,31 @@ public abstract class VerifyProcess extends BaseDBProcess {
 	public static final int ONCE = 1;
 
 	public void verify() throws VerifyException {
-		try {
-			if (_log.isInfoEnabled()) {
-				_log.info("Verifying " + getClass().getName());
-			}
+		long start = System.currentTimeMillis();
+
+		if (_log.isInfoEnabled()) {
+			_log.info("Verifying " + ClassUtil.getClassName(this));
+		}
+
+		try (Connection con = DataAccess.getUpgradeOptimizedConnection()) {
+			connection = con;
 
 			doVerify();
 		}
 		catch (Exception e) {
 			throw new VerifyException(e);
+		}
+		finally {
+			connection = null;
+
+			if (_log.isInfoEnabled()) {
+				_log.info(
+					StringBundler.concat(
+						"Completed verification process ",
+						ClassUtil.getClassName(this), " in ",
+						String.valueOf(System.currentTimeMillis() - start),
+						"ms"));
+			}
 		}
 	}
 
@@ -69,6 +95,36 @@ public abstract class VerifyProcess extends BaseDBProcess {
 	protected void doVerify() throws Exception {
 	}
 
+	protected void doVerify(Collection<? extends Callable<Void>> callables)
+		throws Exception {
+
+		try {
+			if ((callables.size() <
+					PropsValues.VERIFY_PROCESS_CONCURRENCY_THRESHOLD) &&
+				!isForceConcurrent(callables)) {
+
+				UnsafeConsumer.accept(callables, Callable<Void>::call);
+			}
+			else {
+				ExecutorService executorService = Executors.newFixedThreadPool(
+					callables.size());
+
+				List<Future<Void>> futures = executorService.invokeAll(
+					callables);
+
+				executorService.shutdown();
+
+				UnsafeConsumer.accept(futures, Future::get);
+			}
+		}
+		catch (Throwable throwable) {
+			Class<?> clazz = getClass();
+
+			throw new Exception(
+				"Verification error: " + clazz.getName(), throwable);
+		}
+	}
+
 	/**
 	 * @return the portal build number before {@link
 	 *         com.liferay.portal.tools.DBUpgrader} has a chance to update it to
@@ -76,27 +132,17 @@ public abstract class VerifyProcess extends BaseDBProcess {
 	 *         com.liferay.portal.kernel.util.ReleaseInfo#getBuildNumber}
 	 */
 	protected int getBuildNumber() throws Exception {
-		Connection con = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-
-		try {
-			con = DataAccess.getUpgradeOptimizedConnection();
-
-			ps = con.prepareStatement(
-				"select buildNumber from Release_ where servletContextName " +
-					"= ?");
+		try (PreparedStatement ps = connection.prepareStatement(
+				"select buildNumber from Release_ where servletContextName = " +
+					"?")) {
 
 			ps.setString(1, ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
 
-			rs = ps.executeQuery();
+			try (ResultSet rs = ps.executeQuery()) {
+				rs.next();
 
-			rs.next();
-
-			return rs.getInt(1);
-		}
-		finally {
-			DataAccess.cleanUp(con, ps, rs);
+				return rs.getInt(1);
+			}
 		}
 	}
 
@@ -113,7 +159,7 @@ public abstract class VerifyProcess extends BaseDBProcess {
 
 		Matcher matcher = _createTablePattern.matcher(sql);
 
-		Set<String> tableNames = new HashSet<String>();
+		Set<String> tableNames = new HashSet<>();
 
 		while (matcher.find()) {
 			String match = matcher.group(1);
@@ -126,15 +172,21 @@ public abstract class VerifyProcess extends BaseDBProcess {
 		return tableNames;
 	}
 
+	protected boolean isForceConcurrent(
+		Collection<? extends Callable<Void>> callables) {
+
+		return false;
+	}
+
 	protected boolean isPortalTableName(String tableName) throws Exception {
 		Set<String> portalTableNames = getPortalTableNames();
 
 		return portalTableNames.contains(StringUtil.toLowerCase(tableName));
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(VerifyProcess.class);
+	private static final Log _log = LogFactoryUtil.getLog(VerifyProcess.class);
 
-	private Pattern _createTablePattern = Pattern.compile(
+	private final Pattern _createTablePattern = Pattern.compile(
 		"create table (\\S*) \\(");
 	private Set<String> _portalTableNames;
 

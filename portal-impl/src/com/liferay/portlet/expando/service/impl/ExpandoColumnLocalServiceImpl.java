@@ -14,18 +14,18 @@
 
 package com.liferay.portlet.expando.service.impl;
 
+import com.liferay.expando.kernel.exception.ColumnNameException;
+import com.liferay.expando.kernel.exception.ColumnTypeException;
+import com.liferay.expando.kernel.exception.DuplicateColumnNameException;
+import com.liferay.expando.kernel.model.ExpandoColumn;
+import com.liferay.expando.kernel.model.ExpandoColumnConstants;
+import com.liferay.expando.kernel.model.ExpandoTable;
+import com.liferay.expando.kernel.model.ExpandoTableConstants;
+import com.liferay.expando.kernel.model.ExpandoValue;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portlet.expando.ColumnNameException;
-import com.liferay.portlet.expando.ColumnTypeException;
-import com.liferay.portlet.expando.DuplicateColumnNameException;
-import com.liferay.portlet.expando.model.ExpandoColumn;
-import com.liferay.portlet.expando.model.ExpandoColumnConstants;
-import com.liferay.portlet.expando.model.ExpandoTable;
-import com.liferay.portlet.expando.model.ExpandoTableConstants;
-import com.liferay.portlet.expando.model.ExpandoValue;
 import com.liferay.portlet.expando.model.impl.ExpandoValueImpl;
 import com.liferay.portlet.expando.service.base.ExpandoColumnLocalServiceBaseImpl;
 
@@ -185,7 +185,6 @@ public class ExpandoColumnLocalServiceImpl
 
 	@Override
 	public ExpandoColumn getColumn(long tableId, String name) {
-
 		return expandoColumnPersistence.fetchByT_N(tableId, name);
 	}
 
@@ -334,7 +333,6 @@ public class ExpandoColumnLocalServiceImpl
 
 	@Override
 	public int getDefaultTableColumnsCount(long companyId, long classNameId) {
-
 		ExpandoTable table = expandoTablePersistence.fetchByC_C_N(
 			companyId, classNameId, ExpandoTableConstants.DEFAULT_TABLE_NAME);
 
@@ -347,7 +345,6 @@ public class ExpandoColumnLocalServiceImpl
 
 	@Override
 	public int getDefaultTableColumnsCount(long companyId, String className) {
-
 		long classNameId = classNameLocalService.getClassNameId(className);
 
 		return getColumnsCount(
@@ -402,7 +399,7 @@ public class ExpandoColumnLocalServiceImpl
 		throws PortalException {
 
 		if (Validator.isNull(name)) {
-			throw new ColumnNameException();
+			throw new ColumnNameException("Name is null");
 		}
 
 		ExpandoColumn column = expandoColumnPersistence.fetchByT_N(
@@ -430,6 +427,7 @@ public class ExpandoColumnLocalServiceImpl
 			(type != ExpandoColumnConstants.DOUBLE_ARRAY) &&
 			(type != ExpandoColumnConstants.FLOAT) &&
 			(type != ExpandoColumnConstants.FLOAT_ARRAY) &&
+			(type != ExpandoColumnConstants.GEOLOCATION) &&
 			(type != ExpandoColumnConstants.INTEGER) &&
 			(type != ExpandoColumnConstants.INTEGER_ARRAY) &&
 			(type != ExpandoColumnConstants.LONG) &&
@@ -443,7 +441,7 @@ public class ExpandoColumnLocalServiceImpl
 			(type != ExpandoColumnConstants.STRING_ARRAY_LOCALIZED) &&
 			(type != ExpandoColumnConstants.STRING_LOCALIZED)) {
 
-			throw new ColumnTypeException();
+			throw new ColumnTypeException("Invalid type " + type);
 		}
 
 		ExpandoValue value = new ExpandoValueImpl();

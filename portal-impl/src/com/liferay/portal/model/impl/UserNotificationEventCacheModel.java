@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.UserNotificationEvent;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.UserNotificationEvent;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -32,8 +34,36 @@ import java.io.ObjectOutput;
  * @see UserNotificationEvent
  * @generated
  */
+@ProviderType
 public class UserNotificationEventCacheModel implements CacheModel<UserNotificationEvent>,
 	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof UserNotificationEventCacheModel)) {
+			return false;
+		}
+
+		UserNotificationEventCacheModel userNotificationEventCacheModel = (UserNotificationEventCacheModel)obj;
+
+		if ((userNotificationEventId == userNotificationEventCacheModel.userNotificationEventId) &&
+				(mvccVersion == userNotificationEventCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, userNotificationEventId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -86,7 +116,7 @@ public class UserNotificationEventCacheModel implements CacheModel<UserNotificat
 		userNotificationEventImpl.setMvccVersion(mvccVersion);
 
 		if (uuid == null) {
-			userNotificationEventImpl.setUuid(StringPool.BLANK);
+			userNotificationEventImpl.setUuid("");
 		}
 		else {
 			userNotificationEventImpl.setUuid(uuid);
@@ -97,7 +127,7 @@ public class UserNotificationEventCacheModel implements CacheModel<UserNotificat
 		userNotificationEventImpl.setUserId(userId);
 
 		if (type == null) {
-			userNotificationEventImpl.setType(StringPool.BLANK);
+			userNotificationEventImpl.setType("");
 		}
 		else {
 			userNotificationEventImpl.setType(type);
@@ -109,7 +139,7 @@ public class UserNotificationEventCacheModel implements CacheModel<UserNotificat
 		userNotificationEventImpl.setDelivered(delivered);
 
 		if (payload == null) {
-			userNotificationEventImpl.setPayload(StringPool.BLANK);
+			userNotificationEventImpl.setPayload("");
 		}
 		else {
 			userNotificationEventImpl.setPayload(payload);
@@ -127,16 +157,25 @@ public class UserNotificationEventCacheModel implements CacheModel<UserNotificat
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
 		uuid = objectInput.readUTF();
+
 		userNotificationEventId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		userId = objectInput.readLong();
 		type = objectInput.readUTF();
+
 		timestamp = objectInput.readLong();
+
 		deliveryType = objectInput.readInt();
+
 		deliverBy = objectInput.readLong();
+
 		delivered = objectInput.readBoolean();
 		payload = objectInput.readUTF();
+
 		actionRequired = objectInput.readBoolean();
+
 		archived = objectInput.readBoolean();
 	}
 
@@ -146,36 +185,42 @@ public class UserNotificationEventCacheModel implements CacheModel<UserNotificat
 		objectOutput.writeLong(mvccVersion);
 
 		if (uuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(uuid);
 		}
 
 		objectOutput.writeLong(userNotificationEventId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(userId);
 
 		if (type == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(type);
 		}
 
 		objectOutput.writeLong(timestamp);
+
 		objectOutput.writeInt(deliveryType);
+
 		objectOutput.writeLong(deliverBy);
+
 		objectOutput.writeBoolean(delivered);
 
 		if (payload == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(payload);
 		}
 
 		objectOutput.writeBoolean(actionRequired);
+
 		objectOutput.writeBoolean(archived);
 	}
 

@@ -14,7 +14,8 @@
 
 package com.liferay.portlet;
 
-import com.liferay.portal.model.PortletApp;
+import com.liferay.portal.kernel.model.PortletApp;
+import com.liferay.portal.kernel.model.PortletFilter;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,25 +29,21 @@ import javax.portlet.filter.FilterConfig;
 public class FilterConfigFactory {
 
 	public static FilterConfig create(
-		com.liferay.portal.model.PortletFilter portletFilter,
-		PortletContext ctx) {
+		PortletFilter portletFilter, PortletContext ctx) {
 
 		return _instance._create(portletFilter, ctx);
 	}
 
-	public static void destroy(
-		com.liferay.portal.model.PortletFilter portletFilter) {
-
+	public static void destroy(PortletFilter portletFilter) {
 		_instance._destroy(portletFilter);
 	}
 
 	private FilterConfigFactory() {
-		_pool = new ConcurrentHashMap<String, Map<String, FilterConfig>>();
+		_pool = new ConcurrentHashMap<>();
 	}
 
 	private FilterConfig _create(
-		com.liferay.portal.model.PortletFilter portletFilter,
-		PortletContext ctx) {
+		PortletFilter portletFilter, PortletContext ctx) {
 
 		PortletApp portletApp = portletFilter.getPortletApp();
 
@@ -54,7 +51,7 @@ public class FilterConfigFactory {
 			portletApp.getServletContextName());
 
 		if (filterConfigs == null) {
-			filterConfigs = new ConcurrentHashMap<String, FilterConfig>();
+			filterConfigs = new ConcurrentHashMap<>();
 
 			_pool.put(portletApp.getServletContextName(), filterConfigs);
 		}
@@ -73,16 +70,15 @@ public class FilterConfigFactory {
 		return filterConfig;
 	}
 
-	private void _destroy(
-		com.liferay.portal.model.PortletFilter portletFilter) {
-
+	private void _destroy(PortletFilter portletFilter) {
 		PortletApp portletApp = portletFilter.getPortletApp();
 
 		_pool.remove(portletApp.getServletContextName());
 	}
 
-	private static FilterConfigFactory _instance = new FilterConfigFactory();
+	private static final FilterConfigFactory _instance =
+		new FilterConfigFactory();
 
-	private Map<String, Map<String, FilterConfig>> _pool;
+	private final Map<String, Map<String, FilterConfig>> _pool;
 
 }

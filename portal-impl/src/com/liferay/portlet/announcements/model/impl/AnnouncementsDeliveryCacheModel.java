@@ -14,11 +14,13 @@
 
 package com.liferay.portlet.announcements.model.impl;
 
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
+import aQute.bnd.annotation.ProviderType;
 
-import com.liferay.portlet.announcements.model.AnnouncementsDelivery;
+import com.liferay.announcements.kernel.model.AnnouncementsDelivery;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.util.HashUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -32,8 +34,33 @@ import java.io.ObjectOutput;
  * @see AnnouncementsDelivery
  * @generated
  */
+@ProviderType
 public class AnnouncementsDeliveryCacheModel implements CacheModel<AnnouncementsDelivery>,
 	Externalizable {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof AnnouncementsDeliveryCacheModel)) {
+			return false;
+		}
+
+		AnnouncementsDeliveryCacheModel announcementsDeliveryCacheModel = (AnnouncementsDeliveryCacheModel)obj;
+
+		if (deliveryId == announcementsDeliveryCacheModel.deliveryId) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return HashUtil.hash(0, deliveryId);
+	}
+
 	@Override
 	public String toString() {
 		StringBundler sb = new StringBundler(15);
@@ -66,7 +93,7 @@ public class AnnouncementsDeliveryCacheModel implements CacheModel<Announcements
 		announcementsDeliveryImpl.setUserId(userId);
 
 		if (type == null) {
-			announcementsDeliveryImpl.setType(StringPool.BLANK);
+			announcementsDeliveryImpl.setType("");
 		}
 		else {
 			announcementsDeliveryImpl.setType(type);
@@ -84,11 +111,16 @@ public class AnnouncementsDeliveryCacheModel implements CacheModel<Announcements
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		deliveryId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		userId = objectInput.readLong();
 		type = objectInput.readUTF();
+
 		email = objectInput.readBoolean();
+
 		sms = objectInput.readBoolean();
+
 		website = objectInput.readBoolean();
 	}
 
@@ -96,18 +128,22 @@ public class AnnouncementsDeliveryCacheModel implements CacheModel<Announcements
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(deliveryId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(userId);
 
 		if (type == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(type);
 		}
 
 		objectOutput.writeBoolean(email);
+
 		objectOutput.writeBoolean(sms);
+
 		objectOutput.writeBoolean(website);
 	}
 

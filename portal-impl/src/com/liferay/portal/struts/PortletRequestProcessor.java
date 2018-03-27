@@ -14,22 +14,22 @@
 
 package com.liferay.portal.struts;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.LiferayPortletConfig;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequestDispatcher;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.security.auth.PrincipalException;
-import com.liferay.portal.service.PortletLocalServiceUtil;
-import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.portal.util.WebKeys;
 
 import java.io.IOException;
 
@@ -63,6 +63,7 @@ import org.apache.struts.config.ActionConfig;
 import org.apache.struts.config.ForwardConfig;
 import org.apache.struts.config.ModuleConfig;
 import org.apache.struts.tiles.TilesRequestProcessor;
+import org.apache.struts.upload.MultipartRequestHandler;
 import org.apache.struts.util.MessageResources;
 
 /**
@@ -90,7 +91,7 @@ public class PortletRequestProcessor extends TilesRequestProcessor {
 			return portletReqProcessor;
 		}
 		catch (Exception e) {
-			_log.error(e);
+			_log.error("Unable to get a portlet request processor", e);
 
 			return new PortletRequestProcessor(servlet, moduleConfig);
 		}
@@ -156,7 +157,8 @@ public class PortletRequestProcessor extends TilesRequestProcessor {
 								currentURL);
 					}
 
-					throw new PrincipalException(currentURL);
+					throw new PrincipalException.MustBeInvokedUsingPost(
+						currentURL);
 				}
 			}
 
@@ -470,7 +472,9 @@ public class PortletRequestProcessor extends TilesRequestProcessor {
 			// Don't render a null path. This is useful if you're sending a file
 			// in an exclusive window state.
 
-			if (forward.getPath().equals(ActionConstants.COMMON_NULL)) {
+			String forwardPath = forward.getPath();
+
+			if (forwardPath.equals(ActionConstants.COMMON_NULL)) {
 				return;
 			}
 		}
@@ -560,14 +564,8 @@ public class PortletRequestProcessor extends TilesRequestProcessor {
 			if (!strutsPath.equals(portlet.getStrutsPath()) &&
 				!strutsPath.equals(portlet.getParentStrutsPath())) {
 
-				if (_log.isWarnEnabled()) {
-					_log.warn(
-						"The struts path " + strutsPath + " does not belong " +
-							"to portlet " + portlet.getPortletId() + ". " +
-								"Check the definition in liferay-portlet.xml");
-				}
-
-				throw new PrincipalException();
+				throw new PrincipalException.MustBePortletStrutsPath(
+					strutsPath, portlet.getPortletId());
 			}
 			else if (!portlet.isActive()) {
 				ForwardConfig forwardConfig = actionMapping.findForward(
@@ -620,8 +618,11 @@ public class PortletRequestProcessor extends TilesRequestProcessor {
 			return true;
 		}
 
-		if (actionForm.getMultipartRequestHandler() != null) {
-			actionForm.getMultipartRequestHandler().rollback();
+		MultipartRequestHandler multipartRequestHandler =
+			actionForm.getMultipartRequestHandler();
+
+		if (multipartRequestHandler != null) {
+			multipartRequestHandler.rollback();
 		}
 
 		String input = actionMapping.getInput();
@@ -648,7 +649,7 @@ public class PortletRequestProcessor extends TilesRequestProcessor {
 	private static final String _PATH_PORTAL_PORTLET_INACTIVE =
 		"/portal/portlet_inactive";
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		PortletRequestProcessor.class);
 
 }

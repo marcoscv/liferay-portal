@@ -40,13 +40,18 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class NamespaceServletRequest extends DynamicServletRequest {
 
-	static Set<String> reservedAttrs = new HashSet<String>();
+	public static Set<String> reservedAttrs = new HashSet<>();
 
 	static {
 		reservedAttrs.add(JavaConstants.JAVAX_PORTLET_CONFIG);
 		reservedAttrs.add(JavaConstants.JAVAX_PORTLET_PORTLET);
 		reservedAttrs.add(JavaConstants.JAVAX_PORTLET_REQUEST);
 		reservedAttrs.add(JavaConstants.JAVAX_PORTLET_RESPONSE);
+		reservedAttrs.add(JavaConstants.JAVAX_SERVLET_FORWARD_CONTEXT_PATH);
+		reservedAttrs.add(JavaConstants.JAVAX_SERVLET_FORWARD_PATH_INFO);
+		reservedAttrs.add(JavaConstants.JAVAX_SERVLET_FORWARD_QUERY_STRING);
+		reservedAttrs.add(JavaConstants.JAVAX_SERVLET_FORWARD_REQUEST_URI);
+		reservedAttrs.add(JavaConstants.JAVAX_SERVLET_FORWARD_SERVLET_PATH);
 		reservedAttrs.add(JavaConstants.JAVAX_SERVLET_INCLUDE_CONTEXT_PATH);
 		reservedAttrs.add(JavaConstants.JAVAX_SERVLET_INCLUDE_PATH_INFO);
 		reservedAttrs.add(JavaConstants.JAVAX_SERVLET_INCLUDE_QUERY_STRING);
@@ -86,7 +91,7 @@ public class NamespaceServletRequest extends DynamicServletRequest {
 
 	@Override
 	public Enumeration<String> getAttributeNames() {
-		List<String> names = new ArrayList<String>();
+		List<String> names = new ArrayList<>();
 
 		Enumeration<String> enu = super.getAttributeNames();
 
@@ -150,6 +155,14 @@ public class NamespaceServletRequest extends DynamicServletRequest {
 		}
 	}
 
+	@Override
+	protected void injectInto(DynamicServletRequest dynamicServletRequest) {
+		dynamicServletRequest.setRequest(
+			new NamespaceServletRequest(
+				(HttpServletRequest)getRequest(), _attrNamespace,
+				_paramNamespace));
+	}
+
 	private boolean _isReservedParam(String name) {
 		if (reservedAttrs.contains(name)) {
 			return true;
@@ -166,7 +179,7 @@ public class NamespaceServletRequest extends DynamicServletRequest {
 		return false;
 	}
 
-	private String _attrNamespace;
-	private String _paramNamespace;
+	private final String _attrNamespace;
+	private final String _paramNamespace;
 
 }

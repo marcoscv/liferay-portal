@@ -16,10 +16,13 @@ package com.liferay.portal.velocity;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.servlet.PortalWebResourceConstants;
+import com.liferay.portal.kernel.servlet.PortalWebResourcesUtil;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.template.TemplateConstants;
+import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.template.URLResourceParser;
-import com.liferay.portal.util.PortalUtil;
 
 import java.io.IOException;
 
@@ -52,8 +55,9 @@ public class VelocityServletResourceParser extends URLResourceParser {
 
 		if (servletContext == null) {
 			_log.error(
-				source + " is not valid because " + servletContextName +
-					" does not map to a servlet context");
+				StringBundler.concat(
+					source, " is not valid because ", servletContextName,
+					" does not map to a servlet context"));
 
 			return null;
 		}
@@ -63,8 +67,9 @@ public class VelocityServletResourceParser extends URLResourceParser {
 
 		if (_log.isDebugEnabled()) {
 			_log.debug(
-				name + " is associated with the servlet context " +
-					servletContextName + " " + servletContext);
+				StringBundler.concat(
+					name, " is associated with the servlet context ",
+					servletContextName, " ", String.valueOf(servletContext)));
 		}
 
 		URL url = servletContext.getResource(name);
@@ -74,17 +79,18 @@ public class VelocityServletResourceParser extends URLResourceParser {
 				_log.warn("The template " + name + " should be created");
 			}
 
-			ServletContext portalServletContext = ServletContextPool.get(
-				PortalUtil.getServletContextName());
+			ServletContext themeClassicServletContext =
+				PortalWebResourcesUtil.getServletContext(
+					PortalWebResourceConstants.RESOURCE_TYPE_THEME_CLASSIC);
 
-			url = portalServletContext.getResource(
-				"/html/themes/_unstyled/templates/init_custom.vm");
+			url = themeClassicServletContext.getResource(
+				"/classic/templates/init_custom.vm");
 		}
 
 		return url;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		VelocityServletResourceParser.class);
 
 }

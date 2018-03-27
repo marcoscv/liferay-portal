@@ -14,12 +14,12 @@
 
 package com.liferay.portal.servlet;
 
-import com.liferay.portal.kernel.concurrent.ConcurrentHashSet;
-import com.liferay.portal.kernel.servlet.ServletVersionDetector;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.util.PropsValues;
 
+import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionAttributeListener;
@@ -34,22 +34,20 @@ import javax.servlet.http.HttpSessionListener;
  * with shared session attributes being modified out of sequence.
  * </p>
  *
- * @author Michael C. Han
+ * @author     Michael C. Han
+ * @deprecated As of 7.0.0, with no direct replacement
  */
+@Deprecated
 public class SharedSessionAttributeListener
 	implements HttpSessionAttributeListener, HttpSessionListener {
 
 	public SharedSessionAttributeListener() {
-		if (ServletVersionDetector.is2_5()) {
-			return;
-		}
-
-		_sessionIds = new ConcurrentHashSet<String>();
+		_sessionIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	}
 
 	@Override
 	public void attributeAdded(HttpSessionBindingEvent event) {
-		if (PropsValues.SESSION_DISABLED || ServletVersionDetector.is2_5()) {
+		if (PropsValues.SESSION_DISABLED) {
 			return;
 		}
 
@@ -83,7 +81,7 @@ public class SharedSessionAttributeListener
 
 	@Override
 	public void attributeRemoved(HttpSessionBindingEvent event) {
-		if (PropsValues.SESSION_DISABLED || ServletVersionDetector.is2_5()) {
+		if (PropsValues.SESSION_DISABLED) {
 			return;
 		}
 
@@ -101,7 +99,7 @@ public class SharedSessionAttributeListener
 
 	@Override
 	public void attributeReplaced(HttpSessionBindingEvent event) {
-		if (PropsValues.SESSION_DISABLED || ServletVersionDetector.is2_5()) {
+		if (PropsValues.SESSION_DISABLED) {
 			return;
 		}
 
@@ -123,7 +121,7 @@ public class SharedSessionAttributeListener
 
 	@Override
 	public void sessionCreated(HttpSessionEvent event) {
-		if (PropsValues.SESSION_DISABLED || ServletVersionDetector.is2_5()) {
+		if (PropsValues.SESSION_DISABLED) {
 			return;
 		}
 
@@ -136,7 +134,7 @@ public class SharedSessionAttributeListener
 
 	@Override
 	public void sessionDestroyed(HttpSessionEvent event) {
-		if (PropsValues.SESSION_DISABLED || ServletVersionDetector.is2_5()) {
+		if (PropsValues.SESSION_DISABLED) {
 			return;
 		}
 
@@ -145,6 +143,6 @@ public class SharedSessionAttributeListener
 		_sessionIds.remove(session.getId());
 	}
 
-	private Set<String> _sessionIds;
+	private final Set<String> _sessionIds;
 
 }

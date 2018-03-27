@@ -19,10 +19,11 @@ import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.spring.util.FactoryBean;
 import com.liferay.portal.kernel.spring.util.SpringFactory;
 import com.liferay.portal.kernel.spring.util.SpringFactoryException;
+import com.liferay.portal.kernel.util.ClassLoaderUtil;
 import com.liferay.portal.kernel.util.InstanceFactory;
 import com.liferay.portal.kernel.util.SetUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.util.ClassLoaderUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,8 +47,8 @@ public class SpringFactoryImpl implements SpringFactory {
 		try {
 			return doNewBean(className, properties);
 		}
-		catch (SpringFactoryException se) {
-			throw se;
+		catch (SpringFactoryException sfe) {
+			throw sfe;
 		}
 		catch (Exception e) {
 			throw new SpringFactoryException(e);
@@ -55,7 +56,7 @@ public class SpringFactoryImpl implements SpringFactory {
 	}
 
 	public void setBeanDefinitions(Map<String, String> beanDefinitions) {
-		_beanDefinitions = new HashMap<String, Set<String>>();
+		_beanDefinitions = new HashMap<>();
 
 		for (Map.Entry<String, String> entry : beanDefinitions.entrySet()) {
 			String className = entry.getKey();
@@ -93,8 +94,9 @@ public class SpringFactoryImpl implements SpringFactory {
 
 				if (!allowedProperties.contains(name)) {
 					throw new SpringFactoryException(
-						"Undefined property " + name + " for class " +
-							className);
+						StringBundler.concat(
+							"Undefined property ", name, " for class ",
+							className));
 				}
 
 				Object value = entry.getValue();

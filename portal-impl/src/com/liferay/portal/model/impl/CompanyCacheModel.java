@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.MVCCModel;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -32,8 +34,36 @@ import java.io.ObjectOutput;
  * @see Company
  * @generated
  */
+@ProviderType
 public class CompanyCacheModel implements CacheModel<Company>, Externalizable,
 	MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof CompanyCacheModel)) {
+			return false;
+		}
+
+		CompanyCacheModel companyCacheModel = (CompanyCacheModel)obj;
+
+		if ((companyId == companyCacheModel.companyId) &&
+				(mvccVersion == companyCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, companyId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -84,28 +114,28 @@ public class CompanyCacheModel implements CacheModel<Company>, Externalizable,
 		companyImpl.setAccountId(accountId);
 
 		if (webId == null) {
-			companyImpl.setWebId(StringPool.BLANK);
+			companyImpl.setWebId("");
 		}
 		else {
 			companyImpl.setWebId(webId);
 		}
 
 		if (key == null) {
-			companyImpl.setKey(StringPool.BLANK);
+			companyImpl.setKey("");
 		}
 		else {
 			companyImpl.setKey(key);
 		}
 
 		if (mx == null) {
-			companyImpl.setMx(StringPool.BLANK);
+			companyImpl.setMx("");
 		}
 		else {
 			companyImpl.setMx(mx);
 		}
 
 		if (homeURL == null) {
-			companyImpl.setHomeURL(StringPool.BLANK);
+			companyImpl.setHomeURL("");
 		}
 		else {
 			companyImpl.setHomeURL(homeURL);
@@ -118,6 +148,8 @@ public class CompanyCacheModel implements CacheModel<Company>, Externalizable,
 
 		companyImpl.resetOriginalValues();
 
+		companyImpl.setCompanySecurityBag(_companySecurityBag);
+
 		companyImpl.setKeyObj(_keyObj);
 
 		companyImpl.setVirtualHostname(_virtualHostname);
@@ -129,17 +161,24 @@ public class CompanyCacheModel implements CacheModel<Company>, Externalizable,
 	public void readExternal(ObjectInput objectInput)
 		throws ClassNotFoundException, IOException {
 		mvccVersion = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		accountId = objectInput.readLong();
 		webId = objectInput.readUTF();
 		key = objectInput.readUTF();
 		mx = objectInput.readUTF();
 		homeURL = objectInput.readUTF();
+
 		logoId = objectInput.readLong();
+
 		system = objectInput.readBoolean();
+
 		maxUsers = objectInput.readInt();
+
 		active = objectInput.readBoolean();
 
+		_companySecurityBag = (CompanyImpl.CompanySecurityBag)objectInput.readObject();
 		_keyObj = (java.security.Key)objectInput.readObject();
 		_virtualHostname = (java.lang.String)objectInput.readObject();
 	}
@@ -148,42 +187,48 @@ public class CompanyCacheModel implements CacheModel<Company>, Externalizable,
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(accountId);
 
 		if (webId == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(webId);
 		}
 
 		if (key == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(key);
 		}
 
 		if (mx == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(mx);
 		}
 
 		if (homeURL == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(homeURL);
 		}
 
 		objectOutput.writeLong(logoId);
+
 		objectOutput.writeBoolean(system);
+
 		objectOutput.writeInt(maxUsers);
+
 		objectOutput.writeBoolean(active);
 
+		objectOutput.writeObject(_companySecurityBag);
 		objectOutput.writeObject(_keyObj);
 		objectOutput.writeObject(_virtualHostname);
 	}
@@ -199,6 +244,7 @@ public class CompanyCacheModel implements CacheModel<Company>, Externalizable,
 	public boolean system;
 	public int maxUsers;
 	public boolean active;
+	public CompanyImpl.CompanySecurityBag _companySecurityBag;
 	public java.security.Key _keyObj;
 	public java.lang.String _virtualHostname;
 }

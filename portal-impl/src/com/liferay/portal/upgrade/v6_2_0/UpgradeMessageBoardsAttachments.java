@@ -14,13 +14,11 @@
 
 package com.liferay.portal.upgrade.v6_2_0;
 
-import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.portal.kernel.upgrade.v6_2_0.BaseUpgradeAttachments;
-import com.liferay.portal.util.PortletKeys;
-import com.liferay.portlet.documentlibrary.model.DLFolderConstants;
-import com.liferay.portlet.messageboards.model.MBMessage;
+import com.liferay.portal.kernel.util.LoggingTimer;
+import com.liferay.portal.kernel.util.StringBundler;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -32,7 +30,7 @@ public class UpgradeMessageBoardsAttachments extends BaseUpgradeAttachments {
 
 	@Override
 	protected String getClassName() {
-		return MBMessage.class.getName();
+		return "com.liferay.portlet.messageboards.model.MBMessage";
 	}
 
 	@Override
@@ -63,29 +61,24 @@ public class UpgradeMessageBoardsAttachments extends BaseUpgradeAttachments {
 
 	@Override
 	protected String getDirName(long containerModelId, long resourcePrimKey) {
-		return "messageboards/" + containerModelId + "/" + resourcePrimKey;
+		return StringBundler.concat(
+			"messageboards/", String.valueOf(containerModelId), "/",
+			String.valueOf(resourcePrimKey));
 	}
 
 	@Override
 	protected String getPortletId() {
-		return PortletKeys.MESSAGE_BOARDS;
+		return "19";
 	}
 
 	@Override
 	protected void updateAttachments() throws Exception {
-		Connection con = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-
-		try {
-			con = DataAccess.getUpgradeOptimizedConnection();
-
-			ps = con.prepareStatement(
+		try (LoggingTimer loggingTimer = new LoggingTimer();
+			PreparedStatement ps = connection.prepareStatement(
 				"select messageId, groupId, companyId, userId, userName, " +
 					"threadId from MBMessage where classNameId = 0 and " +
 						"classPK = 0");
-
-			rs = ps.executeQuery();
+			ResultSet rs = ps.executeQuery()) {
 
 			while (rs.next()) {
 				long messageId = rs.getLong("messageId");
@@ -98,9 +91,6 @@ public class UpgradeMessageBoardsAttachments extends BaseUpgradeAttachments {
 				updateEntryAttachments(
 					companyId, groupId, messageId, threadId, userId, userName);
 			}
-		}
-		finally {
-			DataAccess.cleanUp(con, ps, rs);
 		}
 	}
 

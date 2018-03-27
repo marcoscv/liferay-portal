@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.LayoutFriendlyURL;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.LayoutFriendlyURL;
-import com.liferay.portal.model.MVCCModel;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,8 +36,36 @@ import java.util.Date;
  * @see LayoutFriendlyURL
  * @generated
  */
+@ProviderType
 public class LayoutFriendlyURLCacheModel implements CacheModel<LayoutFriendlyURL>,
 	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof LayoutFriendlyURLCacheModel)) {
+			return false;
+		}
+
+		LayoutFriendlyURLCacheModel layoutFriendlyURLCacheModel = (LayoutFriendlyURLCacheModel)obj;
+
+		if ((layoutFriendlyURLId == layoutFriendlyURLCacheModel.layoutFriendlyURLId) &&
+				(mvccVersion == layoutFriendlyURLCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, layoutFriendlyURLId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -48,7 +78,7 @@ public class LayoutFriendlyURLCacheModel implements CacheModel<LayoutFriendlyURL
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(27);
+		StringBundler sb = new StringBundler(29);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -76,6 +106,8 @@ public class LayoutFriendlyURLCacheModel implements CacheModel<LayoutFriendlyURL
 		sb.append(friendlyURL);
 		sb.append(", languageId=");
 		sb.append(languageId);
+		sb.append(", lastPublishDate=");
+		sb.append(lastPublishDate);
 		sb.append("}");
 
 		return sb.toString();
@@ -88,7 +120,7 @@ public class LayoutFriendlyURLCacheModel implements CacheModel<LayoutFriendlyURL
 		layoutFriendlyURLImpl.setMvccVersion(mvccVersion);
 
 		if (uuid == null) {
-			layoutFriendlyURLImpl.setUuid(StringPool.BLANK);
+			layoutFriendlyURLImpl.setUuid("");
 		}
 		else {
 			layoutFriendlyURLImpl.setUuid(uuid);
@@ -100,7 +132,7 @@ public class LayoutFriendlyURLCacheModel implements CacheModel<LayoutFriendlyURL
 		layoutFriendlyURLImpl.setUserId(userId);
 
 		if (userName == null) {
-			layoutFriendlyURLImpl.setUserName(StringPool.BLANK);
+			layoutFriendlyURLImpl.setUserName("");
 		}
 		else {
 			layoutFriendlyURLImpl.setUserName(userName);
@@ -124,17 +156,24 @@ public class LayoutFriendlyURLCacheModel implements CacheModel<LayoutFriendlyURL
 		layoutFriendlyURLImpl.setPrivateLayout(privateLayout);
 
 		if (friendlyURL == null) {
-			layoutFriendlyURLImpl.setFriendlyURL(StringPool.BLANK);
+			layoutFriendlyURLImpl.setFriendlyURL("");
 		}
 		else {
 			layoutFriendlyURLImpl.setFriendlyURL(friendlyURL);
 		}
 
 		if (languageId == null) {
-			layoutFriendlyURLImpl.setLanguageId(StringPool.BLANK);
+			layoutFriendlyURLImpl.setLanguageId("");
 		}
 		else {
 			layoutFriendlyURLImpl.setLanguageId(languageId);
+		}
+
+		if (lastPublishDate == Long.MIN_VALUE) {
+			layoutFriendlyURLImpl.setLastPublishDate(null);
+		}
+		else {
+			layoutFriendlyURLImpl.setLastPublishDate(new Date(lastPublishDate));
 		}
 
 		layoutFriendlyURLImpl.resetOriginalValues();
@@ -146,17 +185,24 @@ public class LayoutFriendlyURLCacheModel implements CacheModel<LayoutFriendlyURL
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
 		uuid = objectInput.readUTF();
+
 		layoutFriendlyURLId = objectInput.readLong();
+
 		groupId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		userId = objectInput.readLong();
 		userName = objectInput.readUTF();
 		createDate = objectInput.readLong();
 		modifiedDate = objectInput.readLong();
+
 		plid = objectInput.readLong();
+
 		privateLayout = objectInput.readBoolean();
 		friendlyURL = objectInput.readUTF();
 		languageId = objectInput.readUTF();
+		lastPublishDate = objectInput.readLong();
 	}
 
 	@Override
@@ -165,19 +211,22 @@ public class LayoutFriendlyURLCacheModel implements CacheModel<LayoutFriendlyURL
 		objectOutput.writeLong(mvccVersion);
 
 		if (uuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(uuid);
 		}
 
 		objectOutput.writeLong(layoutFriendlyURLId);
+
 		objectOutput.writeLong(groupId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -185,22 +234,26 @@ public class LayoutFriendlyURLCacheModel implements CacheModel<LayoutFriendlyURL
 
 		objectOutput.writeLong(createDate);
 		objectOutput.writeLong(modifiedDate);
+
 		objectOutput.writeLong(plid);
+
 		objectOutput.writeBoolean(privateLayout);
 
 		if (friendlyURL == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(friendlyURL);
 		}
 
 		if (languageId == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(languageId);
 		}
+
+		objectOutput.writeLong(lastPublishDate);
 	}
 
 	public long mvccVersion;
@@ -216,4 +269,5 @@ public class LayoutFriendlyURLCacheModel implements CacheModel<LayoutFriendlyURL
 	public boolean privateLayout;
 	public String friendlyURL;
 	public String languageId;
+	public long lastPublishDate;
 }

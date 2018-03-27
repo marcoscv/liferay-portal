@@ -14,11 +14,13 @@
 
 package com.liferay.portal.messaging.async;
 
-import com.liferay.portal.kernel.util.AutoResetThreadLocal;
+import com.liferay.petra.lang.CentralizedThreadLocal;
 
 /**
  * @author Shuyang Zhou
+ * @deprecated As of 7.0.0, moved to {@link com.liferay.portal.internal.messaging.async.AsyncInvokeThreadLocal}
  */
+@Deprecated
 public class AsyncInvokeThreadLocal {
 
 	public static boolean isEnabled() {
@@ -29,8 +31,8 @@ public class AsyncInvokeThreadLocal {
 		_enabled.set(enabled);
 	}
 
-	private static ThreadLocal<Boolean> _enabled =
-		new AutoResetThreadLocal<Boolean>(
-			AsyncInvokeThreadLocal.class + "._enabled", false);
+	private static final ThreadLocal<Boolean> _enabled =
+		new CentralizedThreadLocal<>(
+			AsyncInvokeThreadLocal.class + "._enabled", () -> Boolean.FALSE);
 
 }

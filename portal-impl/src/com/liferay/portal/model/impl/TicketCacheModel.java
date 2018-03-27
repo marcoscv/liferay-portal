@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.Ticket;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.Ticket;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,8 +36,36 @@ import java.util.Date;
  * @see Ticket
  * @generated
  */
+@ProviderType
 public class TicketCacheModel implements CacheModel<Ticket>, Externalizable,
 	MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof TicketCacheModel)) {
+			return false;
+		}
+
+		TicketCacheModel ticketCacheModel = (TicketCacheModel)obj;
+
+		if ((ticketId == ticketCacheModel.ticketId) &&
+				(mvccVersion == ticketCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, ticketId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -94,7 +124,7 @@ public class TicketCacheModel implements CacheModel<Ticket>, Externalizable,
 		ticketImpl.setClassPK(classPK);
 
 		if (key == null) {
-			ticketImpl.setKey(StringPool.BLANK);
+			ticketImpl.setKey("");
 		}
 		else {
 			ticketImpl.setKey(key);
@@ -103,7 +133,7 @@ public class TicketCacheModel implements CacheModel<Ticket>, Externalizable,
 		ticketImpl.setType(type);
 
 		if (extraInfo == null) {
-			ticketImpl.setExtraInfo(StringPool.BLANK);
+			ticketImpl.setExtraInfo("");
 		}
 		else {
 			ticketImpl.setExtraInfo(extraInfo);
@@ -124,12 +154,17 @@ public class TicketCacheModel implements CacheModel<Ticket>, Externalizable,
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
+
 		ticketId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
 		createDate = objectInput.readLong();
+
 		classNameId = objectInput.readLong();
+
 		classPK = objectInput.readLong();
 		key = objectInput.readUTF();
+
 		type = objectInput.readInt();
 		extraInfo = objectInput.readUTF();
 		expirationDate = objectInput.readLong();
@@ -139,14 +174,18 @@ public class TicketCacheModel implements CacheModel<Ticket>, Externalizable,
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
 		objectOutput.writeLong(ticketId);
+
 		objectOutput.writeLong(companyId);
 		objectOutput.writeLong(createDate);
+
 		objectOutput.writeLong(classNameId);
+
 		objectOutput.writeLong(classPK);
 
 		if (key == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(key);
@@ -155,7 +194,7 @@ public class TicketCacheModel implements CacheModel<Ticket>, Externalizable,
 		objectOutput.writeInt(type);
 
 		if (extraInfo == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(extraInfo);

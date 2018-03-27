@@ -14,20 +14,20 @@
 
 package com.liferay.portal.servlet;
 
-import com.liferay.portal.NoSuchLayoutException;
+import com.liferay.portal.kernel.exception.NoSuchLayoutException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.service.PortletLocalServiceUtil;
-import com.liferay.portal.util.Portal;
-import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.portal.util.WebKeys;
 
 import java.io.IOException;
 
@@ -94,17 +94,13 @@ public class GoogleGadgetServlet extends HttpServlet {
 
 		String title = portlet.getDisplayName();
 
-		String widgetJsURL =
-			PortalUtil.getPortalURL(request) + PortalUtil.getPathContext() +
-				"/html/js/liferay/widget.js";
-
-		String widgetURL = request.getRequestURL().toString();
+		String widgetURL = String.valueOf(request.getRequestURL());
 
 		widgetURL = widgetURL.replaceFirst(
 			PropsValues.GOOGLE_GADGET_SERVLET_MAPPING,
 			PropsValues.WIDGET_SERVLET_MAPPING);
 
-		StringBundler sb = new StringBundler(19);
+		StringBundler sb = new StringBundler(14);
 
 		sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 		sb.append("<Module>");
@@ -113,15 +109,10 @@ public class GoogleGadgetServlet extends HttpServlet {
 		sb.append("\"/>");
 		sb.append("<Content type=\"html\">");
 		sb.append("<![CDATA[");
-		sb.append("<script src=\"");
-		sb.append(widgetJsURL);
-		sb.append("\" ");
-		sb.append("type=\"text/javascript\"></script>");
-		sb.append("<script type=\"text/javascript\">");
-		sb.append("window.Liferay.Widget({url:'");
+		sb.append("<iframe frameborder=\"0\" height=\"100%\" src=\"");
 		sb.append(widgetURL);
-		sb.append("'});");
-		sb.append("</script>");
+		sb.append("\" width=\"100%\">");
+		sb.append("</iframe>");
 		sb.append("]]>");
 		sb.append("</Content>");
 		sb.append("</Module>");
@@ -129,6 +120,7 @@ public class GoogleGadgetServlet extends HttpServlet {
 		return sb.toString();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(GoogleGadgetServlet.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		GoogleGadgetServlet.class);
 
 }

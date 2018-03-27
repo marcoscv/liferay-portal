@@ -16,6 +16,8 @@ package com.liferay.portal.resiliency.mpi.portlet;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.ActionResult;
 import com.liferay.portal.kernel.portlet.PortletContainer;
 import com.liferay.portal.kernel.portlet.PortletContainerException;
@@ -23,9 +25,8 @@ import com.liferay.portal.kernel.resiliency.PortalResiliencyException;
 import com.liferay.portal.kernel.resiliency.spi.SPI;
 import com.liferay.portal.kernel.resiliency.spi.SPIRegistryUtil;
 import com.liferay.portal.kernel.resiliency.spi.agent.SPIAgent;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.model.Layout;
-import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.Collections;
@@ -149,6 +150,21 @@ public class PortalResiliencyPortletContainerWrapper
 	}
 
 	@Override
+	public void processPublicRenderParameters(
+		HttpServletRequest request, Layout layout) {
+
+		_portletContainer.processPublicRenderParameters(request, layout);
+	}
+
+	@Override
+	public void processPublicRenderParameters(
+		HttpServletRequest request, Layout layout, Portlet portlet) {
+
+		_portletContainer.processPublicRenderParameters(
+			request, layout, portlet);
+	}
+
+	@Override
 	public void render(
 			HttpServletRequest request, HttpServletResponse response,
 			Portlet portlet)
@@ -240,7 +256,9 @@ public class PortalResiliencyPortletContainerWrapper
 
 			if (_log.isDebugEnabled()) {
 				_log.debug(
-					"Portlet " + portlet + " is registered to SPI " + spi);
+					StringBundler.concat(
+						"Portlet ", String.valueOf(portlet),
+						" is registered to SPI ", String.valueOf(spi)));
 			}
 
 			return spi.getSPIAgent();
@@ -269,9 +287,10 @@ public class PortalResiliencyPortletContainerWrapper
 	private static final String[] _ACTION_REQUEST_ATTRIBUTE_NAMES =
 		{WebKeys.SPI_AGENT_LIFECYCLE, WebKeys.SPI_AGENT_PORTLET};
 
-	private static final String[] _EVENT_REQUEST_ATTRIBUTE_NAMES =
-		{WebKeys.SPI_AGENT_EVENT, WebKeys.SPI_AGENT_LAYOUT,
-			WebKeys.SPI_AGENT_LIFECYCLE, WebKeys.SPI_AGENT_PORTLET};
+	private static final String[] _EVENT_REQUEST_ATTRIBUTE_NAMES = {
+		WebKeys.SPI_AGENT_EVENT, WebKeys.SPI_AGENT_LAYOUT,
+		WebKeys.SPI_AGENT_LIFECYCLE, WebKeys.SPI_AGENT_PORTLET
+	};
 
 	private static final String[] _RENDER_REQUEST_ATTRIBUTE_NAMES =
 		_ACTION_REQUEST_ATTRIBUTE_NAMES;
@@ -279,9 +298,9 @@ public class PortalResiliencyPortletContainerWrapper
 	private static final String[] _RESOURCE_REQUEST_ATTRIBUTE_NAMES =
 		_ACTION_REQUEST_ATTRIBUTE_NAMES;
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		PortalResiliencyPortletContainerWrapper.class);
 
-	private PortletContainer _portletContainer;
+	private final PortletContainer _portletContainer;
 
 }

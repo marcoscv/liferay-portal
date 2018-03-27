@@ -14,17 +14,18 @@
 
 package com.liferay.portlet.documentlibrary.service.permission;
 
+import com.liferay.document.library.kernel.model.DLFileShortcut;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.staging.permission.StagingPermissionUtil;
-import com.liferay.portal.security.auth.PrincipalException;
-import com.liferay.portal.security.permission.PermissionChecker;
-import com.liferay.portal.util.PortletKeys;
-import com.liferay.portlet.documentlibrary.model.DLFileShortcut;
-import com.liferay.portlet.documentlibrary.service.DLFileShortcutLocalServiceUtil;
+import com.liferay.portal.kernel.repository.model.FileShortcut;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 /**
  * @author Brian Wing Shun Chan
+ * @deprecated As of 7.0.0, with no direct replacement
  */
+@Deprecated
 public class DLFileShortcutPermission {
 
 	public static void check(
@@ -32,9 +33,17 @@ public class DLFileShortcutPermission {
 			String actionId)
 		throws PortalException {
 
-		if (!contains(permissionChecker, dlFileShortcut, actionId)) {
-			throw new PrincipalException();
-		}
+		_dlFileShortcutModelResourcePermission.check(
+			permissionChecker, dlFileShortcut, actionId);
+	}
+
+	public static void check(
+			PermissionChecker permissionChecker, FileShortcut fileShortcut,
+			String actionId)
+		throws PortalException {
+
+		_fileShortcutModelResourcePermission.check(
+			permissionChecker, fileShortcut, actionId);
 	}
 
 	public static void check(
@@ -42,35 +51,26 @@ public class DLFileShortcutPermission {
 			String actionId)
 		throws PortalException {
 
-		if (!contains(permissionChecker, fileShortcutId, actionId)) {
-			throw new PrincipalException();
-		}
+		_dlFileShortcutModelResourcePermission.check(
+			permissionChecker, fileShortcutId, actionId);
 	}
 
 	public static boolean contains(
-		PermissionChecker permissionChecker, DLFileShortcut dlFileShortcut,
-		String actionId) {
+			PermissionChecker permissionChecker, DLFileShortcut dlFileShortcut,
+			String actionId)
+		throws PortalException {
 
-		Boolean hasPermission = StagingPermissionUtil.hasPermission(
-			permissionChecker, dlFileShortcut.getGroupId(),
-			DLFileShortcut.class.getName(), dlFileShortcut.getFileShortcutId(),
-			PortletKeys.DOCUMENT_LIBRARY, actionId);
+		return _dlFileShortcutModelResourcePermission.contains(
+			permissionChecker, dlFileShortcut, actionId);
+	}
 
-		if (hasPermission != null) {
-			return hasPermission.booleanValue();
-		}
+	public static boolean contains(
+			PermissionChecker permissionChecker, FileShortcut fileShortcut,
+			String actionId)
+		throws PortalException {
 
-		if (permissionChecker.hasOwnerPermission(
-				dlFileShortcut.getCompanyId(), DLFileShortcut.class.getName(),
-				dlFileShortcut.getFileShortcutId(), dlFileShortcut.getUserId(),
-				actionId)) {
-
-			return true;
-		}
-
-		return permissionChecker.hasPermission(
-			dlFileShortcut.getGroupId(), DLFileShortcut.class.getName(),
-			dlFileShortcut.getFileShortcutId(), actionId);
+		return _fileShortcutModelResourcePermission.contains(
+			permissionChecker, fileShortcut, actionId);
 	}
 
 	public static boolean contains(
@@ -78,10 +78,23 @@ public class DLFileShortcutPermission {
 			String actionId)
 		throws PortalException {
 
-		DLFileShortcut dlFileShortcut =
-			DLFileShortcutLocalServiceUtil.getFileShortcut(fileShortcutId);
-
-		return contains(permissionChecker, dlFileShortcut, actionId);
+		return _dlFileShortcutModelResourcePermission.contains(
+			permissionChecker, fileShortcutId, actionId);
 	}
+
+	private static volatile ModelResourcePermission<DLFileShortcut>
+		_dlFileShortcutModelResourcePermission =
+			ServiceProxyFactory.newServiceTrackedInstance(
+				ModelResourcePermission.class, DLFileShortcutPermission.class,
+				"_dlFileShortcutModelResourcePermission",
+				"(model.class.name=" + DLFileShortcut.class.getName() + ")",
+				true);
+	private static volatile ModelResourcePermission<FileShortcut>
+		_fileShortcutModelResourcePermission =
+			ServiceProxyFactory.newServiceTrackedInstance(
+				ModelResourcePermission.class, DLFileShortcutPermission.class,
+				"_fileShortcutModelResourcePermission",
+				"(model.class.name=" + FileShortcut.class.getName() + ")",
+				true);
 
 }

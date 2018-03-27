@@ -14,21 +14,23 @@
 
 package com.liferay.portlet;
 
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.model.PortletApp;
+import com.liferay.portal.kernel.model.PortletConstants;
+import com.liferay.portal.kernel.model.PublicRenderParameter;
 import com.liferay.portal.kernel.portlet.LiferayPortletConfig;
 import com.liferay.portal.kernel.portlet.PortletBag;
 import com.liferay.portal.kernel.portlet.PortletBagPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.model.PortletApp;
-import com.liferay.portal.model.PortletConstants;
-import com.liferay.portal.model.PublicRenderParameter;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -49,26 +51,75 @@ import javax.xml.namespace.QName;
 public class PortletConfigImpl implements LiferayPortletConfig {
 
 	public PortletConfigImpl(Portlet portlet, PortletContext portletContext) {
-		_portletApp = portlet.getPortletApp();
 		_portlet = portlet;
-		_portletName = portlet.getRootPortletId();
-
-		int pos = _portletName.indexOf(PortletConstants.WAR_SEPARATOR);
-
-		if (pos != -1) {
-			_portletName = _portletName.substring(0, pos);
-		}
-
 		_portletContext = portletContext;
-		_resourceBundles = new ConcurrentHashMap<String, ResourceBundle>();
+
+		_portletInfos = PortletResourceBundle.getPortletInfos(
+			_portlet.getPortletInfo());
 
 		_copyRequestParameters = GetterUtil.getBoolean(
 			getInitParameter("copy-request-parameters"));
+		_portletApp = portlet.getPortletApp();
+
+		String portletName = portlet.getRootPortletId();
+
+		int pos = portletName.indexOf(PortletConstants.WAR_SEPARATOR);
+
+		if (pos != -1) {
+			portletName = portletName.substring(0, pos);
+		}
+
+		_portletName = portletName;
+
+		String className = LiferayPortletConfig.class.getName();
+
+		_containerRuntimeOptionPrefix = className.concat(_portletName);
 	}
 
 	@Override
 	public Map<String, String[]> getContainerRuntimeOptions() {
-		return _portletApp.getContainerRuntimeOptions();
+		Map<String, String[]> portletAppContainerRuntimeOptions =
+			_portletApp.getContainerRuntimeOptions();
+
+		Map<String, String[]> containerRuntimeOptions = new HashMap<>();
+
+		String className = LiferayPortletConfig.class.getName();
+
+		for (Map.Entry<String, String[]> portletAppContainerRuntimeOption :
+				portletAppContainerRuntimeOptions.entrySet()) {
+
+			String name = portletAppContainerRuntimeOption.getKey();
+
+			if (!name.startsWith(className)) {
+				containerRuntimeOptions.put(
+					name, portletAppContainerRuntimeOption.getValue());
+			}
+		}
+
+		// PLT 8.4: If the deployment descriptor contains
+		// <container-runtime-option> elements of the same name defined at both
+		// the portlet and the portlet application levels, the returned Map
+		// contains a the value defined at the portlet level.
+
+		for (Map.Entry<String, String[]> portletAppContainerRuntimeOption :
+				portletAppContainerRuntimeOptions.entrySet()) {
+
+			String name = portletAppContainerRuntimeOption.getKey();
+
+			if (name.startsWith(_containerRuntimeOptionPrefix)) {
+				containerRuntimeOptions.put(
+					name.substring(_containerRuntimeOptionPrefix.length()),
+					portletAppContainerRuntimeOption.getValue());
+			}
+		}
+
+		Set<String> keySet = containerRuntimeOptions.keySet();
+
+		keySet.retainAll(
+			SetUtil.fromEnumeration(
+				_portletContext.getContainerRuntimeOptions()));
+
+		return Collections.unmodifiableMap(containerRuntimeOptions);
 	}
 
 	@Override
@@ -82,12 +133,16 @@ public class PortletConfigImpl implements LiferayPortletConfig {
 			throw new IllegalArgumentException();
 		}
 
-		return _portlet.getInitParams().get(name);
+		Map<String, String> initParams = _portlet.getInitParams();
+
+		return initParams.get(name);
 	}
 
 	@Override
 	public Enumeration<String> getInitParameterNames() {
-		return Collections.enumeration(_portlet.getInitParams().keySet());
+		Map<String, String> initParams = _portlet.getInitParams();
+
+		return Collections.enumeration(initParams.keySet());
 	}
 
 	@Override
@@ -118,7 +173,7 @@ public class PortletConfigImpl implements LiferayPortletConfig {
 
 	@Override
 	public Enumeration<String> getPublicRenderParameterNames() {
-		List<String> publicRenderParameterNames = new ArrayList<String>();
+		List<String> publicRenderParameterNames = new ArrayList<>();
 
 		for (PublicRenderParameter publicRenderParameter :
 				_portlet.getPublicRenderParameters()) {
@@ -140,16 +195,14 @@ public class PortletConfigImpl implements LiferayPortletConfig {
 	public ResourceBundle getResourceBundle(Locale locale) {
 		String resourceBundleClassName = _portlet.getResourceBundle();
 
-		ResourceBundle resourceBundle = null;
-
 		if (Validator.isNull(resourceBundleClassName)) {
 			String resourceBundleId = _portlet.getPortletId();
 
-			resourceBundle = _resourceBundles.get(resourceBundleId);
+			ResourceBundle resourceBundle = _resourceBundles.get(
+				resourceBundleId);
 
 			if (resourceBundle == null) {
-				resourceBundle = new PortletResourceBundle(
-					_portlet.getPortletInfo());
+				resourceBundle = new PortletResourceBundle(null, _portletInfos);
 
 				_resourceBundles.put(resourceBundleId, resourceBundle);
 			}
@@ -157,43 +210,42 @@ public class PortletConfigImpl implements LiferayPortletConfig {
 			return resourceBundle;
 		}
 
-		StringBundler sb = new StringBundler(4);
+		ResourceBundle resourceBundle = null;
 
-		sb.append(_portlet.getPortletId());
-		sb.append(locale.getLanguage());
-		sb.append(locale.getCountry());
-		sb.append(locale.getVariant());
+		if (!_portletApp.isWARFile() &&
+			resourceBundleClassName.equals(
+				StrutsResourceBundle.class.getName())) {
 
-		String resourceBundleId = sb.toString();
+			StringBundler sb = new StringBundler(4);
 
-		resourceBundle = _resourceBundles.get(resourceBundleId);
+			sb.append(_portlet.getPortletId());
+			sb.append(locale.getLanguage());
+			sb.append(locale.getCountry());
+			sb.append(locale.getVariant());
 
-		if (resourceBundle == null) {
-			if (!_portletApp.isWARFile() &&
-				resourceBundleClassName.equals(
-					StrutsResourceBundle.class.getName())) {
+			String resourceBundleId = sb.toString();
 
+			resourceBundle = _resourceBundles.get(resourceBundleId);
+
+			if (resourceBundle == null) {
 				resourceBundle = new StrutsResourceBundle(_portletName, locale);
 			}
-			else {
-				PortletBag portletBag = PortletBagPool.get(
-					_portlet.getRootPortletId());
-
-				resourceBundle = portletBag.getResourceBundle(locale);
-			}
-
-			resourceBundle = new PortletResourceBundle(
-				resourceBundle, _portlet.getPortletInfo());
 
 			_resourceBundles.put(resourceBundleId, resourceBundle);
 		}
+		else {
+			PortletBag portletBag = PortletBagPool.get(
+				_portlet.getRootPortletId());
 
-		return resourceBundle;
+			resourceBundle = portletBag.getResourceBundle(locale);
+		}
+
+		return new PortletResourceBundle(resourceBundle, _portletInfos);
 	}
 
 	@Override
 	public Enumeration<Locale> getSupportedLocales() {
-		List<Locale> supportedLocales = new ArrayList<Locale>();
+		List<Locale> supportedLocales = new ArrayList<>();
 
 		for (String languageId : _portlet.getSupportedLocales()) {
 			supportedLocales.add(LocaleUtil.fromLanguageId(languageId));
@@ -212,10 +264,10 @@ public class PortletConfigImpl implements LiferayPortletConfig {
 		return _portletApp.isWARFile();
 	}
 
-	protected Set<javax.xml.namespace.QName> toJavaxQNames(
+	protected Set<QName> toJavaxQNames(
 		Set<com.liferay.portal.kernel.xml.QName> liferayQNames) {
 
-		Set<QName> javaxQNames = new HashSet<QName>(liferayQNames.size());
+		Set<QName> javaxQNames = new HashSet<>(liferayQNames.size());
 
 		for (com.liferay.portal.kernel.xml.QName liferayQName : liferayQNames) {
 			QName javaxQName = new QName(
@@ -228,11 +280,14 @@ public class PortletConfigImpl implements LiferayPortletConfig {
 		return javaxQNames;
 	}
 
-	private boolean _copyRequestParameters;
-	private Portlet _portlet;
-	private PortletApp _portletApp;
-	private PortletContext _portletContext;
-	private String _portletName;
-	private Map<String, ResourceBundle> _resourceBundles;
+	private final String _containerRuntimeOptionPrefix;
+	private final boolean _copyRequestParameters;
+	private final Portlet _portlet;
+	private final PortletApp _portletApp;
+	private final PortletContext _portletContext;
+	private final Map<String, String> _portletInfos;
+	private final String _portletName;
+	private final Map<String, ResourceBundle> _resourceBundles =
+		new ConcurrentHashMap<>();
 
 }

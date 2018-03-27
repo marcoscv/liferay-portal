@@ -14,6 +14,8 @@
 
 package com.liferay.portal.cluster;
 
+import com.liferay.portal.internal.cluster.ClusterableAdvice;
+import com.liferay.portal.internal.cluster.SPIClusterableAdvice;
 import com.liferay.portal.kernel.resiliency.spi.SPIUtil;
 import com.liferay.portal.spring.aop.ChainableMethodAdviceInjector;
 import com.liferay.portal.util.PropsValues;
@@ -37,13 +39,6 @@ public class ClusterableChainableMethodAdviceInjector
 
 			super.inject();
 		}
-	}
-
-	/**
-	 * @deprecated As of 6.2.0
-	 */
-	@Deprecated
-	public void setServletContextName(String servletContextName) {
 	}
 
 }

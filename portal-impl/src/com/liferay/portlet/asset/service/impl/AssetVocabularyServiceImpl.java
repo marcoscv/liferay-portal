@@ -14,24 +14,21 @@
 
 package com.liferay.portlet.asset.service.impl;
 
+import com.liferay.asset.kernel.model.AssetCategoryConstants;
+import com.liferay.asset.kernel.model.AssetVocabulary;
+import com.liferay.asset.kernel.model.AssetVocabularyDisplay;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.json.JSONArray;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
+import com.liferay.portal.kernel.search.Sort;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.User;
-import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.security.permission.PermissionChecker;
-import com.liferay.portal.service.ServiceContext;
-import com.liferay.portlet.asset.model.AssetCategoryConstants;
-import com.liferay.portlet.asset.model.AssetVocabulary;
-import com.liferay.portlet.asset.model.AssetVocabularyDisplay;
 import com.liferay.portlet.asset.service.base.AssetVocabularyServiceBaseImpl;
-import com.liferay.portlet.asset.service.permission.AssetPermission;
+import com.liferay.portlet.asset.service.permission.AssetCategoriesPermission;
 import com.liferay.portlet.asset.service.permission.AssetVocabularyPermission;
 import com.liferay.portlet.asset.util.AssetUtil;
 import com.liferay.util.dao.orm.CustomSQLUtil;
@@ -53,61 +50,31 @@ import java.util.Map;
  */
 public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 
-	/**
-	 * @deprecated As of 6.1.0 {@link #addVocabulary(String, Map, Map, String,
-	 *             ServiceContext)}
-	 */
-	@Deprecated
 	@Override
 	public AssetVocabulary addVocabulary(
-			Map<Locale, String> titleMap, Map<Locale, String> descriptionMap,
-			String settings, ServiceContext serviceContext)
-		throws PortalException {
-
-		return addVocabulary(
-			StringPool.BLANK, titleMap, descriptionMap, settings,
-			serviceContext);
-	}
-
-	@Override
-	public AssetVocabulary addVocabulary(
-			String title, Map<Locale, String> titleMap,
+			long groupId, String title, Map<Locale, String> titleMap,
 			Map<Locale, String> descriptionMap, String settings,
 			ServiceContext serviceContext)
 		throws PortalException {
 
-		AssetPermission.check(
-			getPermissionChecker(), serviceContext.getScopeGroupId(),
-			ActionKeys.ADD_VOCABULARY);
+		AssetCategoriesPermission.check(
+			getPermissionChecker(), groupId, ActionKeys.ADD_VOCABULARY);
 
 		return assetVocabularyLocalService.addVocabulary(
-			getUserId(), title, titleMap, descriptionMap, settings,
+			getUserId(), groupId, title, titleMap, descriptionMap, settings,
 			serviceContext);
 	}
 
 	@Override
 	public AssetVocabulary addVocabulary(
-			String title, ServiceContext serviceContext)
+			long groupId, String title, ServiceContext serviceContext)
 		throws PortalException {
 
-		AssetPermission.check(
-			getPermissionChecker(), serviceContext.getScopeGroupId(),
-			ActionKeys.ADD_VOCABULARY);
+		AssetCategoriesPermission.check(
+			getPermissionChecker(), groupId, ActionKeys.ADD_VOCABULARY);
 
 		return assetVocabularyLocalService.addVocabulary(
-			getUserId(), title, serviceContext);
-	}
-
-	/**
-	 * @deprecated As of 6.2.0, Replaced by {@link #deleteVocabularies(long[],
-	 *             ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public void deleteVocabularies(long[] vocabularyIds)
-		throws PortalException {
-
-		deleteVocabularies(vocabularyIds, null);
+			getUserId(), groupId, title, serviceContext);
 	}
 
 	@Override
@@ -115,8 +82,7 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 			long[] vocabularyIds, ServiceContext serviceContext)
 		throws PortalException {
 
-		List<AssetVocabulary> failedVocabularies =
-			new ArrayList<AssetVocabulary>();
+		List<AssetVocabulary> failedVocabularies = new ArrayList<>();
 
 		for (long vocabularyId : vocabularyIds) {
 			try {
@@ -157,6 +123,21 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 		assetVocabularyLocalService.deleteVocabulary(vocabularyId);
 	}
 
+	@Override
+	public AssetVocabulary fetchVocabulary(long vocabularyId)
+		throws PortalException {
+
+		AssetVocabulary vocabulary =
+			assetVocabularyLocalService.fetchAssetVocabulary(vocabularyId);
+
+		if (vocabulary != null) {
+			AssetVocabularyPermission.check(
+				getPermissionChecker(), vocabulary, ActionKeys.VIEW);
+		}
+
+		return vocabulary;
+	}
+
 	/**
 	 * @deprecated As of 7.0.0, with no direct replacement
 	 */
@@ -171,7 +152,6 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 
 	@Override
 	public List<AssetVocabulary> getGroupsVocabularies(long[] groupIds) {
-
 		return getGroupsVocabularies(groupIds, null);
 	}
 
@@ -217,7 +197,7 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 			return vocabularies;
 		}
 
-		vocabularies = new ArrayList<AssetVocabulary>();
+		vocabularies = new ArrayList<>();
 
 		AssetVocabulary vocabulary =
 			assetVocabularyLocalService.addDefaultVocabulary(groupId);
@@ -229,7 +209,38 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 
 	@Override
 	public List<AssetVocabulary> getGroupVocabularies(
-		long groupId, int start, int end, OrderByComparator obc) {
+			long groupId, boolean createDefaultVocabulary, int start, int end,
+			OrderByComparator<AssetVocabulary> obc)
+		throws PortalException {
+
+		List<AssetVocabulary> vocabularies = getGroupVocabularies(
+			groupId, start, end, obc);
+
+		if (!vocabularies.isEmpty() || !createDefaultVocabulary) {
+			return vocabularies;
+		}
+
+		int count = assetVocabularyLocalService.getGroupVocabulariesCount(
+			new long[] {groupId});
+
+		if (count > 0) {
+			return vocabularies;
+		}
+
+		vocabularies = new ArrayList<>();
+
+		AssetVocabulary vocabulary =
+			assetVocabularyLocalService.addDefaultVocabulary(groupId);
+
+		vocabularies.add(vocabulary);
+
+		return vocabularies;
+	}
+
+	@Override
+	public List<AssetVocabulary> getGroupVocabularies(
+		long groupId, int start, int end,
+		OrderByComparator<AssetVocabulary> obc) {
 
 		return assetVocabularyPersistence.filterFindByGroupId(
 			groupId, start, end, obc);
@@ -237,7 +248,8 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 
 	@Override
 	public List<AssetVocabulary> getGroupVocabularies(
-		long groupId, String name, int start, int end, OrderByComparator obc) {
+		long groupId, String name, int start, int end,
+		OrderByComparator<AssetVocabulary> obc) {
 
 		return assetVocabularyPersistence.filterFindByG_LikeN(
 			groupId, name, start, end, obc);
@@ -245,7 +257,6 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 
 	@Override
 	public List<AssetVocabulary> getGroupVocabularies(long[] groupIds) {
-
 		return assetVocabularyPersistence.filterFindByGroupId(groupIds);
 	}
 
@@ -256,20 +267,19 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 
 	@Override
 	public int getGroupVocabulariesCount(long groupId, String name) {
-
 		return assetVocabularyPersistence.filterCountByG_LikeN(groupId, name);
 	}
 
 	@Override
 	public int getGroupVocabulariesCount(long[] groupIds) {
-
 		return assetVocabularyPersistence.filterCountByGroupId(groupIds);
 	}
 
 	@Override
 	public AssetVocabularyDisplay getGroupVocabulariesDisplay(
 			long groupId, String name, int start, int end,
-			boolean addDefaultVocabulary, OrderByComparator obc)
+			boolean addDefaultVocabulary,
+			OrderByComparator<AssetVocabulary> obc)
 		throws PortalException {
 
 		List<AssetVocabulary> vocabularies;
@@ -289,7 +299,7 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 		if (addDefaultVocabulary && (total == 0) &&
 			(assetVocabularyPersistence.countByGroupId(groupId) == 0)) {
 
-			vocabularies = new ArrayList<AssetVocabulary>();
+			vocabularies = new ArrayList<>();
 
 			vocabularies.add(
 				assetVocabularyLocalService.addDefaultVocabulary(groupId));
@@ -303,7 +313,7 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 	@Override
 	public AssetVocabularyDisplay getGroupVocabulariesDisplay(
 			long groupId, String name, int start, int end,
-			OrderByComparator obc)
+			OrderByComparator<AssetVocabulary> obc)
 		throws PortalException {
 
 		return getGroupVocabulariesDisplay(
@@ -311,50 +321,8 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 	}
 
 	/**
-	 * @deprecated As of 6.2.0, with no direct replacement
-	 */
-	@Deprecated
-	@Override
-	public JSONObject getJSONGroupVocabularies(
-			long groupId, String name, int start, int end,
-			OrderByComparator obc)
-		throws PortalException {
-
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-
-		int page = end / (end - start);
-
-		jsonObject.put("page", page);
-
-		List<AssetVocabulary> vocabularies;
-		int total = 0;
-
-		if (Validator.isNotNull(name)) {
-			name = (CustomSQLUtil.keywords(name))[0];
-
-			vocabularies = getGroupVocabularies(groupId, name, start, end, obc);
-			total = getGroupVocabulariesCount(groupId, name);
-		}
-		else {
-			vocabularies = getGroupVocabularies(groupId, start, end, obc);
-			total = getGroupVocabulariesCount(groupId);
-		}
-
-		String vocabulariesJSON = JSONFactoryUtil.looseSerialize(vocabularies);
-
-		JSONArray vocabulariesJSONArray = JSONFactoryUtil.createJSONArray(
-			vocabulariesJSON);
-
-		jsonObject.put("vocabularies", vocabulariesJSONArray);
-
-		jsonObject.put("total", total);
-
-		return jsonObject;
-	}
-
-	/**
 	 * @deprecated As of 7.0.0, replaced by {@link
-	 *             #AssetUtil.filterVocabularyIds(PermissionChecker, long[])}
+	 *             AssetUtil#filterVocabularyIds(PermissionChecker, long[])}
 	 */
 	@Deprecated
 	@Override
@@ -377,15 +345,25 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 
 	@Override
 	public AssetVocabularyDisplay searchVocabulariesDisplay(
-			long groupId, String title, int start, int end,
-			boolean addDefaultVocabulary)
+			long groupId, String title, boolean addDefaultVocabulary, int start,
+			int end)
+		throws PortalException {
+
+		return searchVocabulariesDisplay(
+			groupId, title, addDefaultVocabulary, start, end, null);
+	}
+
+	@Override
+	public AssetVocabularyDisplay searchVocabulariesDisplay(
+			long groupId, String title, boolean addDefaultVocabulary, int start,
+			int end, Sort sort)
 		throws PortalException {
 
 		User user = getUser();
 
 		BaseModelSearchResult<AssetVocabulary> baseModelSearchResult =
 			assetVocabularyLocalService.searchVocabularies(
-				user.getCompanyId(), groupId, title, start, end);
+				user.getCompanyId(), groupId, title, start, end, sort);
 
 		List<AssetVocabulary> vocabularies =
 			baseModelSearchResult.getBaseModels();
@@ -395,7 +373,7 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 			total = assetVocabularyPersistence.countByGroupId(groupId);
 
 			if (total == 0) {
-				vocabularies = new ArrayList<AssetVocabulary>(1);
+				vocabularies = new ArrayList<>(1);
 
 				AssetVocabulary defaultVocabulary =
 					assetVocabularyLocalService.addDefaultVocabulary(groupId);
@@ -407,23 +385,6 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 		}
 
 		return new AssetVocabularyDisplay(vocabularies, total, start, end);
-	}
-
-	/**
-	 * @deprecated As of 6.1.0, {@link #updateVocabulary(long, String, Map, Map,
-	 *             String, ServiceContext)}
-	 */
-	@Deprecated
-	@Override
-	public AssetVocabulary updateVocabulary(
-			long vocabularyId, Map<Locale, String> titleMap,
-			Map<Locale, String> descriptionMap, String settings,
-			ServiceContext serviceContext)
-		throws PortalException {
-
-		return updateVocabulary(
-			vocabularyId, StringPool.BLANK, titleMap, descriptionMap, settings,
-			serviceContext);
 	}
 
 	@Override

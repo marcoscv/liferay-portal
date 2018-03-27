@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.SystemEvent;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.SystemEvent;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,8 +36,36 @@ import java.util.Date;
  * @see SystemEvent
  * @generated
  */
+@ProviderType
 public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof SystemEventCacheModel)) {
+			return false;
+		}
+
+		SystemEventCacheModel systemEventCacheModel = (SystemEventCacheModel)obj;
+
+		if ((systemEventId == systemEventCacheModel.systemEventId) &&
+				(mvccVersion == systemEventCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, systemEventId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -96,7 +126,7 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 		systemEventImpl.setUserId(userId);
 
 		if (userName == null) {
-			systemEventImpl.setUserName(StringPool.BLANK);
+			systemEventImpl.setUserName("");
 		}
 		else {
 			systemEventImpl.setUserName(userName);
@@ -113,7 +143,7 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 		systemEventImpl.setClassPK(classPK);
 
 		if (classUuid == null) {
-			systemEventImpl.setClassUuid(StringPool.BLANK);
+			systemEventImpl.setClassUuid("");
 		}
 		else {
 			systemEventImpl.setClassUuid(classUuid);
@@ -125,7 +155,7 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 		systemEventImpl.setType(type);
 
 		if (extraData == null) {
-			systemEventImpl.setExtraData(StringPool.BLANK);
+			systemEventImpl.setExtraData("");
 		}
 		else {
 			systemEventImpl.setExtraData(extraData);
@@ -139,18 +169,28 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
+
 		systemEventId = objectInput.readLong();
+
 		groupId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		userId = objectInput.readLong();
 		userName = objectInput.readUTF();
 		createDate = objectInput.readLong();
+
 		classNameId = objectInput.readLong();
+
 		classPK = objectInput.readLong();
 		classUuid = objectInput.readUTF();
+
 		referrerClassNameId = objectInput.readLong();
+
 		parentSystemEventId = objectInput.readLong();
+
 		systemEventSetKey = objectInput.readLong();
+
 		type = objectInput.readInt();
 		extraData = objectInput.readUTF();
 	}
@@ -159,36 +199,45 @@ public class SystemEventCacheModel implements CacheModel<SystemEvent>,
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
 		objectOutput.writeLong(systemEventId);
+
 		objectOutput.writeLong(groupId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
 		}
 
 		objectOutput.writeLong(createDate);
+
 		objectOutput.writeLong(classNameId);
+
 		objectOutput.writeLong(classPK);
 
 		if (classUuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(classUuid);
 		}
 
 		objectOutput.writeLong(referrerClassNameId);
+
 		objectOutput.writeLong(parentSystemEventId);
+
 		objectOutput.writeLong(systemEventSetKey);
+
 		objectOutput.writeInt(type);
 
 		if (extraData == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(extraData);

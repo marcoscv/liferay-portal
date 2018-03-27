@@ -17,6 +17,7 @@ package com.liferay.portal.events;
 import com.liferay.portal.kernel.events.Action;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,11 +34,13 @@ public class LogSessionIdAction extends Action {
 
 		if (_log.isDebugEnabled()) {
 			_log.debug(
-				"Session id " + session.getId() + " is " +
-					(!session.isNew() ? "not " : "") + "new");
+				StringBundler.concat(
+					"Session id ", session.getId(), " is ",
+					String.valueOf(!session.isNew() ? "not " : ""), "new"));
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(LogSessionIdAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		LogSessionIdAction.class);
 
 }

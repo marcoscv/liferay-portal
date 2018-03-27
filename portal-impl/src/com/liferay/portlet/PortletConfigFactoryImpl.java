@@ -14,8 +14,11 @@
 
 package com.liferay.portlet;
 
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.portlet.PortletConfigFactory;
+import com.liferay.portal.kernel.portlet.PortletContextFactory;
+import com.liferay.portal.kernel.portlet.PortletIdCodec;
 import com.liferay.portal.kernel.security.pacl.DoPrivileged;
-import com.liferay.portal.model.Portlet;
 import com.liferay.portal.security.lang.DoPrivilegedUtil;
 
 import java.util.Map;
@@ -33,7 +36,7 @@ import javax.servlet.ServletContext;
 public class PortletConfigFactoryImpl implements PortletConfigFactory {
 
 	public PortletConfigFactoryImpl() {
-		_pool = new ConcurrentHashMap<String, Map<String, PortletConfig>>();
+		_pool = new ConcurrentHashMap<>();
 	}
 
 	@Override
@@ -44,16 +47,22 @@ public class PortletConfigFactoryImpl implements PortletConfigFactory {
 			portlet.getRootPortletId());
 
 		if (portletConfigs == null) {
-			portletConfigs = new ConcurrentHashMap<String, PortletConfig>();
+			portletConfigs = new ConcurrentHashMap<>();
 
 			_pool.put(portlet.getRootPortletId(), portletConfigs);
 		}
 
-		PortletConfig portletConfig = portletConfigs.get(
-			portlet.getPortletId());
+		PortletConfig portletConfig = null;
+
+		if (portlet.isUndeployedPortlet()) {
+			portletConfigs.remove(portlet.getPortletId());
+		}
+		else {
+			portletConfig = portletConfigs.get(portlet.getPortletId());
+		}
 
 		if (portletConfig == null) {
-			PortletContext portletContext = PortletContextFactory.create(
+			PortletContext portletContext = _portletContextFactory.create(
 				portlet, servletContext);
 
 			portletConfig = new PortletConfigImpl(portlet, portletContext);
@@ -67,6 +76,30 @@ public class PortletConfigFactoryImpl implements PortletConfigFactory {
 	@Override
 	public void destroy(Portlet portlet) {
 		_pool.remove(portlet.getRootPortletId());
+	}
+
+	@Override
+	public PortletConfig get(Portlet portlet) {
+		return get(portlet.getPortletId());
+	}
+
+	@Override
+	public PortletConfig get(String portletId) {
+		String rootPortletId = PortletIdCodec.decodePortletName(portletId);
+
+		Map<String, PortletConfig> portletConfigs = _pool.get(rootPortletId);
+
+		if (portletConfigs == null) {
+			return null;
+		}
+
+		return portletConfigs.get(portletId);
+	}
+
+	public void setPortletContextFactory(
+		PortletContextFactory portletContextFactory) {
+
+		_portletContextFactory = portletContextFactory;
 	}
 
 	@Override
@@ -90,6 +123,7 @@ public class PortletConfigFactoryImpl implements PortletConfigFactory {
 		return DoPrivilegedUtil.wrap(portletConfig);
 	}
 
-	private Map<String, Map<String, PortletConfig>> _pool;
+	private final Map<String, Map<String, PortletConfig>> _pool;
+	private PortletContextFactory _portletContextFactory;
 
 }

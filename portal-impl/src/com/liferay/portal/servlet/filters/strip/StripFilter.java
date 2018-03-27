@@ -14,34 +14,33 @@
 
 package com.liferay.portal.servlet.filters.strip;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.cache.PortalCache;
+import com.liferay.portal.kernel.cache.SingleVMPoolUtil;
 import com.liferay.portal.kernel.cache.key.CacheKeyGenerator;
 import com.liferay.portal.kernel.cache.key.CacheKeyGeneratorUtil;
-import com.liferay.portal.kernel.concurrent.ConcurrentLFUCache;
 import com.liferay.portal.kernel.io.OutputStreamWriter;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
-import com.liferay.portal.kernel.scripting.ScriptingException;
 import com.liferay.portal.kernel.servlet.BufferCacheServletResponse;
-import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.KMPSearch;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.minifier.MinifierUtil;
 import com.liferay.portal.servlet.filters.BasePortalFilter;
-import com.liferay.portal.servlet.filters.dynamiccss.DynamicCSSUtil;
 import com.liferay.portal.util.PropsValues;
 
 import java.io.Writer;
 
+import java.nio.Buffer;
 import java.nio.CharBuffer;
 
 import java.util.HashSet;
@@ -51,7 +50,6 @@ import java.util.regex.Pattern;
 
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -63,12 +61,15 @@ import javax.servlet.http.HttpServletResponse;
 public class StripFilter extends BasePortalFilter {
 
 	public static final String SKIP_FILTER =
-		StripFilter.class.getName() + "SKIP_FILTER";
+		StripFilter.class.getName() + "#SKIP_FILTER";
 
 	public StripFilter() {
-		if (PropsValues.MINIFIER_INLINE_CONTENT_CACHE_SIZE > 0) {
-			_minifierCache = new ConcurrentLFUCache<String, String>(
-				PropsValues.MINIFIER_INLINE_CONTENT_CACHE_SIZE);
+		if (PropsValues.MINIFIER_INLINE_CONTENT_CACHE_ENABLED) {
+			_minifierCache = SingleVMPoolUtil.getPortalCache(
+				StripFilter.class.getName());
+		}
+		else {
+			_minifierCache = null;
 		}
 	}
 
@@ -79,8 +80,6 @@ public class StripFilter extends BasePortalFilter {
 		for (String ignorePath : PropsValues.STRIP_IGNORE_PATHS) {
 			_ignorePaths.add(ignorePath);
 		}
-
-		_servletContext = filterConfig.getServletContext();
 	}
 
 	@Override
@@ -111,7 +110,9 @@ public class StripFilter extends BasePortalFilter {
 
 		int position = duplicateCharBuffer.position() + length;
 
-		String content = duplicateCharBuffer.limit(position).toString();
+		Buffer buffer = duplicateCharBuffer.limit(position);
+
+		String content = buffer.toString();
 
 		charBuffer.position(position);
 
@@ -256,10 +257,10 @@ public class StripFilter extends BasePortalFilter {
 
 	protected void processCSS(
 			HttpServletRequest request, HttpServletResponse response,
-			CharBuffer charBuffer, Writer writer)
+			CharBuffer charBuffer, Writer writer, char[] openTag)
 		throws Exception {
 
-		outputOpenTag(charBuffer, writer, _MARKER_STYLE_OPEN);
+		outputOpenTag(charBuffer, writer, openTag);
 
 		int length = KMPSearch.search(
 			charBuffer, _MARKER_STYLE_CLOSE, _MARKER_STYLE_CLOSE_NEXTS);
@@ -282,7 +283,7 @@ public class StripFilter extends BasePortalFilter {
 
 		String minifiedContent = content;
 
-		if (PropsValues.MINIFIER_INLINE_CONTENT_CACHE_SIZE > 0) {
+		if (PropsValues.MINIFIER_INLINE_CONTENT_CACHE_ENABLED) {
 			CacheKeyGenerator cacheKeyGenerator =
 				CacheKeyGeneratorUtil.getCacheKeyGenerator(
 					StripFilter.class.getName());
@@ -292,27 +293,6 @@ public class StripFilter extends BasePortalFilter {
 			minifiedContent = _minifierCache.get(key);
 
 			if (minifiedContent == null) {
-				if (PropsValues.STRIP_CSS_SASS_ENABLED) {
-					try {
-						content = DynamicCSSUtil.parseSass(
-							_servletContext, request, request.getRequestURI(),
-							content);
-					}
-					catch (ScriptingException se) {
-						_log.error("Unable to parse SASS on CSS " + key, se);
-
-						if (_log.isDebugEnabled()) {
-							_log.debug(content);
-						}
-
-						if (response != null) {
-							response.setHeader(
-								HttpHeaders.CACHE_CONTROL,
-								HttpHeaders.CACHE_CONTROL_NO_CACHE_VALUE);
-						}
-					}
-				}
-
 				minifiedContent = MinifierUtil.minifyCss(content);
 
 				boolean skipCache = false;
@@ -331,6 +311,9 @@ public class StripFilter extends BasePortalFilter {
 					_minifierCache.put(key, minifiedContent);
 				}
 			}
+		}
+		else {
+			minifiedContent = MinifierUtil.minifyCss(content);
 		}
 
 		if (Validator.isNotNull(minifiedContent)) {
@@ -358,7 +341,7 @@ public class StripFilter extends BasePortalFilter {
 			new BufferCacheServletResponse(response);
 
 		processFilter(
-			StripFilter.class, request, bufferCacheServletResponse,
+			StripFilter.class.getName(), request, bufferCacheServletResponse,
 			filterChain);
 
 		String contentType = GetterUtil.getString(
@@ -523,7 +506,7 @@ public class StripFilter extends BasePortalFilter {
 
 		String minifiedContent = content;
 
-		if (PropsValues.MINIFIER_INLINE_CONTENT_CACHE_SIZE > 0) {
+		if (PropsValues.MINIFIER_INLINE_CONTENT_CACHE_ENABLED) {
 			CacheKeyGenerator cacheKeyGenerator =
 				CacheKeyGeneratorUtil.getCacheKeyGenerator(
 					StripFilter.class.getName());
@@ -553,6 +536,10 @@ public class StripFilter extends BasePortalFilter {
 					_minifierCache.put(key, minifiedContent);
 				}
 			}
+		}
+		else {
+			minifiedContent = MinifierUtil.minifyJavaScript(
+				resourceName, content);
 		}
 
 		if (Validator.isNotNull(minifiedContent)) {
@@ -681,7 +668,29 @@ public class StripFilter extends BasePortalFilter {
 					continue;
 				}
 				else if (hasMarker(charBuffer, _MARKER_STYLE_OPEN)) {
-					processCSS(request, response, charBuffer, writer);
+					processCSS(
+						request, response, charBuffer, writer,
+						_MARKER_STYLE_OPEN);
+
+					continue;
+				}
+				else if (hasMarker(
+							charBuffer,
+							_MARKER_STYLE_DATA_SENNA_TRACK_PERMANENT)) {
+
+					processCSS(
+						request, response, charBuffer, writer,
+						_MARKER_STYLE_DATA_SENNA_TRACK_PERMANENT);
+
+					continue;
+				}
+				else if (hasMarker(
+							charBuffer,
+							_MARKER_STYLE_DATA_SENNA_TRACK_TEMPORARY)) {
+
+					processCSS(
+						request, response, charBuffer, writer,
+						_MARKER_STYLE_DATA_SENNA_TRACK_TEMPORARY);
 
 					continue;
 				}
@@ -729,6 +738,12 @@ public class StripFilter extends BasePortalFilter {
 	private static final int[] _MARKER_STYLE_CLOSE_NEXTS =
 		KMPSearch.generateNexts(_MARKER_STYLE_CLOSE);
 
+	private static final char[] _MARKER_STYLE_DATA_SENNA_TRACK_PERMANENT =
+		"style data-senna-track=\"permanent\" type=\"text/css\">".toCharArray();
+
+	private static final char[] _MARKER_STYLE_DATA_SENNA_TRACK_TEMPORARY =
+		"style data-senna-track=\"temporary\" type=\"text/css\">".toCharArray();
+
 	private static final char[] _MARKER_STYLE_OPEN =
 		"style type=\"text/css\">".toCharArray();
 
@@ -748,13 +763,12 @@ public class StripFilter extends BasePortalFilter {
 
 	private static final String _STRIP = "strip";
 
-	private static Log _log = LogFactoryUtil.getLog(StripFilter.class);
+	private static final Log _log = LogFactoryUtil.getLog(StripFilter.class);
 
-	private static Pattern _javaScriptPattern = Pattern.compile(
+	private static final Pattern _javaScriptPattern = Pattern.compile(
 		"[Jj][aA][vV][aA][sS][cC][rR][iI][pP][tT]");
 
-	private Set<String> _ignorePaths = new HashSet<String>();
-	private ConcurrentLFUCache<String, String> _minifierCache;
-	private ServletContext _servletContext;
+	private final Set<String> _ignorePaths = new HashSet<>();
+	private final PortalCache<String, String> _minifierCache;
 
 }

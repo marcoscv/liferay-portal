@@ -14,12 +14,13 @@
 
 package com.liferay.portlet.documentlibrary.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.document.library.kernel.model.DLFolder;
+import com.liferay.document.library.kernel.service.DLFolderLocalServiceUtil;
+
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-
-import com.liferay.portlet.documentlibrary.model.DLFolder;
-import com.liferay.portlet.documentlibrary.service.DLFolderLocalServiceUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,9 +34,10 @@ import java.util.List;
  *
  * @author Brian Wing Shun Chan
  * @see DLFolderImpl
- * @see com.liferay.portlet.documentlibrary.model.DLFolder
+ * @see DLFolder
  * @generated
  */
+@ProviderType
 public abstract class DLFolderBaseImpl extends DLFolderModelImpl
 	implements DLFolder {
 	/*
@@ -68,13 +70,13 @@ public abstract class DLFolderBaseImpl extends DLFolderModelImpl
 
 		StringBundler sb = new StringBundler((dlFolders.size() * 2) + 1);
 
-		sb.append(StringPool.SLASH);
+		sb.append("/");
 
 		for (int i = dlFolders.size() - 1; i >= 0; i--) {
 			dlFolder = dlFolders.get(i);
 
 			sb.append(dlFolder.getFolderId());
-			sb.append(StringPool.SLASH);
+			sb.append("/");
 		}
 
 		return sb.toString();

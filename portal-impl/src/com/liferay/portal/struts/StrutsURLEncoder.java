@@ -14,16 +14,16 @@
 
 package com.liferay.portal.struts;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.portlet.PortletModeFactory;
 import com.liferay.portal.kernel.portlet.WindowStateFactory;
 import com.liferay.portal.kernel.servlet.URLEncoder;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -95,10 +95,12 @@ public class StrutsURLEncoder implements URLEncoder {
 
 		_contextPath = contextPath;
 		_mainPath = mainPath;
-		_setServletMapping(servletMapping);
 		_liferayPortletURL = liferayPortletURL;
+
 		_windowState = liferayPortletURL.getWindowState();
 		_portletMode = liferayPortletURL.getPortletMode();
+
+		_setServletMapping(servletMapping);
 	}
 
 	@Override
@@ -111,8 +113,7 @@ public class StrutsURLEncoder implements URLEncoder {
 
 		String encodedURL = path;
 
-		if (!path.startsWith("//") &&
-			!path.startsWith(_contextPath) &&
+		if (!path.startsWith("//") && !path.startsWith(_contextPath) &&
 			!path.startsWith(_servletMapping)) {
 
 			return encodedURL;
@@ -212,13 +213,14 @@ public class StrutsURLEncoder implements URLEncoder {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(StrutsURLEncoder.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		StrutsURLEncoder.class);
 
-	private String _contextPath;
-	private LiferayPortletURL _liferayPortletURL;
-	private String _mainPath;
-	private PortletMode _portletMode;
+	private final String _contextPath;
+	private final LiferayPortletURL _liferayPortletURL;
+	private final String _mainPath;
+	private final PortletMode _portletMode;
 	private String _servletMapping = StringPool.BLANK;
-	private WindowState _windowState;
+	private final WindowState _windowState;
 
 }

@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.VirtualHost;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.VirtualHost;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -32,8 +34,36 @@ import java.io.ObjectOutput;
  * @see VirtualHost
  * @generated
  */
+@ProviderType
 public class VirtualHostCacheModel implements CacheModel<VirtualHost>,
 	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof VirtualHostCacheModel)) {
+			return false;
+		}
+
+		VirtualHostCacheModel virtualHostCacheModel = (VirtualHostCacheModel)obj;
+
+		if ((virtualHostId == virtualHostCacheModel.virtualHostId) &&
+				(mvccVersion == virtualHostCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, virtualHostId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -73,7 +103,7 @@ public class VirtualHostCacheModel implements CacheModel<VirtualHost>,
 		virtualHostImpl.setLayoutSetId(layoutSetId);
 
 		if (hostname == null) {
-			virtualHostImpl.setHostname(StringPool.BLANK);
+			virtualHostImpl.setHostname("");
 		}
 		else {
 			virtualHostImpl.setHostname(hostname);
@@ -87,8 +117,11 @@ public class VirtualHostCacheModel implements CacheModel<VirtualHost>,
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
+
 		virtualHostId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		layoutSetId = objectInput.readLong();
 		hostname = objectInput.readUTF();
 	}
@@ -97,12 +130,15 @@ public class VirtualHostCacheModel implements CacheModel<VirtualHost>,
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
 		objectOutput.writeLong(virtualHostId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(layoutSetId);
 
 		if (hostname == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(hostname);

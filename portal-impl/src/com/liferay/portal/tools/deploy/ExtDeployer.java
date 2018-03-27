@@ -14,22 +14,28 @@
 
 package com.liferay.portal.tools.deploy;
 
-import com.liferay.portal.model.Plugin;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Plugin;
 import com.liferay.portal.tools.ToolDependencies;
+
+import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author Brian Wing Shun Chan
+ * @author     Brian Wing Shun Chan
+ * @deprecated As of 6.2.0
  */
+@Deprecated
 public class ExtDeployer extends BaseDeployer {
 
 	public static void main(String[] args) {
 		ToolDependencies.wireDeployers();
 
-		List<String> wars = new ArrayList<String>();
-		List<String> jars = new ArrayList<String>();
+		List<String> wars = new ArrayList<>();
+		List<String> jars = new ArrayList<>();
 
 		for (String arg : args) {
 			if (arg.endsWith(".war")) {
@@ -40,7 +46,13 @@ public class ExtDeployer extends BaseDeployer {
 			}
 		}
 
-		new ExtDeployer(wars, jars);
+		try (ExtDeployer extDeployer = new ExtDeployer(wars, jars)) {
+		}
+		catch (IOException ioe) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(ioe, ioe);
+			}
+		}
 	}
 
 	public ExtDeployer() {
@@ -54,5 +66,7 @@ public class ExtDeployer extends BaseDeployer {
 	public String getPluginType() {
 		return Plugin.TYPE_EXT;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(ExtDeployer.class);
 
 }

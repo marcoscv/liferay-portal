@@ -14,41 +14,40 @@
 
 package com.liferay.portal.service.persistence.impl;
 
-import com.liferay.portal.NoSuchLayoutBranchException;
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
+import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
 import com.liferay.portal.kernel.dao.orm.Query;
 import com.liferay.portal.kernel.dao.orm.QueryPos;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.Session;
+import com.liferay.portal.kernel.exception.NoSuchLayoutBranchException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.InstanceFactory;
+import com.liferay.portal.kernel.model.LayoutBranch;
+import com.liferay.portal.kernel.service.persistence.CompanyProvider;
+import com.liferay.portal.kernel.service.persistence.CompanyProviderWrapper;
+import com.liferay.portal.kernel.service.persistence.LayoutBranchPersistence;
+import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.LayoutBranch;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.ModelListener;
 import com.liferay.portal.model.impl.LayoutBranchImpl;
 import com.liferay.portal.model.impl.LayoutBranchModelImpl;
-import com.liferay.portal.service.persistence.LayoutBranchPersistence;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -60,9 +59,10 @@ import java.util.Set;
  *
  * @author Brian Wing Shun Chan
  * @see LayoutBranchPersistence
- * @see LayoutBranchUtil
+ * @see com.liferay.portal.kernel.service.persistence.LayoutBranchUtil
  * @generated
  */
+@ProviderType
 public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranch>
 	implements LayoutBranchPersistence {
 	/*
@@ -121,7 +121,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * Returns a range of all the layout branchs where layoutSetBranchId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param layoutSetBranchId the layout set branch ID
@@ -139,7 +139,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * Returns an ordered range of all the layout branchs where layoutSetBranchId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param layoutSetBranchId the layout set branch ID
@@ -150,7 +150,29 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public List<LayoutBranch> findByLayoutSetBranchId(long layoutSetBranchId,
-		int start, int end, OrderByComparator orderByComparator) {
+		int start, int end, OrderByComparator<LayoutBranch> orderByComparator) {
+		return findByLayoutSetBranchId(layoutSetBranchId, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the layout branchs where layoutSetBranchId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param layoutSetBranchId the layout set branch ID
+	 * @param start the lower bound of the range of layout branchs
+	 * @param end the upper bound of the range of layout branchs (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching layout branchs
+	 */
+	@Override
+	public List<LayoutBranch> findByLayoutSetBranchId(long layoutSetBranchId,
+		int start, int end, OrderByComparator<LayoutBranch> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -170,15 +192,19 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 				};
 		}
 
-		List<LayoutBranch> list = (List<LayoutBranch>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<LayoutBranch> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (LayoutBranch layoutBranch : list) {
-				if ((layoutSetBranchId != layoutBranch.getLayoutSetBranchId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<LayoutBranch>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (LayoutBranch layoutBranch : list) {
+					if ((layoutSetBranchId != layoutBranch.getLayoutSetBranchId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -188,7 +214,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -235,10 +261,10 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -256,11 +282,12 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * @param layoutSetBranchId the layout set branch ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a matching layout branch could not be found
+	 * @throws NoSuchLayoutBranchException if a matching layout branch could not be found
 	 */
 	@Override
 	public LayoutBranch findByLayoutSetBranchId_First(long layoutSetBranchId,
-		OrderByComparator orderByComparator) throws NoSuchLayoutBranchException {
+		OrderByComparator<LayoutBranch> orderByComparator)
+		throws NoSuchLayoutBranchException {
 		LayoutBranch layoutBranch = fetchByLayoutSetBranchId_First(layoutSetBranchId,
 				orderByComparator);
 
@@ -275,7 +302,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 		msg.append("layoutSetBranchId=");
 		msg.append(layoutSetBranchId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLayoutBranchException(msg.toString());
 	}
@@ -289,7 +316,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public LayoutBranch fetchByLayoutSetBranchId_First(long layoutSetBranchId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<LayoutBranch> orderByComparator) {
 		List<LayoutBranch> list = findByLayoutSetBranchId(layoutSetBranchId, 0,
 				1, orderByComparator);
 
@@ -306,11 +333,12 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * @param layoutSetBranchId the layout set branch ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a matching layout branch could not be found
+	 * @throws NoSuchLayoutBranchException if a matching layout branch could not be found
 	 */
 	@Override
 	public LayoutBranch findByLayoutSetBranchId_Last(long layoutSetBranchId,
-		OrderByComparator orderByComparator) throws NoSuchLayoutBranchException {
+		OrderByComparator<LayoutBranch> orderByComparator)
+		throws NoSuchLayoutBranchException {
 		LayoutBranch layoutBranch = fetchByLayoutSetBranchId_Last(layoutSetBranchId,
 				orderByComparator);
 
@@ -325,7 +353,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 		msg.append("layoutSetBranchId=");
 		msg.append(layoutSetBranchId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLayoutBranchException(msg.toString());
 	}
@@ -339,7 +367,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public LayoutBranch fetchByLayoutSetBranchId_Last(long layoutSetBranchId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<LayoutBranch> orderByComparator) {
 		int count = countByLayoutSetBranchId(layoutSetBranchId);
 
 		if (count == 0) {
@@ -359,17 +387,18 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	/**
 	 * Returns the layout branchs before and after the current layout branch in the ordered set where layoutSetBranchId = &#63;.
 	 *
-	 * @param LayoutBranchId the primary key of the current layout branch
+	 * @param layoutBranchId the primary key of the current layout branch
 	 * @param layoutSetBranchId the layout set branch ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a layout branch with the primary key could not be found
+	 * @throws NoSuchLayoutBranchException if a layout branch with the primary key could not be found
 	 */
 	@Override
 	public LayoutBranch[] findByLayoutSetBranchId_PrevAndNext(
-		long LayoutBranchId, long layoutSetBranchId,
-		OrderByComparator orderByComparator) throws NoSuchLayoutBranchException {
-		LayoutBranch layoutBranch = findByPrimaryKey(LayoutBranchId);
+		long layoutBranchId, long layoutSetBranchId,
+		OrderByComparator<LayoutBranch> orderByComparator)
+		throws NoSuchLayoutBranchException {
+		LayoutBranch layoutBranch = findByPrimaryKey(layoutBranchId);
 
 		Session session = null;
 
@@ -398,12 +427,13 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 	protected LayoutBranch getByLayoutSetBranchId_PrevAndNext(Session session,
 		LayoutBranch layoutBranch, long layoutSetBranchId,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<LayoutBranch> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -526,8 +556,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 		Object[] finderArgs = new Object[] { layoutSetBranchId };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(2);
@@ -551,10 +580,10 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -605,7 +634,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * Returns a range of all the layout branchs where layoutSetBranchId = &#63; and plid = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param layoutSetBranchId the layout set branch ID
@@ -624,7 +653,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * Returns an ordered range of all the layout branchs where layoutSetBranchId = &#63; and plid = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param layoutSetBranchId the layout set branch ID
@@ -636,7 +665,30 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public List<LayoutBranch> findByL_P(long layoutSetBranchId, long plid,
-		int start, int end, OrderByComparator orderByComparator) {
+		int start, int end, OrderByComparator<LayoutBranch> orderByComparator) {
+		return findByL_P(layoutSetBranchId, plid, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the layout branchs where layoutSetBranchId = &#63; and plid = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param layoutSetBranchId the layout set branch ID
+	 * @param plid the plid
+	 * @param start the lower bound of the range of layout branchs
+	 * @param end the upper bound of the range of layout branchs (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching layout branchs
+	 */
+	@Override
+	public List<LayoutBranch> findByL_P(long layoutSetBranchId, long plid,
+		int start, int end, OrderByComparator<LayoutBranch> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -656,16 +708,20 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 				};
 		}
 
-		List<LayoutBranch> list = (List<LayoutBranch>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<LayoutBranch> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (LayoutBranch layoutBranch : list) {
-				if ((layoutSetBranchId != layoutBranch.getLayoutSetBranchId()) ||
-						(plid != layoutBranch.getPlid())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<LayoutBranch>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (LayoutBranch layoutBranch : list) {
+					if ((layoutSetBranchId != layoutBranch.getLayoutSetBranchId()) ||
+							(plid != layoutBranch.getPlid())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -675,7 +731,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 			if (orderByComparator != null) {
 				query = new StringBundler(4 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(4);
@@ -726,10 +782,10 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -748,11 +804,12 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * @param plid the plid
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a matching layout branch could not be found
+	 * @throws NoSuchLayoutBranchException if a matching layout branch could not be found
 	 */
 	@Override
 	public LayoutBranch findByL_P_First(long layoutSetBranchId, long plid,
-		OrderByComparator orderByComparator) throws NoSuchLayoutBranchException {
+		OrderByComparator<LayoutBranch> orderByComparator)
+		throws NoSuchLayoutBranchException {
 		LayoutBranch layoutBranch = fetchByL_P_First(layoutSetBranchId, plid,
 				orderByComparator);
 
@@ -770,7 +827,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 		msg.append(", plid=");
 		msg.append(plid);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLayoutBranchException(msg.toString());
 	}
@@ -785,7 +842,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public LayoutBranch fetchByL_P_First(long layoutSetBranchId, long plid,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<LayoutBranch> orderByComparator) {
 		List<LayoutBranch> list = findByL_P(layoutSetBranchId, plid, 0, 1,
 				orderByComparator);
 
@@ -803,11 +860,12 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * @param plid the plid
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a matching layout branch could not be found
+	 * @throws NoSuchLayoutBranchException if a matching layout branch could not be found
 	 */
 	@Override
 	public LayoutBranch findByL_P_Last(long layoutSetBranchId, long plid,
-		OrderByComparator orderByComparator) throws NoSuchLayoutBranchException {
+		OrderByComparator<LayoutBranch> orderByComparator)
+		throws NoSuchLayoutBranchException {
 		LayoutBranch layoutBranch = fetchByL_P_Last(layoutSetBranchId, plid,
 				orderByComparator);
 
@@ -825,7 +883,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 		msg.append(", plid=");
 		msg.append(plid);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLayoutBranchException(msg.toString());
 	}
@@ -840,7 +898,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public LayoutBranch fetchByL_P_Last(long layoutSetBranchId, long plid,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<LayoutBranch> orderByComparator) {
 		int count = countByL_P(layoutSetBranchId, plid);
 
 		if (count == 0) {
@@ -860,18 +918,19 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	/**
 	 * Returns the layout branchs before and after the current layout branch in the ordered set where layoutSetBranchId = &#63; and plid = &#63;.
 	 *
-	 * @param LayoutBranchId the primary key of the current layout branch
+	 * @param layoutBranchId the primary key of the current layout branch
 	 * @param layoutSetBranchId the layout set branch ID
 	 * @param plid the plid
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a layout branch with the primary key could not be found
+	 * @throws NoSuchLayoutBranchException if a layout branch with the primary key could not be found
 	 */
 	@Override
-	public LayoutBranch[] findByL_P_PrevAndNext(long LayoutBranchId,
-		long layoutSetBranchId, long plid, OrderByComparator orderByComparator)
+	public LayoutBranch[] findByL_P_PrevAndNext(long layoutBranchId,
+		long layoutSetBranchId, long plid,
+		OrderByComparator<LayoutBranch> orderByComparator)
 		throws NoSuchLayoutBranchException {
-		LayoutBranch layoutBranch = findByPrimaryKey(LayoutBranchId);
+		LayoutBranch layoutBranch = findByPrimaryKey(layoutBranchId);
 
 		Session session = null;
 
@@ -900,15 +959,16 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 	protected LayoutBranch getByL_P_PrevAndNext(Session session,
 		LayoutBranch layoutBranch, long layoutSetBranchId, long plid,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<LayoutBranch> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(5 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(4);
 		}
 
 		query.append(_SQL_SELECT_LAYOUTBRANCH_WHERE);
@@ -1034,8 +1094,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 		Object[] finderArgs = new Object[] { layoutSetBranchId, plid };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(3);
@@ -1063,10 +1122,10 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1099,13 +1158,13 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 			});
 
 	/**
-	 * Returns the layout branch where layoutSetBranchId = &#63; and plid = &#63; and name = &#63; or throws a {@link com.liferay.portal.NoSuchLayoutBranchException} if it could not be found.
+	 * Returns the layout branch where layoutSetBranchId = &#63; and plid = &#63; and name = &#63; or throws a {@link NoSuchLayoutBranchException} if it could not be found.
 	 *
 	 * @param layoutSetBranchId the layout set branch ID
 	 * @param plid the plid
 	 * @param name the name
 	 * @return the matching layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a matching layout branch could not be found
+	 * @throws NoSuchLayoutBranchException if a matching layout branch could not be found
 	 */
 	@Override
 	public LayoutBranch findByL_P_N(long layoutSetBranchId, long plid,
@@ -1126,10 +1185,10 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 			msg.append(", name=");
 			msg.append(name);
 
-			msg.append(StringPool.CLOSE_CURLY_BRACE);
+			msg.append("}");
 
-			if (_log.isWarnEnabled()) {
-				_log.warn(msg.toString());
+			if (_log.isDebugEnabled()) {
+				_log.debug(msg.toString());
 			}
 
 			throw new NoSuchLayoutBranchException(msg.toString());
@@ -1158,7 +1217,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * @param layoutSetBranchId the layout set branch ID
 	 * @param plid the plid
 	 * @param name the name
-	 * @param retrieveFromCache whether to use the finder cache
+	 * @param retrieveFromCache whether to retrieve from the finder cache
 	 * @return the matching layout branch, or <code>null</code> if a matching layout branch could not be found
 	 */
 	@Override
@@ -1169,7 +1228,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 		Object result = null;
 
 		if (retrieveFromCache) {
-			result = FinderCacheUtil.getResult(FINDER_PATH_FETCH_BY_L_P_N,
+			result = finderCache.getResult(FINDER_PATH_FETCH_BY_L_P_N,
 					finderArgs, this);
 		}
 
@@ -1178,7 +1237,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 			if ((layoutSetBranchId != layoutBranch.getLayoutSetBranchId()) ||
 					(plid != layoutBranch.getPlid()) ||
-					!Validator.equals(name, layoutBranch.getName())) {
+					!Objects.equals(name, layoutBranch.getName())) {
 				result = null;
 			}
 		}
@@ -1197,7 +1256,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 			if (name == null) {
 				query.append(_FINDER_COLUMN_L_P_N_NAME_1);
 			}
-			else if (name.equals(StringPool.BLANK)) {
+			else if (name.equals("")) {
 				query.append(_FINDER_COLUMN_L_P_N_NAME_3);
 			}
 			else {
@@ -1228,7 +1287,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 				List<LayoutBranch> list = q.list();
 
 				if (list.isEmpty()) {
-					FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_L_P_N,
+					finderCache.putResult(FINDER_PATH_FETCH_BY_L_P_N,
 						finderArgs, list);
 				}
 				else {
@@ -1242,14 +1301,13 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 							(layoutBranch.getPlid() != plid) ||
 							(layoutBranch.getName() == null) ||
 							!layoutBranch.getName().equals(name)) {
-						FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_L_P_N,
+						finderCache.putResult(FINDER_PATH_FETCH_BY_L_P_N,
 							finderArgs, layoutBranch);
 					}
 				}
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_L_P_N,
-					finderArgs);
+				finderCache.removeResult(FINDER_PATH_FETCH_BY_L_P_N, finderArgs);
 
 				throw processException(e);
 			}
@@ -1296,8 +1354,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 		Object[] finderArgs = new Object[] { layoutSetBranchId, plid, name };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(4);
@@ -1313,7 +1370,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 			if (name == null) {
 				query.append(_FINDER_COLUMN_L_P_N_NAME_1);
 			}
-			else if (name.equals(StringPool.BLANK)) {
+			else if (name.equals("")) {
 				query.append(_FINDER_COLUMN_L_P_N_NAME_3);
 			}
 			else {
@@ -1343,10 +1400,10 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1410,7 +1467,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * Returns a range of all the layout branchs where layoutSetBranchId = &#63; and plid = &#63; and master = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param layoutSetBranchId the layout set branch ID
@@ -1430,7 +1487,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * Returns an ordered range of all the layout branchs where layoutSetBranchId = &#63; and plid = &#63; and master = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param layoutSetBranchId the layout set branch ID
@@ -1443,7 +1500,33 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public List<LayoutBranch> findByL_P_M(long layoutSetBranchId, long plid,
-		boolean master, int start, int end, OrderByComparator orderByComparator) {
+		boolean master, int start, int end,
+		OrderByComparator<LayoutBranch> orderByComparator) {
+		return findByL_P_M(layoutSetBranchId, plid, master, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the layout branchs where layoutSetBranchId = &#63; and plid = &#63; and master = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param layoutSetBranchId the layout set branch ID
+	 * @param plid the plid
+	 * @param master the master
+	 * @param start the lower bound of the range of layout branchs
+	 * @param end the upper bound of the range of layout branchs (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching layout branchs
+	 */
+	@Override
+	public List<LayoutBranch> findByL_P_M(long layoutSetBranchId, long plid,
+		boolean master, int start, int end,
+		OrderByComparator<LayoutBranch> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1463,17 +1546,21 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 				};
 		}
 
-		List<LayoutBranch> list = (List<LayoutBranch>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<LayoutBranch> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (LayoutBranch layoutBranch : list) {
-				if ((layoutSetBranchId != layoutBranch.getLayoutSetBranchId()) ||
-						(plid != layoutBranch.getPlid()) ||
-						(master != layoutBranch.getMaster())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<LayoutBranch>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (LayoutBranch layoutBranch : list) {
+					if ((layoutSetBranchId != layoutBranch.getLayoutSetBranchId()) ||
+							(plid != layoutBranch.getPlid()) ||
+							(master != layoutBranch.getMaster())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -1483,7 +1570,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 			if (orderByComparator != null) {
 				query = new StringBundler(5 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(5);
@@ -1538,10 +1625,10 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1561,11 +1648,11 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * @param master the master
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a matching layout branch could not be found
+	 * @throws NoSuchLayoutBranchException if a matching layout branch could not be found
 	 */
 	@Override
 	public LayoutBranch findByL_P_M_First(long layoutSetBranchId, long plid,
-		boolean master, OrderByComparator orderByComparator)
+		boolean master, OrderByComparator<LayoutBranch> orderByComparator)
 		throws NoSuchLayoutBranchException {
 		LayoutBranch layoutBranch = fetchByL_P_M_First(layoutSetBranchId, plid,
 				master, orderByComparator);
@@ -1587,7 +1674,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 		msg.append(", master=");
 		msg.append(master);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLayoutBranchException(msg.toString());
 	}
@@ -1603,7 +1690,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public LayoutBranch fetchByL_P_M_First(long layoutSetBranchId, long plid,
-		boolean master, OrderByComparator orderByComparator) {
+		boolean master, OrderByComparator<LayoutBranch> orderByComparator) {
 		List<LayoutBranch> list = findByL_P_M(layoutSetBranchId, plid, master,
 				0, 1, orderByComparator);
 
@@ -1622,11 +1709,11 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * @param master the master
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a matching layout branch could not be found
+	 * @throws NoSuchLayoutBranchException if a matching layout branch could not be found
 	 */
 	@Override
 	public LayoutBranch findByL_P_M_Last(long layoutSetBranchId, long plid,
-		boolean master, OrderByComparator orderByComparator)
+		boolean master, OrderByComparator<LayoutBranch> orderByComparator)
 		throws NoSuchLayoutBranchException {
 		LayoutBranch layoutBranch = fetchByL_P_M_Last(layoutSetBranchId, plid,
 				master, orderByComparator);
@@ -1648,7 +1735,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 		msg.append(", master=");
 		msg.append(master);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLayoutBranchException(msg.toString());
 	}
@@ -1664,7 +1751,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public LayoutBranch fetchByL_P_M_Last(long layoutSetBranchId, long plid,
-		boolean master, OrderByComparator orderByComparator) {
+		boolean master, OrderByComparator<LayoutBranch> orderByComparator) {
 		int count = countByL_P_M(layoutSetBranchId, plid, master);
 
 		if (count == 0) {
@@ -1684,19 +1771,20 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	/**
 	 * Returns the layout branchs before and after the current layout branch in the ordered set where layoutSetBranchId = &#63; and plid = &#63; and master = &#63;.
 	 *
-	 * @param LayoutBranchId the primary key of the current layout branch
+	 * @param layoutBranchId the primary key of the current layout branch
 	 * @param layoutSetBranchId the layout set branch ID
 	 * @param plid the plid
 	 * @param master the master
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a layout branch with the primary key could not be found
+	 * @throws NoSuchLayoutBranchException if a layout branch with the primary key could not be found
 	 */
 	@Override
-	public LayoutBranch[] findByL_P_M_PrevAndNext(long LayoutBranchId,
+	public LayoutBranch[] findByL_P_M_PrevAndNext(long layoutBranchId,
 		long layoutSetBranchId, long plid, boolean master,
-		OrderByComparator orderByComparator) throws NoSuchLayoutBranchException {
-		LayoutBranch layoutBranch = findByPrimaryKey(LayoutBranchId);
+		OrderByComparator<LayoutBranch> orderByComparator)
+		throws NoSuchLayoutBranchException {
+		LayoutBranch layoutBranch = findByPrimaryKey(layoutBranchId);
 
 		Session session = null;
 
@@ -1725,15 +1813,17 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 	protected LayoutBranch getByL_P_M_PrevAndNext(Session session,
 		LayoutBranch layoutBranch, long layoutSetBranchId, long plid,
-		boolean master, OrderByComparator orderByComparator, boolean previous) {
+		boolean master, OrderByComparator<LayoutBranch> orderByComparator,
+		boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
 			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(5);
 		}
 
 		query.append(_SQL_SELECT_LAYOUTBRANCH_WHERE);
@@ -1865,8 +1955,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 		Object[] finderArgs = new Object[] { layoutSetBranchId, plid, master };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(4);
@@ -1898,10 +1987,10 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1928,10 +2017,10 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public void cacheResult(LayoutBranch layoutBranch) {
-		EntityCacheUtil.putResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.putResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
 			LayoutBranchImpl.class, layoutBranch.getPrimaryKey(), layoutBranch);
 
-		FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_L_P_N,
+		finderCache.putResult(FINDER_PATH_FETCH_BY_L_P_N,
 			new Object[] {
 				layoutBranch.getLayoutSetBranchId(), layoutBranch.getPlid(),
 				layoutBranch.getName()
@@ -1948,7 +2037,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	@Override
 	public void cacheResult(List<LayoutBranch> layoutBranchs) {
 		for (LayoutBranch layoutBranch : layoutBranchs) {
-			if (EntityCacheUtil.getResult(
+			if (entityCache.getResult(
 						LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
 						LayoutBranchImpl.class, layoutBranch.getPrimaryKey()) == null) {
 				cacheResult(layoutBranch);
@@ -1963,119 +2052,102 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * Clears the cache for all layout branchs.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
-		if (_HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE) {
-			CacheRegistryUtil.clear(LayoutBranchImpl.class.getName());
-		}
+		entityCache.clearCache(LayoutBranchImpl.class);
 
-		EntityCacheUtil.clearCache(LayoutBranchImpl.class);
-
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
 	/**
 	 * Clears the cache for the layout branch.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache(LayoutBranch layoutBranch) {
-		EntityCacheUtil.removeResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.removeResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
 			LayoutBranchImpl.class, layoutBranch.getPrimaryKey());
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
-		clearUniqueFindersCache(layoutBranch);
+		clearUniqueFindersCache((LayoutBranchModelImpl)layoutBranch, true);
 	}
 
 	@Override
 	public void clearCache(List<LayoutBranch> layoutBranchs) {
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
 		for (LayoutBranch layoutBranch : layoutBranchs) {
-			EntityCacheUtil.removeResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
+			entityCache.removeResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
 				LayoutBranchImpl.class, layoutBranch.getPrimaryKey());
 
-			clearUniqueFindersCache(layoutBranch);
+			clearUniqueFindersCache((LayoutBranchModelImpl)layoutBranch, true);
 		}
 	}
 
-	protected void cacheUniqueFindersCache(LayoutBranch layoutBranch) {
-		if (layoutBranch.isNew()) {
-			Object[] args = new Object[] {
-					layoutBranch.getLayoutSetBranchId(), layoutBranch.getPlid(),
-					layoutBranch.getName()
-				};
-
-			FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_L_P_N, args,
-				Long.valueOf(1));
-			FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_L_P_N, args,
-				layoutBranch);
-		}
-		else {
-			LayoutBranchModelImpl layoutBranchModelImpl = (LayoutBranchModelImpl)layoutBranch;
-
-			if ((layoutBranchModelImpl.getColumnBitmask() &
-					FINDER_PATH_FETCH_BY_L_P_N.getColumnBitmask()) != 0) {
-				Object[] args = new Object[] {
-						layoutBranch.getLayoutSetBranchId(),
-						layoutBranch.getPlid(), layoutBranch.getName()
-					};
-
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_L_P_N, args,
-					Long.valueOf(1));
-				FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_L_P_N, args,
-					layoutBranch);
-			}
-		}
-	}
-
-	protected void clearUniqueFindersCache(LayoutBranch layoutBranch) {
-		LayoutBranchModelImpl layoutBranchModelImpl = (LayoutBranchModelImpl)layoutBranch;
-
+	protected void cacheUniqueFindersCache(
+		LayoutBranchModelImpl layoutBranchModelImpl) {
 		Object[] args = new Object[] {
-				layoutBranch.getLayoutSetBranchId(), layoutBranch.getPlid(),
-				layoutBranch.getName()
+				layoutBranchModelImpl.getLayoutSetBranchId(),
+				layoutBranchModelImpl.getPlid(), layoutBranchModelImpl.getName()
 			};
 
-		FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_L_P_N, args);
-		FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_L_P_N, args);
+		finderCache.putResult(FINDER_PATH_COUNT_BY_L_P_N, args,
+			Long.valueOf(1), false);
+		finderCache.putResult(FINDER_PATH_FETCH_BY_L_P_N, args,
+			layoutBranchModelImpl, false);
+	}
+
+	protected void clearUniqueFindersCache(
+		LayoutBranchModelImpl layoutBranchModelImpl, boolean clearCurrent) {
+		if (clearCurrent) {
+			Object[] args = new Object[] {
+					layoutBranchModelImpl.getLayoutSetBranchId(),
+					layoutBranchModelImpl.getPlid(),
+					layoutBranchModelImpl.getName()
+				};
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_L_P_N, args);
+			finderCache.removeResult(FINDER_PATH_FETCH_BY_L_P_N, args);
+		}
 
 		if ((layoutBranchModelImpl.getColumnBitmask() &
 				FINDER_PATH_FETCH_BY_L_P_N.getColumnBitmask()) != 0) {
-			args = new Object[] {
+			Object[] args = new Object[] {
 					layoutBranchModelImpl.getOriginalLayoutSetBranchId(),
 					layoutBranchModelImpl.getOriginalPlid(),
 					layoutBranchModelImpl.getOriginalName()
 				};
 
-			FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_L_P_N, args);
-			FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_L_P_N, args);
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_L_P_N, args);
+			finderCache.removeResult(FINDER_PATH_FETCH_BY_L_P_N, args);
 		}
 	}
 
 	/**
 	 * Creates a new layout branch with the primary key. Does not add the layout branch to the database.
 	 *
-	 * @param LayoutBranchId the primary key for the new layout branch
+	 * @param layoutBranchId the primary key for the new layout branch
 	 * @return the new layout branch
 	 */
 	@Override
-	public LayoutBranch create(long LayoutBranchId) {
+	public LayoutBranch create(long layoutBranchId) {
 		LayoutBranch layoutBranch = new LayoutBranchImpl();
 
 		layoutBranch.setNew(true);
-		layoutBranch.setPrimaryKey(LayoutBranchId);
+		layoutBranch.setPrimaryKey(layoutBranchId);
+
+		layoutBranch.setCompanyId(companyProvider.getCompanyId());
 
 		return layoutBranch;
 	}
@@ -2083,14 +2155,14 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	/**
 	 * Removes the layout branch with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
-	 * @param LayoutBranchId the primary key of the layout branch
+	 * @param layoutBranchId the primary key of the layout branch
 	 * @return the layout branch that was removed
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a layout branch with the primary key could not be found
+	 * @throws NoSuchLayoutBranchException if a layout branch with the primary key could not be found
 	 */
 	@Override
-	public LayoutBranch remove(long LayoutBranchId)
+	public LayoutBranch remove(long layoutBranchId)
 		throws NoSuchLayoutBranchException {
-		return remove((Serializable)LayoutBranchId);
+		return remove((Serializable)layoutBranchId);
 	}
 
 	/**
@@ -2098,7 +2170,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 *
 	 * @param primaryKey the primary key of the layout branch
 	 * @return the layout branch that was removed
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a layout branch with the primary key could not be found
+	 * @throws NoSuchLayoutBranchException if a layout branch with the primary key could not be found
 	 */
 	@Override
 	public LayoutBranch remove(Serializable primaryKey)
@@ -2112,8 +2184,8 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 					primaryKey);
 
 			if (layoutBranch == null) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+				if (_log.isDebugEnabled()) {
+					_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 				}
 
 				throw new NoSuchLayoutBranchException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -2166,8 +2238,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	}
 
 	@Override
-	public LayoutBranch updateImpl(
-		com.liferay.portal.model.LayoutBranch layoutBranch) {
+	public LayoutBranch updateImpl(LayoutBranch layoutBranch) {
 		layoutBranch = toUnwrappedModel(layoutBranch);
 
 		boolean isNew = layoutBranch.isNew();
@@ -2185,7 +2256,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 				layoutBranch.setNew(false);
 			}
 			else {
-				session.merge(layoutBranch);
+				layoutBranch = (LayoutBranch)session.merge(layoutBranch);
 			}
 		}
 		catch (Exception e) {
@@ -2195,10 +2266,44 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 			closeSession(session);
 		}
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 
-		if (isNew || !LayoutBranchModelImpl.COLUMN_BITMASK_ENABLED) {
-			FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		if (!LayoutBranchModelImpl.COLUMN_BITMASK_ENABLED) {
+			finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		}
+		else
+		 if (isNew) {
+			Object[] args = new Object[] {
+					layoutBranchModelImpl.getLayoutSetBranchId()
+				};
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_LAYOUTSETBRANCHID,
+				args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_LAYOUTSETBRANCHID,
+				args);
+
+			args = new Object[] {
+					layoutBranchModelImpl.getLayoutSetBranchId(),
+					layoutBranchModelImpl.getPlid()
+				};
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_L_P, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_L_P,
+				args);
+
+			args = new Object[] {
+					layoutBranchModelImpl.getLayoutSetBranchId(),
+					layoutBranchModelImpl.getPlid(),
+					layoutBranchModelImpl.getMaster()
+				};
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_L_P_M, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_L_P_M,
+				args);
+
+			finderCache.removeResult(FINDER_PATH_COUNT_ALL, FINDER_ARGS_EMPTY);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL,
+				FINDER_ARGS_EMPTY);
 		}
 
 		else {
@@ -2208,16 +2313,16 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 						layoutBranchModelImpl.getOriginalLayoutSetBranchId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_LAYOUTSETBRANCHID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_LAYOUTSETBRANCHID,
 					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_LAYOUTSETBRANCHID,
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_LAYOUTSETBRANCHID,
 					args);
 
 				args = new Object[] { layoutBranchModelImpl.getLayoutSetBranchId() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_LAYOUTSETBRANCHID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_LAYOUTSETBRANCHID,
 					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_LAYOUTSETBRANCHID,
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_LAYOUTSETBRANCHID,
 					args);
 			}
 
@@ -2228,8 +2333,8 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 						layoutBranchModelImpl.getOriginalPlid()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_L_P, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_L_P,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_L_P, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_L_P,
 					args);
 
 				args = new Object[] {
@@ -2237,8 +2342,8 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 						layoutBranchModelImpl.getPlid()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_L_P, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_L_P,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_L_P, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_L_P,
 					args);
 			}
 
@@ -2250,8 +2355,8 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 						layoutBranchModelImpl.getOriginalMaster()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_L_P_M, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_L_P_M,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_L_P_M, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_L_P_M,
 					args);
 
 				args = new Object[] {
@@ -2260,18 +2365,18 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 						layoutBranchModelImpl.getMaster()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_L_P_M, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_L_P_M,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_L_P_M, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_L_P_M,
 					args);
 			}
 		}
 
-		EntityCacheUtil.putResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.putResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
 			LayoutBranchImpl.class, layoutBranch.getPrimaryKey(), layoutBranch,
 			false);
 
-		clearUniqueFindersCache(layoutBranch);
-		cacheUniqueFindersCache(layoutBranch);
+		clearUniqueFindersCache(layoutBranchModelImpl, false);
+		cacheUniqueFindersCache(layoutBranchModelImpl);
 
 		layoutBranch.resetOriginalValues();
 
@@ -2304,11 +2409,11 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	}
 
 	/**
-	 * Returns the layout branch with the primary key or throws a {@link com.liferay.portal.NoSuchModelException} if it could not be found.
+	 * Returns the layout branch with the primary key or throws a {@link com.liferay.portal.kernel.exception.NoSuchModelException} if it could not be found.
 	 *
 	 * @param primaryKey the primary key of the layout branch
 	 * @return the layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a layout branch with the primary key could not be found
+	 * @throws NoSuchLayoutBranchException if a layout branch with the primary key could not be found
 	 */
 	@Override
 	public LayoutBranch findByPrimaryKey(Serializable primaryKey)
@@ -2316,8 +2421,8 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 		LayoutBranch layoutBranch = fetchByPrimaryKey(primaryKey);
 
 		if (layoutBranch == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+			if (_log.isDebugEnabled()) {
+				_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 			}
 
 			throw new NoSuchLayoutBranchException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -2328,16 +2433,16 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	}
 
 	/**
-	 * Returns the layout branch with the primary key or throws a {@link com.liferay.portal.NoSuchLayoutBranchException} if it could not be found.
+	 * Returns the layout branch with the primary key or throws a {@link NoSuchLayoutBranchException} if it could not be found.
 	 *
-	 * @param LayoutBranchId the primary key of the layout branch
+	 * @param layoutBranchId the primary key of the layout branch
 	 * @return the layout branch
-	 * @throws com.liferay.portal.NoSuchLayoutBranchException if a layout branch with the primary key could not be found
+	 * @throws NoSuchLayoutBranchException if a layout branch with the primary key could not be found
 	 */
 	@Override
-	public LayoutBranch findByPrimaryKey(long LayoutBranchId)
+	public LayoutBranch findByPrimaryKey(long layoutBranchId)
 		throws NoSuchLayoutBranchException {
-		return findByPrimaryKey((Serializable)LayoutBranchId);
+		return findByPrimaryKey((Serializable)layoutBranchId);
 	}
 
 	/**
@@ -2348,12 +2453,14 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public LayoutBranch fetchByPrimaryKey(Serializable primaryKey) {
-		LayoutBranch layoutBranch = (LayoutBranch)EntityCacheUtil.getResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
+		Serializable serializable = entityCache.getResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
 				LayoutBranchImpl.class, primaryKey);
 
-		if (layoutBranch == _nullLayoutBranch) {
+		if (serializable == nullModel) {
 			return null;
 		}
+
+		LayoutBranch layoutBranch = (LayoutBranch)serializable;
 
 		if (layoutBranch == null) {
 			Session session = null;
@@ -2368,12 +2475,12 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 					cacheResult(layoutBranch);
 				}
 				else {
-					EntityCacheUtil.putResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-						LayoutBranchImpl.class, primaryKey, _nullLayoutBranch);
+					entityCache.putResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
+						LayoutBranchImpl.class, primaryKey, nullModel);
 				}
 			}
 			catch (Exception e) {
-				EntityCacheUtil.removeResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
+				entityCache.removeResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
 					LayoutBranchImpl.class, primaryKey);
 
 				throw processException(e);
@@ -2389,12 +2496,12 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	/**
 	 * Returns the layout branch with the primary key or returns <code>null</code> if it could not be found.
 	 *
-	 * @param LayoutBranchId the primary key of the layout branch
+	 * @param layoutBranchId the primary key of the layout branch
 	 * @return the layout branch, or <code>null</code> if a layout branch with the primary key could not be found
 	 */
 	@Override
-	public LayoutBranch fetchByPrimaryKey(long LayoutBranchId) {
-		return fetchByPrimaryKey((Serializable)LayoutBranchId);
+	public LayoutBranch fetchByPrimaryKey(long layoutBranchId) {
+		return fetchByPrimaryKey((Serializable)layoutBranchId);
 	}
 
 	@Override
@@ -2423,18 +2530,20 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 		Set<Serializable> uncachedPrimaryKeys = null;
 
 		for (Serializable primaryKey : primaryKeys) {
-			LayoutBranch layoutBranch = (LayoutBranch)EntityCacheUtil.getResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
+			Serializable serializable = entityCache.getResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
 					LayoutBranchImpl.class, primaryKey);
 
-			if (layoutBranch == null) {
-				if (uncachedPrimaryKeys == null) {
-					uncachedPrimaryKeys = new HashSet<Serializable>();
-				}
+			if (serializable != nullModel) {
+				if (serializable == null) {
+					if (uncachedPrimaryKeys == null) {
+						uncachedPrimaryKeys = new HashSet<Serializable>();
+					}
 
-				uncachedPrimaryKeys.add(primaryKey);
-			}
-			else {
-				map.put(primaryKey, layoutBranch);
+					uncachedPrimaryKeys.add(primaryKey);
+				}
+				else {
+					map.put(primaryKey, (LayoutBranch)serializable);
+				}
 			}
 		}
 
@@ -2448,14 +2557,14 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 		query.append(_SQL_SELECT_LAYOUTBRANCH_WHERE_PKS_IN);
 
 		for (Serializable primaryKey : uncachedPrimaryKeys) {
-			query.append(String.valueOf(primaryKey));
+			query.append((long)primaryKey);
 
-			query.append(StringPool.COMMA);
+			query.append(",");
 		}
 
 		query.setIndex(query.index() - 1);
 
-		query.append(StringPool.CLOSE_PARENTHESIS);
+		query.append(")");
 
 		String sql = query.toString();
 
@@ -2475,8 +2584,8 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 			}
 
 			for (Serializable primaryKey : uncachedPrimaryKeys) {
-				EntityCacheUtil.putResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
-					LayoutBranchImpl.class, primaryKey, _nullLayoutBranch);
+				entityCache.putResult(LayoutBranchModelImpl.ENTITY_CACHE_ENABLED,
+					LayoutBranchImpl.class, primaryKey, nullModel);
 			}
 		}
 		catch (Exception e) {
@@ -2503,7 +2612,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * Returns a range of all the layout branchs.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of layout branchs
@@ -2519,7 +2628,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 * Returns an ordered range of all the layout branchs.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of layout branchs
@@ -2529,7 +2638,27 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public List<LayoutBranch> findAll(int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<LayoutBranch> orderByComparator) {
+		return findAll(start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the layout branchs.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link LayoutBranchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param start the lower bound of the range of layout branchs
+	 * @param end the upper bound of the range of layout branchs (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of layout branchs
+	 */
+	@Override
+	public List<LayoutBranch> findAll(int start, int end,
+		OrderByComparator<LayoutBranch> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -2545,8 +2674,12 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 			finderArgs = new Object[] { start, end, orderByComparator };
 		}
 
-		List<LayoutBranch> list = (List<LayoutBranch>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<LayoutBranch> list = null;
+
+		if (retrieveFromCache) {
+			list = (List<LayoutBranch>)finderCache.getResult(finderPath,
+					finderArgs, this);
+		}
 
 		if (list == null) {
 			StringBundler query = null;
@@ -2554,7 +2687,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 			if (orderByComparator != null) {
 				query = new StringBundler(2 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 
 				query.append(_SQL_SELECT_LAYOUTBRANCH);
 
@@ -2593,10 +2726,10 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -2626,7 +2759,7 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)FinderCacheUtil.getResult(FINDER_PATH_COUNT_ALL,
+		Long count = (Long)finderCache.getResult(FINDER_PATH_COUNT_ALL,
 				FINDER_ARGS_EMPTY, this);
 
 		if (count == null) {
@@ -2639,11 +2772,11 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_ALL,
-					FINDER_ARGS_EMPTY, count);
+				finderCache.putResult(FINDER_PATH_COUNT_ALL, FINDER_ARGS_EMPTY,
+					count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_ALL,
+				finderCache.removeResult(FINDER_PATH_COUNT_ALL,
 					FINDER_ARGS_EMPTY);
 
 				throw processException(e);
@@ -2656,76 +2789,35 @@ public class LayoutBranchPersistenceImpl extends BasePersistenceImpl<LayoutBranc
 		return count.intValue();
 	}
 
+	@Override
+	protected Map<String, Integer> getTableColumnsMap() {
+		return LayoutBranchModelImpl.TABLE_COLUMNS_MAP;
+	}
+
 	/**
 	 * Initializes the layout branch persistence.
 	 */
 	public void afterPropertiesSet() {
-		String[] listenerClassNames = StringUtil.split(GetterUtil.getString(
-					com.liferay.portal.util.PropsUtil.get(
-						"value.object.listener.com.liferay.portal.model.LayoutBranch")));
-
-		if (listenerClassNames.length > 0) {
-			try {
-				List<ModelListener<LayoutBranch>> listenersList = new ArrayList<ModelListener<LayoutBranch>>();
-
-				for (String listenerClassName : listenerClassNames) {
-					listenersList.add((ModelListener<LayoutBranch>)InstanceFactory.newInstance(
-							getClassLoader(), listenerClassName));
-				}
-
-				listeners = listenersList.toArray(new ModelListener[listenersList.size()]);
-			}
-			catch (Exception e) {
-				_log.error(e);
-			}
-		}
 	}
 
 	public void destroy() {
-		EntityCacheUtil.removeCache(LayoutBranchImpl.class.getName());
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		entityCache.removeCache(LayoutBranchImpl.class.getName());
+		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
+		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
+	@BeanReference(type = CompanyProviderWrapper.class)
+	protected CompanyProvider companyProvider;
+	protected EntityCache entityCache = EntityCacheUtil.getEntityCache();
+	protected FinderCache finderCache = FinderCacheUtil.getFinderCache();
 	private static final String _SQL_SELECT_LAYOUTBRANCH = "SELECT layoutBranch FROM LayoutBranch layoutBranch";
-	private static final String _SQL_SELECT_LAYOUTBRANCH_WHERE_PKS_IN = "SELECT layoutBranch FROM LayoutBranch layoutBranch WHERE LayoutBranchId IN (";
+	private static final String _SQL_SELECT_LAYOUTBRANCH_WHERE_PKS_IN = "SELECT layoutBranch FROM LayoutBranch layoutBranch WHERE layoutBranchId IN (";
 	private static final String _SQL_SELECT_LAYOUTBRANCH_WHERE = "SELECT layoutBranch FROM LayoutBranch layoutBranch WHERE ";
 	private static final String _SQL_COUNT_LAYOUTBRANCH = "SELECT COUNT(layoutBranch) FROM LayoutBranch layoutBranch";
 	private static final String _SQL_COUNT_LAYOUTBRANCH_WHERE = "SELECT COUNT(layoutBranch) FROM LayoutBranch layoutBranch WHERE ";
 	private static final String _ORDER_BY_ENTITY_ALIAS = "layoutBranch.";
 	private static final String _NO_SUCH_ENTITY_WITH_PRIMARY_KEY = "No LayoutBranch exists with the primary key ";
 	private static final String _NO_SUCH_ENTITY_WITH_KEY = "No LayoutBranch exists with the key {";
-	private static final boolean _HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE = com.liferay.portal.util.PropsValues.HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE;
-	private static Log _log = LogFactoryUtil.getLog(LayoutBranchPersistenceImpl.class);
-	private static LayoutBranch _nullLayoutBranch = new LayoutBranchImpl() {
-			@Override
-			public Object clone() {
-				return this;
-			}
-
-			@Override
-			public CacheModel<LayoutBranch> toCacheModel() {
-				return _nullLayoutBranchCacheModel;
-			}
-		};
-
-	private static CacheModel<LayoutBranch> _nullLayoutBranchCacheModel = new NullCacheModel();
-
-	private static class NullCacheModel implements CacheModel<LayoutBranch>,
-		MVCCModel {
-		@Override
-		public long getMvccVersion() {
-			return 0;
-		}
-
-		@Override
-		public void setMvccVersion(long mvccVersion) {
-		}
-
-		@Override
-		public LayoutBranch toEntityModel() {
-			return _nullLayoutBranch;
-		}
-	}
+	private static final Log _log = LogFactoryUtil.getLog(LayoutBranchPersistenceImpl.class);
 }

@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.UserGroup;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.UserGroup;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,8 +36,36 @@ import java.util.Date;
  * @see UserGroup
  * @generated
  */
+@ProviderType
 public class UserGroupCacheModel implements CacheModel<UserGroup>,
 	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof UserGroupCacheModel)) {
+			return false;
+		}
+
+		UserGroupCacheModel userGroupCacheModel = (UserGroupCacheModel)obj;
+
+		if ((userGroupId == userGroupCacheModel.userGroupId) &&
+				(mvccVersion == userGroupCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, userGroupId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -86,7 +116,7 @@ public class UserGroupCacheModel implements CacheModel<UserGroup>,
 		userGroupImpl.setMvccVersion(mvccVersion);
 
 		if (uuid == null) {
-			userGroupImpl.setUuid(StringPool.BLANK);
+			userGroupImpl.setUuid("");
 		}
 		else {
 			userGroupImpl.setUuid(uuid);
@@ -97,7 +127,7 @@ public class UserGroupCacheModel implements CacheModel<UserGroup>,
 		userGroupImpl.setUserId(userId);
 
 		if (userName == null) {
-			userGroupImpl.setUserName(StringPool.BLANK);
+			userGroupImpl.setUserName("");
 		}
 		else {
 			userGroupImpl.setUserName(userName);
@@ -120,14 +150,14 @@ public class UserGroupCacheModel implements CacheModel<UserGroup>,
 		userGroupImpl.setParentUserGroupId(parentUserGroupId);
 
 		if (name == null) {
-			userGroupImpl.setName(StringPool.BLANK);
+			userGroupImpl.setName("");
 		}
 		else {
 			userGroupImpl.setName(name);
 		}
 
 		if (description == null) {
-			userGroupImpl.setDescription(StringPool.BLANK);
+			userGroupImpl.setDescription("");
 		}
 		else {
 			userGroupImpl.setDescription(description);
@@ -144,15 +174,20 @@ public class UserGroupCacheModel implements CacheModel<UserGroup>,
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
 		uuid = objectInput.readUTF();
+
 		userGroupId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		userId = objectInput.readLong();
 		userName = objectInput.readUTF();
 		createDate = objectInput.readLong();
 		modifiedDate = objectInput.readLong();
+
 		parentUserGroupId = objectInput.readLong();
 		name = objectInput.readUTF();
 		description = objectInput.readUTF();
+
 		addedByLDAPImport = objectInput.readBoolean();
 	}
 
@@ -162,18 +197,20 @@ public class UserGroupCacheModel implements CacheModel<UserGroup>,
 		objectOutput.writeLong(mvccVersion);
 
 		if (uuid == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(uuid);
 		}
 
 		objectOutput.writeLong(userGroupId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -181,17 +218,18 @@ public class UserGroupCacheModel implements CacheModel<UserGroup>,
 
 		objectOutput.writeLong(createDate);
 		objectOutput.writeLong(modifiedDate);
+
 		objectOutput.writeLong(parentUserGroupId);
 
 		if (name == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(name);
 		}
 
 		if (description == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(description);

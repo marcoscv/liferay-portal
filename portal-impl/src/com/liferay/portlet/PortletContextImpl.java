@@ -14,14 +14,15 @@
 
 package com.liferay.portlet;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.model.PortletApp;
+import com.liferay.portal.kernel.portlet.LiferayPortletConfig;
 import com.liferay.portal.kernel.portlet.LiferayPortletContext;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ReleaseInfo;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.model.PortletApp;
 import com.liferay.portal.security.lang.DoPrivilegedUtil;
 
 import java.io.InputStream;
@@ -29,7 +30,9 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.portlet.PortletRequestDispatcher;
@@ -45,7 +48,9 @@ public class PortletContextImpl implements LiferayPortletContext {
 
 	public PortletContextImpl(Portlet portlet, ServletContext servletContext) {
 		_portlet = portlet;
+
 		_servletContext = servletContext;
+
 		_servletContextName = GetterUtil.getString(
 			_servletContext.getServletContextName());
 	}
@@ -66,7 +71,7 @@ public class PortletContextImpl implements LiferayPortletContext {
 
 	@Override
 	public Enumeration<String> getContainerRuntimeOptions() {
-		return null;
+		return Collections.enumeration(_supportedRuntimeOptions);
 	}
 
 	@Override
@@ -105,7 +110,12 @@ public class PortletContextImpl implements LiferayPortletContext {
 		try {
 			requestDispatcher = _servletContext.getNamedDispatcher(name);
 		}
-		catch (IllegalArgumentException iae) {
+		catch (Throwable t) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Unable to get request dispatcher for name " + name, t);
+			}
+
 			return null;
 		}
 
@@ -141,7 +151,12 @@ public class PortletContextImpl implements LiferayPortletContext {
 		try {
 			requestDispatcher = _servletContext.getRequestDispatcher(path);
 		}
-		catch (IllegalArgumentException iae) {
+		catch (Throwable t) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Unable to get request dispatcher for path " + path, t);
+			}
+
 			return null;
 		}
 
@@ -226,10 +241,20 @@ public class PortletContextImpl implements LiferayPortletContext {
 
 	private static final int _MINOR_VERSION = 0;
 
-	private static Log _log = LogFactoryUtil.getLog(PortletContextImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		PortletContextImpl.class);
 
-	private Portlet _portlet;
-	private ServletContext _servletContext;
-	private String _servletContextName;
+	private static final Set<String> _supportedRuntimeOptions = new HashSet<>();
+
+	static {
+		_supportedRuntimeOptions.add(
+			LiferayPortletConfig.RUNTIME_OPTION_ESCAPE_XML);
+		_supportedRuntimeOptions.add(
+			LiferayPortletConfig.RUNTIME_OPTION_PORTAL_CONTEXT);
+	}
+
+	private final Portlet _portlet;
+	private final ServletContext _servletContext;
+	private final String _servletContextName;
 
 }

@@ -14,22 +14,21 @@
 
 package com.liferay.portal.servlet.filters.authverifier;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.access.control.AccessControlUtil;
+import com.liferay.portal.kernel.security.auth.AccessControlContext;
+import com.liferay.portal.kernel.security.auth.verifier.AuthVerifierResult;
 import com.liferay.portal.kernel.servlet.ProtectedServletRequest;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.security.ac.AccessControlUtil;
-import com.liferay.portal.security.auth.AccessControlContext;
-import com.liferay.portal.security.auth.AuthSettingsUtil;
 import com.liferay.portal.security.auth.AuthVerifierPipeline;
-import com.liferay.portal.security.auth.AuthVerifierResult;
 import com.liferay.portal.servlet.filters.BasePortalFilter;
 import com.liferay.portal.util.PropsUtil;
 
@@ -78,10 +77,9 @@ public class AuthVerifierFilter extends BasePortalFilter {
 			Properties properties = PropsUtil.getProperties(
 				portalPropertyPrefix, true);
 
-			for (Object name : properties.keySet()) {
-				Object value = properties.get(name);
-
-				_initParametersMap.put((String)name, value);
+			for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+				_initParametersMap.put(
+					(String)entry.getKey(), entry.getValue());
 			}
 		}
 
@@ -166,8 +164,11 @@ public class AuthVerifierFilter extends BasePortalFilter {
 
 			accessControlContext.setRequest(protectedServletRequest);
 
+			Class<?> clazz = getClass();
+
 			processFilter(
-				getClass(), protectedServletRequest, response, filterChain);
+				clazz.getName(), protectedServletRequest, response,
+				filterChain);
 		}
 		else {
 			_log.error("Unimplemented state " + state);
@@ -180,7 +181,7 @@ public class AuthVerifierFilter extends BasePortalFilter {
 
 		String remoteAddr = request.getRemoteAddr();
 
-		if (AuthSettingsUtil.isAccessAllowed(request, _hostsAllowed)) {
+		if (AccessControlUtil.isAccessAllowed(request, _hostsAllowed)) {
 			if (_log.isDebugEnabled()) {
 				_log.debug("Access allowed for " + remoteAddr);
 			}
@@ -213,34 +214,33 @@ public class AuthVerifierFilter extends BasePortalFilter {
 			_log.debug("Securing " + completeURL);
 		}
 
-		StringBundler redirectURL = new StringBundler(5);
+		StringBundler sb = new StringBundler(5);
 
-		redirectURL.append(Http.HTTPS_WITH_SLASH);
-		redirectURL.append(request.getServerName());
-		redirectURL.append(request.getServletPath());
+		sb.append(Http.HTTPS_WITH_SLASH);
+		sb.append(request.getServerName());
+		sb.append(request.getServletPath());
 
 		String queryString = request.getQueryString();
 
 		if (Validator.isNotNull(queryString)) {
-			redirectURL.append(StringPool.QUESTION);
-			redirectURL.append(request.getQueryString());
+			sb.append(StringPool.QUESTION);
+			sb.append(request.getQueryString());
 		}
 
 		if (_log.isDebugEnabled()) {
-			_log.debug("Redirect to " + redirectURL);
+			_log.debug("Redirect to " + sb.toString());
 		}
 
-		response.sendRedirect(redirectURL.toString());
+		response.sendRedirect(sb.toString());
 
 		return true;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		AuthVerifierFilter.class.getName());
 
-	private Set<String> _hostsAllowed = new HashSet<String>();
+	private final Set<String> _hostsAllowed = new HashSet<>();
 	private boolean _httpsRequired;
-	private Map<String, Object> _initParametersMap =
-		new HashMap<String, Object>();
+	private final Map<String, Object> _initParametersMap = new HashMap<>();
 
 }

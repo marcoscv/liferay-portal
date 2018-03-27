@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.WorkflowDefinitionLink;
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.WorkflowDefinitionLink;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,8 +36,36 @@ import java.util.Date;
  * @see WorkflowDefinitionLink
  * @generated
  */
+@ProviderType
 public class WorkflowDefinitionLinkCacheModel implements CacheModel<WorkflowDefinitionLink>,
 	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof WorkflowDefinitionLinkCacheModel)) {
+			return false;
+		}
+
+		WorkflowDefinitionLinkCacheModel workflowDefinitionLinkCacheModel = (WorkflowDefinitionLinkCacheModel)obj;
+
+		if ((workflowDefinitionLinkId == workflowDefinitionLinkCacheModel.workflowDefinitionLinkId) &&
+				(mvccVersion == workflowDefinitionLinkCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, workflowDefinitionLinkId);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -92,7 +122,7 @@ public class WorkflowDefinitionLinkCacheModel implements CacheModel<WorkflowDefi
 		workflowDefinitionLinkImpl.setUserId(userId);
 
 		if (userName == null) {
-			workflowDefinitionLinkImpl.setUserName(StringPool.BLANK);
+			workflowDefinitionLinkImpl.setUserName("");
 		}
 		else {
 			workflowDefinitionLinkImpl.setUserName(userName);
@@ -117,7 +147,7 @@ public class WorkflowDefinitionLinkCacheModel implements CacheModel<WorkflowDefi
 		workflowDefinitionLinkImpl.setTypePK(typePK);
 
 		if (workflowDefinitionName == null) {
-			workflowDefinitionLinkImpl.setWorkflowDefinitionName(StringPool.BLANK);
+			workflowDefinitionLinkImpl.setWorkflowDefinitionName("");
 		}
 		else {
 			workflowDefinitionLinkImpl.setWorkflowDefinitionName(workflowDefinitionName);
@@ -133,17 +163,25 @@ public class WorkflowDefinitionLinkCacheModel implements CacheModel<WorkflowDefi
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
+
 		workflowDefinitionLinkId = objectInput.readLong();
+
 		groupId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		userId = objectInput.readLong();
 		userName = objectInput.readUTF();
 		createDate = objectInput.readLong();
 		modifiedDate = objectInput.readLong();
+
 		classNameId = objectInput.readLong();
+
 		classPK = objectInput.readLong();
+
 		typePK = objectInput.readLong();
 		workflowDefinitionName = objectInput.readUTF();
+
 		workflowDefinitionVersion = objectInput.readInt();
 	}
 
@@ -151,13 +189,17 @@ public class WorkflowDefinitionLinkCacheModel implements CacheModel<WorkflowDefi
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
 		objectOutput.writeLong(workflowDefinitionLinkId);
+
 		objectOutput.writeLong(groupId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -165,12 +207,15 @@ public class WorkflowDefinitionLinkCacheModel implements CacheModel<WorkflowDefi
 
 		objectOutput.writeLong(createDate);
 		objectOutput.writeLong(modifiedDate);
+
 		objectOutput.writeLong(classNameId);
+
 		objectOutput.writeLong(classPK);
+
 		objectOutput.writeLong(typePK);
 
 		if (workflowDefinitionName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(workflowDefinitionName);

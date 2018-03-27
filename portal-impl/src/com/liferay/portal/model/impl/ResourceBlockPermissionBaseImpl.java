@@ -14,8 +14,10 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.model.ResourceBlockPermission;
-import com.liferay.portal.service.ResourceBlockPermissionLocalServiceUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.model.ResourceBlockPermission;
+import com.liferay.portal.kernel.service.ResourceBlockPermissionLocalServiceUtil;
 
 /**
  * The extended model base implementation for the ResourceBlockPermission service. Represents a row in the &quot;ResourceBlockPermission&quot; database table, with each column mapped to a property of this class.
@@ -26,9 +28,12 @@ import com.liferay.portal.service.ResourceBlockPermissionLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see ResourceBlockPermissionImpl
- * @see com.liferay.portal.model.ResourceBlockPermission
+ * @see ResourceBlockPermission
+ * @deprecated As of 7.0.0, with no direct replacement
  * @generated
  */
+@Deprecated
+@ProviderType
 public abstract class ResourceBlockPermissionBaseImpl
 	extends ResourceBlockPermissionModelImpl implements ResourceBlockPermission {
 	/*

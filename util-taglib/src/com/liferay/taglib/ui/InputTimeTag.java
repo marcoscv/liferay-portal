@@ -73,8 +73,14 @@ public class InputTimeTag extends IncludeTag {
 		_name = name;
 	}
 
+	public void setTimeFormat(String timeFormat) {
+		_timeFormat = timeFormat;
+	}
+
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
 		_amPmParam = null;
 		_amPmValue = 0;
 		_cssClass = null;
@@ -87,6 +93,7 @@ public class InputTimeTag extends IncludeTag {
 		_minuteParam = null;
 		_minuteValue = 0;
 		_name = null;
+		_timeFormat = null;
 	}
 
 	@Override
@@ -114,6 +121,8 @@ public class InputTimeTag extends IncludeTag {
 		request.setAttribute(
 			"liferay-ui:input-time:minuteValue", String.valueOf(_minuteValue));
 		request.setAttribute("liferay-ui:input-time:name", _name);
+		request.setAttribute(
+			"liferay-ui:input-time:timeFormat", String.valueOf(_timeFormat));
 	}
 
 	private static final String _PAGE = "/html/taglib/ui/input_time/page.jsp";
@@ -130,5 +139,6 @@ public class InputTimeTag extends IncludeTag {
 	private String _minuteParam;
 	private int _minuteValue;
 	private String _name;
+	private String _timeFormat;
 
 }

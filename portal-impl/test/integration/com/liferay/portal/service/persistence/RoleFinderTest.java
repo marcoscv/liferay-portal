@@ -14,47 +14,45 @@
 
 package com.liferay.portal.service.persistence;
 
-import com.liferay.portal.kernel.test.ExecutionTestListeners;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.ResourceAction;
-import com.liferay.portal.model.ResourceBlock;
-import com.liferay.portal.model.ResourceBlockPermission;
-import com.liferay.portal.model.ResourcePermission;
-import com.liferay.portal.model.Role;
-import com.liferay.portal.model.RoleConstants;
-import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.service.ResourceActionLocalServiceUtil;
-import com.liferay.portal.service.ResourceBlockLocalServiceUtil;
-import com.liferay.portal.service.ResourceBlockPermissionLocalServiceUtil;
-import com.liferay.portal.service.ResourcePermissionLocalServiceUtil;
-import com.liferay.portal.service.RoleLocalServiceUtil;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.test.TransactionalTestRule;
-import com.liferay.portal.util.test.ResourceBlockPermissionTestUtil;
-import com.liferay.portal.util.test.ResourceBlockTestUtil;
-import com.liferay.portal.util.test.ResourcePermissionTestUtil;
-import com.liferay.portlet.bookmarks.model.BookmarksFolder;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.ResourceAction;
+import com.liferay.portal.kernel.model.ResourcePermission;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.RoleConstants;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.service.ResourceActionLocalServiceUtil;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalServiceUtil;
+import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
+import com.liferay.portal.kernel.service.persistence.RoleFinderUtil;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.ResourcePermissionTestUtil;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.TransactionalTestRule;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Alberto Chaparro
  */
-@ExecutionTestListeners(listeners = {MainServletExecutionTestListener.class})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class RoleFinderTest {
 
 	@ClassRule
-	public static TransactionalTestRule transactionalTestRule =
-		new TransactionalTestRule();
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), TransactionalTestRule.INSTANCE);
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
@@ -71,33 +69,57 @@ public class RoleFinderTest {
 		_resourcePermission = ResourcePermissionTestUtil.addResourcePermission(
 			_arbitraryResourceAction.getBitwiseValue(),
 			_arbitraryResourceAction.getName(), _arbitraryRole.getRoleId());
-
-		_bookmarkFolderResourceAction =
-			ResourceActionLocalServiceUtil.getResourceAction(
-				BookmarksFolder.class.getName(), ActionKeys.VIEW);
-
-		_resourceBlock = ResourceBlockTestUtil.addResourceBlock(
-			_bookmarkFolderResourceAction.getName());
-
-		_resourceBlockPermission =
-			ResourceBlockPermissionTestUtil.addResourceBlockPermission(
-				_resourceBlock.getResourceBlockId(), _arbitraryRole.getRoleId(),
-				_bookmarkFolderResourceAction.getBitwiseValue());
 	}
 
 	@AfterClass
 	public static void tearDownClass() throws Exception {
 		ResourcePermissionLocalServiceUtil.deleteResourcePermission(
 			_resourcePermission);
+	}
 
-		ResourceBlockLocalServiceUtil.deleteResourceBlock(_resourceBlock);
+	@Test
+	public void testFindByC_N_S_P() throws Exception {
+		long companyId = _resourcePermission.getCompanyId();
+		String name = _resourcePermission.getName();
+		int scope = _resourcePermission.getScope();
+		String primKey = _resourcePermission.getPrimKey();
 
-		ResourceBlockPermissionLocalServiceUtil.deleteResourceBlockPermission(
-			_resourceBlockPermission);
+		Map<String, List<String>> actionIdsLists = new HashMap<>();
+
+		List<ResourcePermission> resourcePermissions =
+			ResourcePermissionLocalServiceUtil.getResourcePermissions(
+				companyId, name, scope, primKey);
+
+		List<ResourceAction> resourceActions =
+			ResourceActionLocalServiceUtil.getResourceActions(name);
+
+		for (ResourcePermission resourcePermission : resourcePermissions) {
+			long roleId = resourcePermission.getRoleId();
+
+			Role role = RoleLocalServiceUtil.getRole(roleId);
+
+			long actionIds = resourcePermission.getActionIds();
+
+			List<String> actionIdsList = new ArrayList<>();
+
+			for (ResourceAction resourceAction : resourceActions) {
+				if ((resourceAction.getBitwiseValue() & actionIds) != 0) {
+					actionIdsList.add(resourceAction.getActionId());
+				}
+			}
+
+			actionIdsLists.put(role.getName(), actionIdsList);
+		}
+
+		Assert.assertEquals(
+			actionIdsLists,
+			RoleFinderUtil.findByC_N_S_P(companyId, name, scope, primKey));
 	}
 
 	@Test
 	public void testFindByC_N_S_P_A() throws Exception {
+		boolean exists = false;
+
 		List<Role> roles = RoleFinderUtil.findByC_N_S_P_A(
 			_resourcePermission.getCompanyId(), _resourcePermission.getName(),
 			_resourcePermission.getScope(), _resourcePermission.getPrimKey(),
@@ -105,37 +127,37 @@ public class RoleFinderTest {
 
 		for (Role role : roles) {
 			if (role.getRoleId() == _arbitraryRole.getRoleId()) {
-				return;
+				exists = true;
+
+				break;
 			}
 		}
 
-		Assert.fail(
+		Assert.assertTrue(
 			"The method findByC_N_S_P_A should have returned the role " +
-				_arbitraryRole.getRoleId());
+				_arbitraryRole.getRoleId(),
+			exists);
 	}
 
-	@Test
-	public void testFindByR_N_A() throws Exception {
-		List<Role> roles = RoleFinderUtil.findByR_N_A(
-			_resourceBlock.getResourceBlockId(), _resourceBlock.getName(),
-			_bookmarkFolderResourceAction.getActionId());
+	protected static ResourceAction getModelResourceAction()
+		throws PortalException {
 
-		for (Role role : roles) {
-			if (role.getRoleId() == _arbitraryRole.getRoleId()) {
-				return;
-			}
-		}
+		String name = RandomTestUtil.randomString() + "Model";
 
-		Assert.fail(
-			"The method findByR_N_A should have returned the role " +
-				_arbitraryRole.getRoleId());
+		List<String> actionIds = new ArrayList<>();
+
+		actionIds.add(ActionKeys.UPDATE);
+		actionIds.add(ActionKeys.VIEW);
+
+		ResourceActionLocalServiceUtil.checkResourceActions(
+			name, actionIds, true);
+
+		return ResourceActionLocalServiceUtil.getResourceAction(
+			name, ActionKeys.VIEW);
 	}
 
 	private static ResourceAction _arbitraryResourceAction;
 	private static Role _arbitraryRole;
-	private static ResourceAction _bookmarkFolderResourceAction;
-	private static ResourceBlock _resourceBlock;
-	private static ResourceBlockPermission _resourceBlockPermission;
 	private static ResourcePermission _resourcePermission;
 
 }

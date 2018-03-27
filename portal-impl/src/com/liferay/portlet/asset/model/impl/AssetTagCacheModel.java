@@ -14,11 +14,13 @@
 
 package com.liferay.portlet.asset.model.impl;
 
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.CacheModel;
+import aQute.bnd.annotation.ProviderType;
 
-import com.liferay.portlet.asset.model.AssetTag;
+import com.liferay.asset.kernel.model.AssetTag;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.util.HashUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -34,12 +36,39 @@ import java.util.Date;
  * @see AssetTag
  * @generated
  */
+@ProviderType
 public class AssetTagCacheModel implements CacheModel<AssetTag>, Externalizable {
 	@Override
-	public String toString() {
-		StringBundler sb = new StringBundler(19);
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
 
-		sb.append("{tagId=");
+		if (!(obj instanceof AssetTagCacheModel)) {
+			return false;
+		}
+
+		AssetTagCacheModel assetTagCacheModel = (AssetTagCacheModel)obj;
+
+		if (tagId == assetTagCacheModel.tagId) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return HashUtil.hash(0, tagId);
+	}
+
+	@Override
+	public String toString() {
+		StringBundler sb = new StringBundler(23);
+
+		sb.append("{uuid=");
+		sb.append(uuid);
+		sb.append(", tagId=");
 		sb.append(tagId);
 		sb.append(", groupId=");
 		sb.append(groupId);
@@ -57,6 +86,8 @@ public class AssetTagCacheModel implements CacheModel<AssetTag>, Externalizable 
 		sb.append(name);
 		sb.append(", assetCount=");
 		sb.append(assetCount);
+		sb.append(", lastPublishDate=");
+		sb.append(lastPublishDate);
 		sb.append("}");
 
 		return sb.toString();
@@ -66,13 +97,20 @@ public class AssetTagCacheModel implements CacheModel<AssetTag>, Externalizable 
 	public AssetTag toEntityModel() {
 		AssetTagImpl assetTagImpl = new AssetTagImpl();
 
+		if (uuid == null) {
+			assetTagImpl.setUuid("");
+		}
+		else {
+			assetTagImpl.setUuid(uuid);
+		}
+
 		assetTagImpl.setTagId(tagId);
 		assetTagImpl.setGroupId(groupId);
 		assetTagImpl.setCompanyId(companyId);
 		assetTagImpl.setUserId(userId);
 
 		if (userName == null) {
-			assetTagImpl.setUserName(StringPool.BLANK);
+			assetTagImpl.setUserName("");
 		}
 		else {
 			assetTagImpl.setUserName(userName);
@@ -93,13 +131,20 @@ public class AssetTagCacheModel implements CacheModel<AssetTag>, Externalizable 
 		}
 
 		if (name == null) {
-			assetTagImpl.setName(StringPool.BLANK);
+			assetTagImpl.setName("");
 		}
 		else {
 			assetTagImpl.setName(name);
 		}
 
 		assetTagImpl.setAssetCount(assetCount);
+
+		if (lastPublishDate == Long.MIN_VALUE) {
+			assetTagImpl.setLastPublishDate(null);
+		}
+		else {
+			assetTagImpl.setLastPublishDate(new Date(lastPublishDate));
+		}
 
 		assetTagImpl.resetOriginalValues();
 
@@ -108,27 +153,44 @@ public class AssetTagCacheModel implements CacheModel<AssetTag>, Externalizable 
 
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
+		uuid = objectInput.readUTF();
+
 		tagId = objectInput.readLong();
+
 		groupId = objectInput.readLong();
+
 		companyId = objectInput.readLong();
+
 		userId = objectInput.readLong();
 		userName = objectInput.readUTF();
 		createDate = objectInput.readLong();
 		modifiedDate = objectInput.readLong();
 		name = objectInput.readUTF();
+
 		assetCount = objectInput.readInt();
+		lastPublishDate = objectInput.readLong();
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
+		if (uuid == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(uuid);
+		}
+
 		objectOutput.writeLong(tagId);
+
 		objectOutput.writeLong(groupId);
+
 		objectOutput.writeLong(companyId);
+
 		objectOutput.writeLong(userId);
 
 		if (userName == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(userName);
@@ -138,15 +200,17 @@ public class AssetTagCacheModel implements CacheModel<AssetTag>, Externalizable 
 		objectOutput.writeLong(modifiedDate);
 
 		if (name == null) {
-			objectOutput.writeUTF(StringPool.BLANK);
+			objectOutput.writeUTF("");
 		}
 		else {
 			objectOutput.writeUTF(name);
 		}
 
 		objectOutput.writeInt(assetCount);
+		objectOutput.writeLong(lastPublishDate);
 	}
 
+	public String uuid;
 	public long tagId;
 	public long groupId;
 	public long companyId;
@@ -156,4 +220,5 @@ public class AssetTagCacheModel implements CacheModel<AssetTag>, Externalizable 
 	public long modifiedDate;
 	public String name;
 	public int assetCount;
+	public long lastPublishDate;
 }

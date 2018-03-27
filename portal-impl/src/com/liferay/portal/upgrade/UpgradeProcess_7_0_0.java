@@ -16,20 +16,43 @@ package com.liferay.portal.upgrade;
 
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ReleaseInfo;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeAddress;
 import com.liferay.portal.upgrade.v7_0_0.UpgradeAsset;
-import com.liferay.portal.upgrade.v7_0_0.UpgradeCalEvent;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeAssetTagsResourcePermission;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeCompanyId;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeDocumentLibrary;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeDocumentLibraryPortletId;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeDocumentLibraryPreferences;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeEmailAddress;
 import com.liferay.portal.upgrade.v7_0_0.UpgradeEmailNotificationPreferences;
 import com.liferay.portal.upgrade.v7_0_0.UpgradeExpando;
-import com.liferay.portal.upgrade.v7_0_0.UpgradeJournal;
-import com.liferay.portal.upgrade.v7_0_0.UpgradeLanguagePreferences;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeGroup;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeKernelPackage;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeLastPublishDate;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeListType;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeLookAndFeel;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeMembershipRequest;
 import com.liferay.portal.upgrade.v7_0_0.UpgradeMessageBoards;
-import com.liferay.portal.upgrade.v7_0_0.UpgradePortletSettings;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeMobileDeviceRules;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeModules;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeMySQL;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeOrgLabor;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeOrganization;
+import com.liferay.portal.upgrade.v7_0_0.UpgradePhone;
+import com.liferay.portal.upgrade.v7_0_0.UpgradePortalPreferences;
+import com.liferay.portal.upgrade.v7_0_0.UpgradePortletDisplayTemplatePreferences;
+import com.liferay.portal.upgrade.v7_0_0.UpgradePortletId;
+import com.liferay.portal.upgrade.v7_0_0.UpgradePostgreSQL;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeRatings;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeRelease;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeRepository;
 import com.liferay.portal.upgrade.v7_0_0.UpgradeRepositoryEntry;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeResourcePermission;
 import com.liferay.portal.upgrade.v7_0_0.UpgradeSchema;
-import com.liferay.portal.upgrade.v7_0_0.UpgradeShopping;
-import com.liferay.portal.upgrade.v7_0_0.UpgradeShoppingPreferences;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeSharding;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeSocial;
 import com.liferay.portal.upgrade.v7_0_0.UpgradeSubscription;
-import com.liferay.portal.upgrade.v7_0_0.UpgradeWiki;
+import com.liferay.portal.upgrade.v7_0_0.UpgradeWebsite;
 
 /**
  * @author Julio Camarero
@@ -43,26 +66,49 @@ public class UpgradeProcess_7_0_0 extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		upgrade(UpgradeSchema.class);
-		upgrade(UpgradeAsset.class);
-		upgrade(UpgradeCalEvent.class);
-		upgrade(UpgradeEmailNotificationPreferences.class);
-		upgrade(UpgradeExpando.class);
-		upgrade(UpgradeLanguagePreferences.class);
-		upgrade(UpgradeJournal.class);
-		upgrade(UpgradeMessageBoards.class);
-		upgrade(UpgradeRepositoryEntry.class);
-		upgrade(UpgradeShopping.class);
-		upgrade(UpgradeShoppingPreferences.class);
-		upgrade(UpgradeSubscription.class);
-		upgrade(UpgradeWiki.class);
+		upgrade(new UpgradeSchema());
 
-		// This must be the last upgrade process. Otherwise, upgrades based on
-		// BaseUpgradePortletPreferences will fail because the portlet ID will
-		// not be found after UpgradePortletSettings translates it to the
-		// service name.
+		upgrade(new UpgradeKernelPackage());
 
-		upgrade(UpgradePortletSettings.class);
+		upgrade(new UpgradeSharding());
+
+		upgrade(new UpgradeAddress());
+		upgrade(new UpgradeAsset());
+		upgrade(new UpgradeAssetTagsResourcePermission());
+		upgrade(new UpgradeCompanyId());
+		upgrade(new UpgradeDocumentLibrary());
+		upgrade(new UpgradeDocumentLibraryPortletId());
+		upgrade(new UpgradeDocumentLibraryPreferences());
+		upgrade(new UpgradeEmailAddress());
+		upgrade(new UpgradeEmailNotificationPreferences());
+		upgrade(new UpgradeExpando());
+		upgrade(new UpgradeGroup());
+		upgrade(new UpgradeLastPublishDate());
+		upgrade(new UpgradeListType());
+		upgrade(new UpgradeLookAndFeel());
+		upgrade(new UpgradeMembershipRequest());
+		upgrade(new UpgradeMessageBoards());
+		upgrade(new UpgradeModules());
+		upgrade(new UpgradeMySQL());
+		upgrade(new UpgradeOrganization());
+		upgrade(new UpgradeOrgLabor());
+		upgrade(new UpgradePhone());
+		upgrade(new UpgradePortalPreferences());
+		upgrade(new UpgradePortletDisplayTemplatePreferences());
+		upgrade(new UpgradePortletId());
+		upgrade(new UpgradePostgreSQL());
+		upgrade(new UpgradeRatings());
+		upgrade(new UpgradeRelease());
+		upgrade(new UpgradeRepository());
+		upgrade(new UpgradeRepositoryEntry());
+		upgrade(new UpgradeResourcePermission());
+		upgrade(new UpgradeSocial());
+		upgrade(new UpgradeSubscription());
+		upgrade(new UpgradeWebsite());
+
+		upgrade(new UpgradeMobileDeviceRules());
+
+		clearIndexesCache();
 	}
 
 }

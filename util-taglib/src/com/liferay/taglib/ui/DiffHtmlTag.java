@@ -27,9 +27,16 @@ public class DiffHtmlTag extends IncludeTag {
 		_diffHtmlResults = diffHtmlResults;
 	}
 
+	public void setInfoMessage(String infoMessage) {
+		_infoMessage = infoMessage;
+	}
+
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
 		_diffHtmlResults = null;
+		_infoMessage = null;
 	}
 
 	@Override
@@ -41,10 +48,12 @@ public class DiffHtmlTag extends IncludeTag {
 	protected void setAttributes(HttpServletRequest request) {
 		request.setAttribute(
 			"liferay-ui:diff-html:diffHtmlResults", _diffHtmlResults);
+		request.setAttribute("liferay-ui:diff-html:infoMessage", _infoMessage);
 	}
 
 	private static final String _PAGE = "/html/taglib/ui/diff_html/page.jsp";
 
 	private String _diffHtmlResults;
+	private String _infoMessage;
 
 }

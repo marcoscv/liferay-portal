@@ -1,0 +1,40 @@
+<html>
+<head>
+<title>MessageBoardsBannedUsers</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">MessageBoardsBannedUsers</td></tr>
+</thead>
+<tbody>
+<!--BANNED_USERS_TABLE-->
+<tr>
+	<td>BANNED_USERS_TABLE_ACTIONS</td>
+	<td>//li[contains(.,'${key_userScreenName}')]//a[span/*[name()='svg'][contains(@class,'icon-ellipsis')]]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>BANNED_USERS_TABLE_BANNED_USER</td>
+	<td>//*[@data-qa-id='row']//div[contains(.,'${key_userScreenName}')]/h4[1]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>BANNED_USERS_TABLE_BANNED_BY</td>
+	<td>//*[@data-qa-id='row']//div[contains(.,'${key_userScreenName}')]/h5[1]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>BANNED_USERS_TABLE_BAN_DATE</td>
+	<td>//*[@data-qa-id='row']//div[contains(.,'${key_userScreenName}')]/h5[1]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>BANNED_USERS_TABLE_UNBAN_DATE</td>
+	<td>//*[@data-qa-id='row']//div[contains(.,'${key_userScreenName}')]/h5[2]</td>
+	<td></td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
