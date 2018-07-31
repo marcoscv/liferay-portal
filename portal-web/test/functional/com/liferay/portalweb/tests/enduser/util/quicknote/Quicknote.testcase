@@ -1,0 +1,50 @@
+<definition component-name="portal-util-misc">
+	<property name="portal.release" value="true" />
+	<property name="portal.upstream" value="true" />
+	<property name="testray.main.component.name" value="Util" />
+
+	<set-up>
+		<execute macro="TestCase#setUpPortalInstance" />
+
+		<execute macro="User#firstLoginPG" />
+
+		<execute macro="ProductMenu#gotoPortlet">
+			<var name="category" value="Build" />
+			<var name="panel" value="Site Administration" />
+			<var name="portlet" value="Pages" />
+		</execute>
+
+		<execute macro="SitePages#addPublicPage">
+			<var name="pageName" value="Quick Note Page" />
+		</execute>
+
+		<execute macro="Navigator#gotoPage">
+			<var name="pageName" value="Quick Note Page" />
+		</execute>
+	</set-up>
+
+	<tear-down>
+		<var method="TestPropsUtil#get('test.portal.instance')" name="testPortalInstance" />
+
+		<if>
+			<equals arg1="${testPortalInstance}" arg2="true" />
+			<then>
+				<execute macro="PortalInstances#tearDownCP" />
+			</then>
+		</if>
+	</tear-down>
+
+	<command ignore="true" name="AddQuickNote" priority="2">
+		<execute macro="Portlet#addPG">
+			<var name="portletName" value="Quick Note" />
+		</execute>
+
+		<execute macro="Navigator#gotoPage">
+			<var name="pageName" value="Quick Note Page" />
+		</execute>
+
+		<execute macro="QuickNote#addPG">
+			<var name="noteContent" value="Test Note Content" />
+		</execute>
+	</command>
+</definition>

@@ -14,12 +14,12 @@
 
 package com.liferay.portal.servlet;
 
+import com.liferay.petra.reflect.ReflectionUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.servlet.DirectServletRegistry;
-import com.liferay.portal.kernel.util.ReflectionUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
@@ -109,7 +109,11 @@ public class DirectServletRegistryImpl implements DirectServletRegistry {
 
 		File file = new File(rootPath, path);
 
-		return file.lastModified();
+		if (file.exists()) {
+			return file.lastModified();
+		}
+
+		return -1;
 	}
 
 	protected Servlet reloadDependants(
@@ -203,16 +207,16 @@ public class DirectServletRegistryImpl implements DirectServletRegistry {
 		file.setLastModified(System.currentTimeMillis());
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DirectServletRegistryImpl.class);
 
-	private Map<String, Long> _dependantTimestamps =
-		new ConcurrentHashMap<String, Long>();
+	private final Map<String, Long> _dependantTimestamps =
+		new ConcurrentHashMap<>();
 	private boolean _reloadDependants = true;
-	private Map<String, ServletInfo> _servletInfos =
-		new ConcurrentHashMap<String, ServletInfo>();
+	private final Map<String, ServletInfo> _servletInfos =
+		new ConcurrentHashMap<>();
 
-	private class ServletInfo {
+	private static class ServletInfo {
 
 		public long getLastModified() {
 			return _lastModified;

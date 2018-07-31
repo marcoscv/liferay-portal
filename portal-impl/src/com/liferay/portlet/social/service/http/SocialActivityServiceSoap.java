@@ -19,13 +19,13 @@ import aQute.bnd.annotation.ProviderType;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
-import com.liferay.portlet.social.service.SocialActivityServiceUtil;
+import com.liferay.social.kernel.service.SocialActivityServiceUtil;
 
 import java.rmi.RemoteException;
 
 /**
  * Provides the SOAP utility for the
- * {@link com.liferay.portlet.social.service.SocialActivityServiceUtil} service utility. The
+ * {@link SocialActivityServiceUtil} service utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it is difficult for SOAP to
  * support certain types.
@@ -33,10 +33,10 @@ import java.rmi.RemoteException;
  * <p>
  * ServiceBuilder follows certain rules in translating the methods. For example,
  * if the method in the service utility returns a {@link java.util.List}, that
- * is translated to an array of {@link com.liferay.portlet.social.model.SocialActivitySoap}.
+ * is translated to an array of {@link com.liferay.social.kernel.model.SocialActivitySoap}.
  * If the method in the service utility returns a
- * {@link com.liferay.portlet.social.model.SocialActivity}, that is translated to a
- * {@link com.liferay.portlet.social.model.SocialActivitySoap}. Methods that SOAP cannot
+ * {@link com.liferay.social.kernel.model.SocialActivity}, that is translated to a
+ * {@link com.liferay.social.kernel.model.SocialActivitySoap}. Methods that SOAP cannot
  * safely wire are skipped.
  * </p>
  *
@@ -59,8 +59,8 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see SocialActivityServiceHttp
- * @see com.liferay.portlet.social.model.SocialActivitySoap
- * @see com.liferay.portlet.social.service.SocialActivityServiceUtil
+ * @see com.liferay.social.kernel.model.SocialActivitySoap
+ * @see SocialActivityServiceUtil
  * @generated
  */
 @ProviderType
@@ -74,8 +74,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -83,15 +82,14 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getActivities(
 		long classNameId, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getActivities(classNameId, start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -110,8 +108,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -121,17 +118,16 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getActivities(
 		long mirrorActivityId, long classNameId, long classPK, int start,
 		int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getActivities(mirrorActivityId,
 					classNameId, classPK, start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -150,8 +146,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -161,17 +156,16 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getActivities(
-		long mirrorActivityId, java.lang.String className, long classPK,
-		int start, int end) throws RemoteException {
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getActivities(
+		long mirrorActivityId, String className, long classPK, int start,
+		int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getActivities(mirrorActivityId,
 					className, classPK, start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -189,8 +183,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -198,16 +191,14 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getActivities(
-		java.lang.String className, int start, int end)
-		throws RemoteException {
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getActivities(
+		String className, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getActivities(className, start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -273,7 +264,7 @@ public class SocialActivityServiceSoap {
 	* @return the number of matching activities
 	*/
 	public static int getActivitiesCount(long mirrorActivityId,
-		java.lang.String className, long classPK) throws RemoteException {
+		String className, long classPK) throws RemoteException {
 		try {
 			int returnValue = SocialActivityServiceUtil.getActivitiesCount(mirrorActivityId,
 					className, classPK);
@@ -293,7 +284,7 @@ public class SocialActivityServiceSoap {
 	* @param className the target asset's class name
 	* @return the number of matching activities
 	*/
-	public static int getActivitiesCount(java.lang.String className)
+	public static int getActivitiesCount(String className)
 		throws RemoteException {
 		try {
 			int returnValue = SocialActivityServiceUtil.getActivitiesCount(className);
@@ -312,14 +303,13 @@ public class SocialActivityServiceSoap {
 	*
 	* @param activityId the primary key of the activity
 	* @return Returns the activity
-	* @throws PortalException if the activity could not be found
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap getActivity(
+	public static com.liferay.social.kernel.model.SocialActivitySoap getActivity(
 		long activityId) throws RemoteException {
 		try {
-			com.liferay.portlet.social.model.SocialActivity returnValue = SocialActivityServiceUtil.getActivity(activityId);
+			com.liferay.social.kernel.model.SocialActivity returnValue = SocialActivityServiceUtil.getActivity(activityId);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModel(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModel(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -328,14 +318,14 @@ public class SocialActivityServiceSoap {
 		}
 	}
 
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getActivitySetActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getActivitySetActivities(
 		long activitySetId, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getActivitySetActivities(activitySetId,
 					start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -356,8 +346,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -365,15 +354,14 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getGroupActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getGroupActivities(
 		long groupId, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getGroupActivities(groupId, start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -419,8 +407,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -428,16 +415,15 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getGroupUsersActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getGroupUsersActivities(
 		long groupId, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getGroupUsersActivities(groupId,
 					start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -476,14 +462,13 @@ public class SocialActivityServiceSoap {
 	*
 	* @param mirrorActivityId the primary key of the mirror activity
 	* @return Returns the mirror activity
-	* @throws PortalException if the mirror activity could not be found
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap getMirrorActivity(
+	public static com.liferay.social.kernel.model.SocialActivitySoap getMirrorActivity(
 		long mirrorActivityId) throws RemoteException {
 		try {
-			com.liferay.portlet.social.model.SocialActivity returnValue = SocialActivityServiceUtil.getMirrorActivity(mirrorActivityId);
+			com.liferay.social.kernel.model.SocialActivity returnValue = SocialActivityServiceUtil.getMirrorActivity(mirrorActivityId);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModel(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModel(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -501,8 +486,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -510,16 +494,15 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getOrganizationActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getOrganizationActivities(
 		long organizationId, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getOrganizationActivities(organizationId,
 					start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -558,8 +541,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -567,16 +549,15 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getOrganizationUsersActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getOrganizationUsersActivities(
 		long organizationId, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getOrganizationUsersActivities(organizationId,
 					start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -613,10 +594,9 @@ public class SocialActivityServiceSoap {
 	* <p>
 	* Useful when paginating results. Returns a maximum of <code>end -
 	* start</code> instances. <code>start</code> and <code>end</code> are not
-	* primary keys, they are indexes in the result set. Thus, <>0</code> refers
-	* to the first result in the set. Setting both <code>start</code> and
-	* <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* primary keys, they are indexes in the result set. Thus, <code>0</code>
+	* refers to the first result in the set. Setting both <code>start</code>
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -624,16 +604,15 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getRelationActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getRelationActivities(
 		long userId, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getRelationActivities(userId, start,
 					end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -652,8 +631,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -662,16 +640,15 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getRelationActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getRelationActivities(
 		long userId, int type, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getRelationActivities(userId, type,
 					start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -733,8 +710,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -742,15 +718,14 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getUserActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getUserActivities(
 		long userId, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getUserActivities(userId, start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -788,8 +763,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -797,16 +771,15 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getUserGroupsActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getUserGroupsActivities(
 		long userId, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getUserGroupsActivities(userId,
 					start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -845,8 +818,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -854,16 +826,15 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getUserGroupsAndOrganizationsActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getUserGroupsAndOrganizationsActivities(
 		long userId, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getUserGroupsAndOrganizationsActivities(userId,
 					start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -902,8 +873,7 @@ public class SocialActivityServiceSoap {
 	* start</code> instances. <code>start</code> and <code>end</code> are not
 	* primary keys, they are indexes in the result set. Thus, <code>0</code>
 	* refers to the first result in the set. Setting both <code>start</code>
-	* and <code>end</code> to {@link
-	* com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full
+	* and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full
 	* result set.
 	* </p>
 	*
@@ -911,16 +881,15 @@ public class SocialActivityServiceSoap {
 	* @param start the lower bound of the range of results
 	* @param end the upper bound of the range of results (not inclusive)
 	* @return the range of matching activities
-	* @throws PortalException if a permission checker was not initialized
 	*/
-	public static com.liferay.portlet.social.model.SocialActivitySoap[] getUserOrganizationsActivities(
+	public static com.liferay.social.kernel.model.SocialActivitySoap[] getUserOrganizationsActivities(
 		long userId, int start, int end) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivity> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivity> returnValue =
 				SocialActivityServiceUtil.getUserOrganizationsActivities(userId,
 					start, end);
 
-			return com.liferay.portlet.social.model.SocialActivitySoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);

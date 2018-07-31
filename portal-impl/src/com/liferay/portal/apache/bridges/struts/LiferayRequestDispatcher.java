@@ -14,17 +14,18 @@
 
 package com.liferay.portal.apache.bridges.struts;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.model.PortletApp;
+import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
+import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
-import com.liferay.portal.kernel.servlet.PipingServletResponse;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.JavaConstants;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.model.PortletApp;
-import com.liferay.portlet.PortletRequestImpl;
-import com.liferay.portlet.PortletResponseImpl;
+import com.liferay.portlet.LiferayPortletUtil;
 import com.liferay.portlet.PortletServletRequest;
 import com.liferay.portlet.PortletServletResponse;
+import com.liferay.taglib.servlet.PipingServletResponse;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -73,19 +74,6 @@ public class LiferayRequestDispatcher implements RequestDispatcher {
 		}
 	}
 
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link #forward(ServletRequest,
-	 *             ServletResponse)}
-	 */
-	@Deprecated
-	public void forward(
-			ServletRequest servletRequest, ServletResponse servletResponse,
-			boolean named)
-		throws IOException, ServletException {
-
-		forward(servletRequest, servletResponse);
-	}
-
 	@Override
 	public void include(
 			ServletRequest servletRequest, ServletResponse servletResponse)
@@ -101,19 +89,6 @@ public class LiferayRequestDispatcher implements RequestDispatcher {
 		else {
 			_requestDispatcher.include(servletRequest, servletResponse);
 		}
-	}
-
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link #include(ServletRequest,
-	 *             ServletResponse)}
-	 */
-	@Deprecated
-	public void include(
-			ServletRequest servletRequest, ServletResponse servletResponse,
-			boolean named)
-		throws IOException, ServletException {
-
-		include(servletRequest, servletResponse);
 	}
 
 	public void invoke(
@@ -191,19 +166,6 @@ public class LiferayRequestDispatcher implements RequestDispatcher {
 		}
 	}
 
-	/**
-	 * @deprecated As of 6.2.0, replaced by {@link #invoke(ServletRequest,
-	 *             ServletResponse, boolean)}
-	 */
-	@Deprecated
-	public void invoke(
-			ServletRequest servletRequest, ServletResponse servletResponse,
-			boolean named, boolean include)
-		throws IOException, ServletException {
-
-		invoke(servletRequest, servletResponse, include);
-	}
-
 	protected HttpServletRequest getPortletServletRequest(
 		ServletRequest servletRequest, PortletRequest portletRequest,
 		String pathInfo, String queryString, String requestURI,
@@ -212,11 +174,11 @@ public class LiferayRequestDispatcher implements RequestDispatcher {
 		HttpServletRequest request = (HttpServletRequest)servletRequest;
 		boolean named = false;
 
-		PortletRequestImpl portletRequestImpl =
-			PortletRequestImpl.getPortletRequestImpl(portletRequest);
+		LiferayPortletRequest liferayPortletRequest =
+			LiferayPortletUtil.getLiferayPortletRequest(portletRequest);
 
 		return new PortletServletRequest(
-			request, portletRequestImpl, pathInfo, queryString, requestURI,
+			request, liferayPortletRequest, pathInfo, queryString, requestURI,
 			servletPath, named, include);
 	}
 
@@ -227,11 +189,11 @@ public class LiferayRequestDispatcher implements RequestDispatcher {
 
 		HttpServletResponse response = (HttpServletResponse)servletResponse;
 
-		PortletResponseImpl portletResponseImpl =
-			(PortletResponseImpl)portletResponse;
+		LiferayPortletResponse liferayPortletResponse =
+			LiferayPortletUtil.getLiferayPortletResponse(portletResponse);
 
 		HttpServletResponse httpServletResponse = new PortletServletResponse(
-			response, portletResponseImpl, include);
+			response, liferayPortletResponse, include);
 
 		PrintWriter printWriter = servletResponse.getWriter();
 
@@ -247,17 +209,17 @@ public class LiferayRequestDispatcher implements RequestDispatcher {
 		ServletRequest servletRequest, PortletRequest portletRequest,
 		PortletResponse portletResponse) {
 
-		PortletRequestImpl portletRequestImpl =
-			PortletRequestImpl.getPortletRequestImpl(portletRequest);
+		LiferayPortletRequest liferayPortletRequest =
+			LiferayPortletUtil.getLiferayPortletRequest(portletRequest);
 
-		Portlet portlet = portletRequestImpl.getPortlet();
+		Portlet portlet = liferayPortletRequest.getPortlet();
 
 		PortletApp portletApp = portlet.getPortletApp();
 
 		return portletApp.getServletURLPatterns();
 	}
 
-	private String _path;
-	private RequestDispatcher _requestDispatcher;
+	private final String _path;
+	private final RequestDispatcher _requestDispatcher;
 
 }

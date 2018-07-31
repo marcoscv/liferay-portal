@@ -17,13 +17,13 @@ package com.liferay.portlet.sites.search;
 import com.liferay.portal.kernel.dao.search.RowChecker;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.model.Organization;
-import com.liferay.portal.model.Role;
-import com.liferay.portal.model.User;
-import com.liferay.portal.security.membershippolicy.OrganizationMembershipPolicyUtil;
-import com.liferay.portal.security.permission.PermissionChecker;
-import com.liferay.portal.security.permission.PermissionThreadLocal;
-import com.liferay.portal.service.UserGroupRoleLocalServiceUtil;
+import com.liferay.portal.kernel.model.Organization;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.membershippolicy.OrganizationMembershipPolicyUtil;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
+import com.liferay.portal.kernel.service.UserGroupRoleLocalServiceUtil;
 
 import javax.portlet.RenderResponse;
 
@@ -62,10 +62,10 @@ public class OrganizationRoleUserChecker extends RowChecker {
 		User user = (User)obj;
 
 		try {
-			PermissionChecker permissionChecker =
-				PermissionThreadLocal.getPermissionChecker();
-
 			if (isChecked(user)) {
+				PermissionChecker permissionChecker =
+					PermissionThreadLocal.getPermissionChecker();
+
 				if (OrganizationMembershipPolicyUtil.isRoleProtected(
 						permissionChecker, user.getUserId(),
 						_organization.getOrganizationId(), _role.getRoleId()) ||
@@ -92,10 +92,10 @@ public class OrganizationRoleUserChecker extends RowChecker {
 		return super.isDisabled(obj);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		OrganizationRoleUserChecker.class);
 
-	private Organization _organization;
-	private Role _role;
+	private final Organization _organization;
+	private final Role _role;
 
 }

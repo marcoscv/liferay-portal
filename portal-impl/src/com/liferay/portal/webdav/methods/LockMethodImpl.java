@@ -14,7 +14,9 @@
 
 package com.liferay.portal.webdav.methods;
 
-import com.liferay.portal.NoSuchLockException;
+import com.liferay.petra.xml.Dom4jUtil;
+import com.liferay.portal.kernel.lock.Lock;
+import com.liferay.portal.kernel.lock.NoSuchLockException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
@@ -33,8 +35,6 @@ import com.liferay.portal.kernel.webdav.methods.Method;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
-import com.liferay.portal.model.Lock;
-import com.liferay.util.xml.XMLFormatter;
 
 import java.util.List;
 
@@ -64,7 +64,6 @@ public class LockMethodImpl implements Method {
 		}
 
 		HttpServletRequest request = webDAVRequest.getHttpServletRequest();
-		HttpServletResponse response = webDAVRequest.getHttpServletResponse();
 
 		Lock lock = null;
 		Status status = null;
@@ -82,7 +81,7 @@ public class LockMethodImpl implements Method {
 
 			if (Validator.isNotNull(xml)) {
 				if (_log.isDebugEnabled()) {
-					_log.debug("Request XML\n" + XMLFormatter.toString(xml));
+					_log.debug("Request XML\n" + Dom4jUtil.toString(xml));
 				}
 
 				Document document = SAXReaderUtil.read(xml);
@@ -139,12 +138,12 @@ public class LockMethodImpl implements Method {
 
 				status = new Status(HttpServletResponse.SC_OK);
 			}
-			catch (WebDAVException wde) {
-				if (wde.getCause() instanceof NoSuchLockException) {
+			catch (WebDAVException wdave) {
+				if (wdave.getCause() instanceof NoSuchLockException) {
 					return HttpServletResponse.SC_PRECONDITION_FAILED;
 				}
 				else {
-					throw wde;
+					throw wdave;
 				}
 			}
 		}
@@ -163,7 +162,10 @@ public class LockMethodImpl implements Method {
 			_log.debug("Response XML\n" + xml);
 		}
 
-		String lockToken = "<" + WebDAVUtil.TOKEN_PREFIX + lock.getUuid() + ">";
+		HttpServletResponse response = webDAVRequest.getHttpServletResponse();
+
+		String lockToken = StringBundler.concat(
+			"<", WebDAVUtil.TOKEN_PREFIX, lock.getUuid(), ">");
 
 		response.setContentType(ContentTypes.TEXT_XML_UTF8);
 		response.setHeader("Lock-Token", lockToken);
@@ -178,7 +180,7 @@ public class LockMethodImpl implements Method {
 		}
 		catch (Exception e) {
 			if (_log.isWarnEnabled()) {
-				_log.warn(e);
+				_log.warn(e, e);
 			}
 		}
 
@@ -223,9 +225,9 @@ public class LockMethodImpl implements Method {
 		sb.append("</D:lockdiscovery>");
 		sb.append("</D:prop>");
 
-		return XMLFormatter.toString(sb.toString());
+		return Dom4jUtil.toString(sb.toString());
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(LockMethodImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(LockMethodImpl.class);
 
 }

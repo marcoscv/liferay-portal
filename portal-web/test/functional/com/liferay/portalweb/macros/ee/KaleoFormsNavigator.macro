@@ -1,0 +1,25 @@
+<definition>
+	<command name="gotoManageFieldSets">
+		<execute macro="LexiconEntry#gotoHeaderMenuItem">
+			<var name="menuItem" value="Manage Field Sets" />
+		</execute>
+
+		<execute function="AssertTextEquals" locator1="Portlet#HEADER" value1="Field Sets" />
+	</command>
+
+	<command name="gotoManageForms">
+		<execute macro="KaleoFormsNavigator#gotoManageFieldSets" />
+
+		<execute macro="Search#searchCP">
+			<var name="searchTerm" value="${kfFieldSetName}" />
+		</execute>
+
+		<execute function="Click#waitForMenuToggleJSClick" locator1="KaleoFormsAdminSelectStructure#KALEO_FORMS_STRUCTURE_ELLIPSIS">
+			<var name="key_kfFieldSetName" value="${kfFieldSetName}" />
+		</execute>
+
+		<execute macro="MenuItem#click">
+			<var name="menuItem" value="Manage Forms" />
+		</execute>
+	</command>
+</definition>

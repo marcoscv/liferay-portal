@@ -14,7 +14,7 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.webdav.WebDAVUtil;
 import com.liferay.portal.kernel.xml.Document;
@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.xml.SAXReaderUtil;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -33,20 +34,17 @@ import java.util.Set;
  */
 public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
 
-	public WebDAVPropsImpl() {
-	}
-
 	@Override
 	public void addProp(String name, String prefix, String uri)
 		throws Exception {
 
 		Namespace namespace = WebDAVUtil.createNamespace(prefix, uri);
 
-		QName qname = SAXReaderUtil.createQName(name, namespace);
+		QName qName = SAXReaderUtil.createQName(name, namespace);
 
-		Element root = _removeExisting(qname);
+		Element root = _removeExisting(qName);
 
-		root.addElement(qname);
+		root.addElement(qName);
 	}
 
 	@Override
@@ -55,11 +53,13 @@ public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
 
 		Namespace namespace = WebDAVUtil.createNamespace(prefix, uri);
 
-		QName qname = SAXReaderUtil.createQName(name, namespace);
+		QName qName = SAXReaderUtil.createQName(name, namespace);
 
-		Element root = _removeExisting(qname);
+		Element root = _removeExisting(qName);
 
-		root.addElement(qname).addText(text);
+		Element element = root.addElement(qName);
+
+		element.addText(text);
 	}
 
 	@Override
@@ -76,7 +76,7 @@ public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
 
 	@Override
 	public Set<QName> getPropsSet() throws Exception {
-		Set<QName> propsSet = new HashSet<QName>();
+		Set<QName> propsSet = new HashSet<>();
 
 		Document doc = _getPropsDocument();
 
@@ -100,13 +100,13 @@ public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
 
 		Namespace namespace = WebDAVUtil.createNamespace(prefix, uri);
 
-		QName qname = SAXReaderUtil.createQName(name, namespace);
+		QName qName = SAXReaderUtil.createQName(name, namespace);
 
 		Document doc = _getPropsDocument();
 
 		Element root = doc.getRootElement();
 
-		Element prop = root.element(qname);
+		Element prop = root.element(qName);
 
 		return prop.getText();
 	}
@@ -117,9 +117,9 @@ public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
 
 		Namespace namespace = WebDAVUtil.createNamespace(prefix, uri);
 
-		QName qname = SAXReaderUtil.createQName(name, namespace);
+		QName qName = SAXReaderUtil.createQName(name, namespace);
 
-		_removeExisting(qname);
+		_removeExisting(qName);
 	}
 
 	@Override
@@ -141,12 +141,14 @@ public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
 		return _document;
 	}
 
-	private Element _removeExisting(QName qname) throws Exception {
+	private Element _removeExisting(QName qName) throws Exception {
 		Document doc = _getPropsDocument();
 
 		Element root = doc.getRootElement();
 
-		Iterator<Element> itr = root.elements(qname).iterator();
+		List<Element> elementsList = root.elements(qName);
+
+		Iterator<Element> itr = elementsList.iterator();
 
 		while (itr.hasNext()) {
 			Element el = itr.next();
@@ -159,6 +161,6 @@ public class WebDAVPropsImpl extends WebDAVPropsBaseImpl {
 
 	private static final String _PROPS = "<properties />";
 
-	private Document _document = null;
+	private Document _document;
 
 }

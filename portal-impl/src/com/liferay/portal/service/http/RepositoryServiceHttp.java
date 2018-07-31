@@ -14,19 +14,22 @@
 
 package com.liferay.portal.service.http;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.auth.HttpPrincipal;
+import com.liferay.portal.kernel.service.RepositoryServiceUtil;
+import com.liferay.portal.kernel.service.http.TunnelUtil;
 import com.liferay.portal.kernel.util.MethodHandler;
 import com.liferay.portal.kernel.util.MethodKey;
-import com.liferay.portal.security.auth.HttpPrincipal;
-import com.liferay.portal.service.RepositoryServiceUtil;
 
 /**
  * Provides the HTTP utility for the
- * {@link com.liferay.portal.service.RepositoryServiceUtil} service utility. The
+ * {@link RepositoryServiceUtil} service utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it requires an additional
- * {@link com.liferay.portal.security.auth.HttpPrincipal} parameter.
+ * {@link HttpPrincipal} parameter.
  *
  * <p>
  * The benefits of using the HTTP utility is that it is fast and allows for
@@ -45,17 +48,17 @@ import com.liferay.portal.service.RepositoryServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see RepositoryServiceSoap
- * @see com.liferay.portal.security.auth.HttpPrincipal
- * @see com.liferay.portal.service.RepositoryServiceUtil
+ * @see HttpPrincipal
+ * @see RepositoryServiceUtil
  * @generated
  */
+@ProviderType
 public class RepositoryServiceHttp {
-	public static com.liferay.portal.model.Repository addRepository(
+	public static com.liferay.portal.kernel.model.Repository addRepository(
 		HttpPrincipal httpPrincipal, long groupId, long classNameId,
-		long parentFolderId, java.lang.String name,
-		java.lang.String description, java.lang.String portletId,
+		long parentFolderId, String name, String description, String portletId,
 		com.liferay.portal.kernel.util.UnicodeProperties typeSettingsProperties,
-		com.liferay.portal.service.ServiceContext serviceContext)
+		com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(RepositoryServiceUtil.class,
@@ -78,7 +81,7 @@ public class RepositoryServiceHttp {
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 
-			return (com.liferay.portal.model.Repository)returnObj;
+			return (com.liferay.portal.kernel.model.Repository)returnObj;
 		}
 		catch (com.liferay.portal.kernel.exception.SystemException se) {
 			_log.error(se, se);
@@ -143,13 +146,12 @@ public class RepositoryServiceHttp {
 		}
 	}
 
-	public static com.liferay.portal.kernel.repository.LocalRepository getLocalRepositoryImpl(
+	public static com.liferay.portal.kernel.model.Repository getRepository(
 		HttpPrincipal httpPrincipal, long repositoryId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(RepositoryServiceUtil.class,
-					"getLocalRepositoryImpl",
-					_getLocalRepositoryImplParameterTypes3);
+					"getRepository", _getRepositoryParameterTypes3);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey,
 					repositoryId);
@@ -167,7 +169,7 @@ public class RepositoryServiceHttp {
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 
-			return (com.liferay.portal.kernel.repository.LocalRepository)returnObj;
+			return (com.liferay.portal.kernel.model.Repository)returnObj;
 		}
 		catch (com.liferay.portal.kernel.exception.SystemException se) {
 			_log.error(se, se);
@@ -176,143 +178,12 @@ public class RepositoryServiceHttp {
 		}
 	}
 
-	public static com.liferay.portal.kernel.repository.LocalRepository getLocalRepositoryImpl(
-		HttpPrincipal httpPrincipal, long folderId, long fileEntryId,
-		long fileVersionId)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		try {
-			MethodKey methodKey = new MethodKey(RepositoryServiceUtil.class,
-					"getLocalRepositoryImpl",
-					_getLocalRepositoryImplParameterTypes4);
-
-			MethodHandler methodHandler = new MethodHandler(methodKey,
-					folderId, fileEntryId, fileVersionId);
-
-			Object returnObj = null;
-
-			try {
-				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
-			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
-			}
-
-			return (com.liferay.portal.kernel.repository.LocalRepository)returnObj;
-		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
-
-			throw se;
-		}
-	}
-
-	public static com.liferay.portal.model.Repository getRepository(
-		HttpPrincipal httpPrincipal, long repositoryId)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		try {
-			MethodKey methodKey = new MethodKey(RepositoryServiceUtil.class,
-					"getRepository", _getRepositoryParameterTypes5);
-
-			MethodHandler methodHandler = new MethodHandler(methodKey,
-					repositoryId);
-
-			Object returnObj = null;
-
-			try {
-				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
-			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
-			}
-
-			return (com.liferay.portal.model.Repository)returnObj;
-		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
-
-			throw se;
-		}
-	}
-
-	public static com.liferay.portal.kernel.repository.Repository getRepositoryImpl(
-		HttpPrincipal httpPrincipal, long repositoryId)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		try {
-			MethodKey methodKey = new MethodKey(RepositoryServiceUtil.class,
-					"getRepositoryImpl", _getRepositoryImplParameterTypes6);
-
-			MethodHandler methodHandler = new MethodHandler(methodKey,
-					repositoryId);
-
-			Object returnObj = null;
-
-			try {
-				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
-			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
-			}
-
-			return (com.liferay.portal.kernel.repository.Repository)returnObj;
-		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
-
-			throw se;
-		}
-	}
-
-	public static com.liferay.portal.kernel.repository.Repository getRepositoryImpl(
-		HttpPrincipal httpPrincipal, long folderId, long fileEntryId,
-		long fileVersionId)
-		throws com.liferay.portal.kernel.exception.PortalException {
-		try {
-			MethodKey methodKey = new MethodKey(RepositoryServiceUtil.class,
-					"getRepositoryImpl", _getRepositoryImplParameterTypes7);
-
-			MethodHandler methodHandler = new MethodHandler(methodKey,
-					folderId, fileEntryId, fileVersionId);
-
-			Object returnObj = null;
-
-			try {
-				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
-			}
-			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
-					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				throw new com.liferay.portal.kernel.exception.SystemException(e);
-			}
-
-			return (com.liferay.portal.kernel.repository.Repository)returnObj;
-		}
-		catch (com.liferay.portal.kernel.exception.SystemException se) {
-			_log.error(se, se);
-
-			throw se;
-		}
-	}
-
-	public static java.lang.String[] getSupportedConfigurations(
+	public static String[] getSupportedConfigurations(
 		HttpPrincipal httpPrincipal, long classNameId) {
 		try {
 			MethodKey methodKey = new MethodKey(RepositoryServiceUtil.class,
 					"getSupportedConfigurations",
-					_getSupportedConfigurationsParameterTypes8);
+					_getSupportedConfigurationsParameterTypes4);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey,
 					classNameId);
@@ -326,7 +197,7 @@ public class RepositoryServiceHttp {
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 
-			return (java.lang.String[])returnObj;
+			return (String[])returnObj;
 		}
 		catch (com.liferay.portal.kernel.exception.SystemException se) {
 			_log.error(se, se);
@@ -335,13 +206,12 @@ public class RepositoryServiceHttp {
 		}
 	}
 
-	public static java.lang.String[] getSupportedParameters(
-		HttpPrincipal httpPrincipal, long classNameId,
-		java.lang.String configuration) {
+	public static String[] getSupportedParameters(HttpPrincipal httpPrincipal,
+		long classNameId, String configuration) {
 		try {
 			MethodKey methodKey = new MethodKey(RepositoryServiceUtil.class,
 					"getSupportedParameters",
-					_getSupportedParametersParameterTypes9);
+					_getSupportedParametersParameterTypes5);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey,
 					classNameId, configuration);
@@ -355,7 +225,35 @@ public class RepositoryServiceHttp {
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 
-			return (java.lang.String[])returnObj;
+			return (String[])returnObj;
+		}
+		catch (com.liferay.portal.kernel.exception.SystemException se) {
+			_log.error(se, se);
+
+			throw se;
+		}
+	}
+
+	public static String[] getSupportedParameters(HttpPrincipal httpPrincipal,
+		String className, String configuration) {
+		try {
+			MethodKey methodKey = new MethodKey(RepositoryServiceUtil.class,
+					"getSupportedParameters",
+					_getSupportedParametersParameterTypes6);
+
+			MethodHandler methodHandler = new MethodHandler(methodKey,
+					className, configuration);
+
+			Object returnObj = null;
+
+			try {
+				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
+			}
+			catch (Exception e) {
+				throw new com.liferay.portal.kernel.exception.SystemException(e);
+			}
+
+			return (String[])returnObj;
 		}
 		catch (com.liferay.portal.kernel.exception.SystemException se) {
 			_log.error(se, se);
@@ -370,7 +268,7 @@ public class RepositoryServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(RepositoryServiceUtil.class,
 					"getTypeSettingsProperties",
-					_getTypeSettingsPropertiesParameterTypes10);
+					_getTypeSettingsPropertiesParameterTypes7);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey,
 					repositoryId);
@@ -398,11 +296,11 @@ public class RepositoryServiceHttp {
 	}
 
 	public static void updateRepository(HttpPrincipal httpPrincipal,
-		long repositoryId, java.lang.String name, java.lang.String description)
+		long repositoryId, String name, String description)
 		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
 			MethodKey methodKey = new MethodKey(RepositoryServiceUtil.class,
-					"updateRepository", _updateRepositoryParameterTypes11);
+					"updateRepository", _updateRepositoryParameterTypes8);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey,
 					repositoryId, name, description);
@@ -427,10 +325,9 @@ public class RepositoryServiceHttp {
 
 	private static Log _log = LogFactoryUtil.getLog(RepositoryServiceHttp.class);
 	private static final Class<?>[] _addRepositoryParameterTypes0 = new Class[] {
-			long.class, long.class, long.class, java.lang.String.class,
-			java.lang.String.class, java.lang.String.class,
-			com.liferay.portal.kernel.util.UnicodeProperties.class,
-			com.liferay.portal.service.ServiceContext.class
+			long.class, long.class, long.class, String.class, String.class,
+			String.class, com.liferay.portal.kernel.util.UnicodeProperties.class,
+			com.liferay.portal.kernel.service.ServiceContext.class
 		};
 	private static final Class<?>[] _checkRepositoryParameterTypes1 = new Class[] {
 			long.class
@@ -438,31 +335,22 @@ public class RepositoryServiceHttp {
 	private static final Class<?>[] _deleteRepositoryParameterTypes2 = new Class[] {
 			long.class
 		};
-	private static final Class<?>[] _getLocalRepositoryImplParameterTypes3 = new Class[] {
+	private static final Class<?>[] _getRepositoryParameterTypes3 = new Class[] {
 			long.class
 		};
-	private static final Class<?>[] _getLocalRepositoryImplParameterTypes4 = new Class[] {
-			long.class, long.class, long.class
-		};
-	private static final Class<?>[] _getRepositoryParameterTypes5 = new Class[] {
+	private static final Class<?>[] _getSupportedConfigurationsParameterTypes4 = new Class[] {
 			long.class
 		};
-	private static final Class<?>[] _getRepositoryImplParameterTypes6 = new Class[] {
+	private static final Class<?>[] _getSupportedParametersParameterTypes5 = new Class[] {
+			long.class, String.class
+		};
+	private static final Class<?>[] _getSupportedParametersParameterTypes6 = new Class[] {
+			String.class, String.class
+		};
+	private static final Class<?>[] _getTypeSettingsPropertiesParameterTypes7 = new Class[] {
 			long.class
 		};
-	private static final Class<?>[] _getRepositoryImplParameterTypes7 = new Class[] {
-			long.class, long.class, long.class
-		};
-	private static final Class<?>[] _getSupportedConfigurationsParameterTypes8 = new Class[] {
-			long.class
-		};
-	private static final Class<?>[] _getSupportedParametersParameterTypes9 = new Class[] {
-			long.class, java.lang.String.class
-		};
-	private static final Class<?>[] _getTypeSettingsPropertiesParameterTypes10 = new Class[] {
-			long.class
-		};
-	private static final Class<?>[] _updateRepositoryParameterTypes11 = new Class[] {
-			long.class, java.lang.String.class, java.lang.String.class
+	private static final Class<?>[] _updateRepositoryParameterTypes8 = new Class[] {
+			long.class, String.class, String.class
 		};
 }

@@ -14,8 +14,18 @@
 
 package com.liferay.portlet.documentlibrary.service.persistence.impl;
 
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.document.library.kernel.exception.NoSuchFileEntryMetadataException;
+import com.liferay.document.library.kernel.model.DLFileEntryMetadata;
+import com.liferay.document.library.kernel.service.persistence.DLFileEntryMetadataPersistence;
+
+import com.liferay.petra.string.StringBundler;
+
+import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
+import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
 import com.liferay.portal.kernel.dao.orm.Query;
@@ -24,34 +34,30 @@ import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.InstanceFactory;
+import com.liferay.portal.kernel.service.persistence.CompanyProvider;
+import com.liferay.portal.kernel.service.persistence.CompanyProviderWrapper;
+import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.ModelListener;
-import com.liferay.portal.service.persistence.impl.BasePersistenceImpl;
 
-import com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException;
-import com.liferay.portlet.documentlibrary.model.DLFileEntryMetadata;
 import com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataImpl;
 import com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataModelImpl;
-import com.liferay.portlet.documentlibrary.service.persistence.DLFileEntryMetadataPersistence;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -63,9 +69,10 @@ import java.util.Set;
  *
  * @author Brian Wing Shun Chan
  * @see DLFileEntryMetadataPersistence
- * @see DLFileEntryMetadataUtil
+ * @see com.liferay.document.library.kernel.service.persistence.DLFileEntryMetadataUtil
  * @generated
  */
+@ProviderType
 public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFileEntryMetadata>
 	implements DLFileEntryMetadataPersistence {
 	/*
@@ -125,7 +132,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * Returns a range of all the document library file entry metadatas where uuid = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param uuid the uuid
@@ -142,7 +149,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * Returns an ordered range of all the document library file entry metadatas where uuid = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param uuid the uuid
@@ -153,7 +160,28 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public List<DLFileEntryMetadata> findByUuid(String uuid, int start,
-		int end, OrderByComparator orderByComparator) {
+		int end, OrderByComparator<DLFileEntryMetadata> orderByComparator) {
+		return findByUuid(uuid, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file entry metadatas where uuid = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param uuid the uuid
+	 * @param start the lower bound of the range of document library file entry metadatas
+	 * @param end the upper bound of the range of document library file entry metadatas (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file entry metadatas
+	 */
+	@Override
+	public List<DLFileEntryMetadata> findByUuid(String uuid, int start,
+		int end, OrderByComparator<DLFileEntryMetadata> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -169,15 +197,19 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 			finderArgs = new Object[] { uuid, start, end, orderByComparator };
 		}
 
-		List<DLFileEntryMetadata> list = (List<DLFileEntryMetadata>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileEntryMetadata> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileEntryMetadata dlFileEntryMetadata : list) {
-				if (!Validator.equals(uuid, dlFileEntryMetadata.getUuid())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileEntryMetadata>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileEntryMetadata dlFileEntryMetadata : list) {
+					if (!Objects.equals(uuid, dlFileEntryMetadata.getUuid())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -187,7 +219,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -200,7 +232,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 			if (uuid == null) {
 				query.append(_FINDER_COLUMN_UUID_UUID_1);
 			}
-			else if (uuid.equals(StringPool.BLANK)) {
+			else if (uuid.equals("")) {
 				query.append(_FINDER_COLUMN_UUID_UUID_3);
 			}
 			else {
@@ -248,10 +280,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -269,11 +301,11 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * @param uuid the uuid
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
+	 * @throws NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata findByUuid_First(String uuid,
-		OrderByComparator orderByComparator)
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
 		DLFileEntryMetadata dlFileEntryMetadata = fetchByUuid_First(uuid,
 				orderByComparator);
@@ -289,7 +321,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		msg.append("uuid=");
 		msg.append(uuid);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchFileEntryMetadataException(msg.toString());
 	}
@@ -303,7 +335,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public DLFileEntryMetadata fetchByUuid_First(String uuid,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
 		List<DLFileEntryMetadata> list = findByUuid(uuid, 0, 1,
 				orderByComparator);
 
@@ -320,11 +352,11 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * @param uuid the uuid
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
+	 * @throws NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata findByUuid_Last(String uuid,
-		OrderByComparator orderByComparator)
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
 		DLFileEntryMetadata dlFileEntryMetadata = fetchByUuid_Last(uuid,
 				orderByComparator);
@@ -340,7 +372,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		msg.append("uuid=");
 		msg.append(uuid);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchFileEntryMetadataException(msg.toString());
 	}
@@ -354,7 +386,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public DLFileEntryMetadata fetchByUuid_Last(String uuid,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
 		int count = countByUuid(uuid);
 
 		if (count == 0) {
@@ -378,12 +410,12 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * @param uuid the uuid
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
+	 * @throws NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata[] findByUuid_PrevAndNext(
 		long fileEntryMetadataId, String uuid,
-		OrderByComparator orderByComparator)
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
 		DLFileEntryMetadata dlFileEntryMetadata = findByPrimaryKey(fileEntryMetadataId);
 
@@ -414,12 +446,14 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 	protected DLFileEntryMetadata getByUuid_PrevAndNext(Session session,
 		DLFileEntryMetadata dlFileEntryMetadata, String uuid,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<DLFileEntryMetadata> orderByComparator,
+		boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -432,7 +466,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		if (uuid == null) {
 			query.append(_FINDER_COLUMN_UUID_UUID_1);
 		}
-		else if (uuid.equals(StringPool.BLANK)) {
+		else if (uuid.equals("")) {
 			query.append(_FINDER_COLUMN_UUID_UUID_3);
 		}
 		else {
@@ -556,8 +590,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 		Object[] finderArgs = new Object[] { uuid };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(2);
@@ -569,7 +602,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 			if (uuid == null) {
 				query.append(_FINDER_COLUMN_UUID_UUID_1);
 			}
-			else if (uuid.equals(StringPool.BLANK)) {
+			else if (uuid.equals("")) {
 				query.append(_FINDER_COLUMN_UUID_UUID_3);
 			}
 			else {
@@ -595,10 +628,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -613,76 +646,102 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	private static final String _FINDER_COLUMN_UUID_UUID_1 = "dlFileEntryMetadata.uuid IS NULL";
 	private static final String _FINDER_COLUMN_UUID_UUID_2 = "dlFileEntryMetadata.uuid = ?";
 	private static final String _FINDER_COLUMN_UUID_UUID_3 = "(dlFileEntryMetadata.uuid IS NULL OR dlFileEntryMetadata.uuid = '')";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_FILEENTRYTYPEID =
-		new FinderPath(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
+	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_UUID_C = new FinderPath(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 			DLFileEntryMetadataModelImpl.FINDER_CACHE_ENABLED,
 			DLFileEntryMetadataImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByFileEntryTypeId",
+			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUuid_C",
 			new String[] {
-				Long.class.getName(),
+				String.class.getName(), Long.class.getName(),
 				
 			Integer.class.getName(), Integer.class.getName(),
 				OrderByComparator.class.getName()
 			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYTYPEID =
+	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID_C =
 		new FinderPath(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 			DLFileEntryMetadataModelImpl.FINDER_CACHE_ENABLED,
 			DLFileEntryMetadataImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByFileEntryTypeId",
-			new String[] { Long.class.getName() },
-			DLFileEntryMetadataModelImpl.FILEENTRYTYPEID_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_FILEENTRYTYPEID = new FinderPath(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUuid_C",
+			new String[] { String.class.getName(), Long.class.getName() },
+			DLFileEntryMetadataModelImpl.UUID_COLUMN_BITMASK |
+			DLFileEntryMetadataModelImpl.COMPANYID_COLUMN_BITMASK);
+	public static final FinderPath FINDER_PATH_COUNT_BY_UUID_C = new FinderPath(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 			DLFileEntryMetadataModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByFileEntryTypeId", new String[] { Long.class.getName() });
+			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUuid_C",
+			new String[] { String.class.getName(), Long.class.getName() });
 
 	/**
-	 * Returns all the document library file entry metadatas where fileEntryTypeId = &#63;.
+	 * Returns all the document library file entry metadatas where uuid = &#63; and companyId = &#63;.
 	 *
-	 * @param fileEntryTypeId the file entry type ID
+	 * @param uuid the uuid
+	 * @param companyId the company ID
 	 * @return the matching document library file entry metadatas
 	 */
 	@Override
-	public List<DLFileEntryMetadata> findByFileEntryTypeId(long fileEntryTypeId) {
-		return findByFileEntryTypeId(fileEntryTypeId, QueryUtil.ALL_POS,
+	public List<DLFileEntryMetadata> findByUuid_C(String uuid, long companyId) {
+		return findByUuid_C(uuid, companyId, QueryUtil.ALL_POS,
 			QueryUtil.ALL_POS, null);
 	}
 
 	/**
-	 * Returns a range of all the document library file entry metadatas where fileEntryTypeId = &#63;.
+	 * Returns a range of all the document library file entry metadatas where uuid = &#63; and companyId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
-	 * @param fileEntryTypeId the file entry type ID
+	 * @param uuid the uuid
+	 * @param companyId the company ID
 	 * @param start the lower bound of the range of document library file entry metadatas
 	 * @param end the upper bound of the range of document library file entry metadatas (not inclusive)
 	 * @return the range of matching document library file entry metadatas
 	 */
 	@Override
-	public List<DLFileEntryMetadata> findByFileEntryTypeId(
-		long fileEntryTypeId, int start, int end) {
-		return findByFileEntryTypeId(fileEntryTypeId, start, end, null);
+	public List<DLFileEntryMetadata> findByUuid_C(String uuid, long companyId,
+		int start, int end) {
+		return findByUuid_C(uuid, companyId, start, end, null);
 	}
 
 	/**
-	 * Returns an ordered range of all the document library file entry metadatas where fileEntryTypeId = &#63;.
+	 * Returns an ordered range of all the document library file entry metadatas where uuid = &#63; and companyId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
-	 * @param fileEntryTypeId the file entry type ID
+	 * @param uuid the uuid
+	 * @param companyId the company ID
 	 * @param start the lower bound of the range of document library file entry metadatas
 	 * @param end the upper bound of the range of document library file entry metadatas (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	 * @return the ordered range of matching document library file entry metadatas
 	 */
 	@Override
-	public List<DLFileEntryMetadata> findByFileEntryTypeId(
-		long fileEntryTypeId, int start, int end,
-		OrderByComparator orderByComparator) {
+	public List<DLFileEntryMetadata> findByUuid_C(String uuid, long companyId,
+		int start, int end,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
+		return findByUuid_C(uuid, companyId, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file entry metadatas where uuid = &#63; and companyId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param uuid the uuid
+	 * @param companyId the company ID
+	 * @param start the lower bound of the range of document library file entry metadatas
+	 * @param end the upper bound of the range of document library file entry metadatas (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file entry metadatas
+	 */
+	@Override
+	public List<DLFileEntryMetadata> findByUuid_C(String uuid, long companyId,
+		int start, int end,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -690,27 +749,32 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYTYPEID;
-			finderArgs = new Object[] { fileEntryTypeId };
+			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID_C;
+			finderArgs = new Object[] { uuid, companyId };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_FILEENTRYTYPEID;
+			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_UUID_C;
 			finderArgs = new Object[] {
-					fileEntryTypeId,
+					uuid, companyId,
 					
 					start, end, orderByComparator
 				};
 		}
 
-		List<DLFileEntryMetadata> list = (List<DLFileEntryMetadata>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileEntryMetadata> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileEntryMetadata dlFileEntryMetadata : list) {
-				if ((fileEntryTypeId != dlFileEntryMetadata.getFileEntryTypeId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileEntryMetadata>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileEntryMetadata dlFileEntryMetadata : list) {
+					if (!Objects.equals(uuid, dlFileEntryMetadata.getUuid()) ||
+							(companyId != dlFileEntryMetadata.getCompanyId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -719,16 +783,30 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 			StringBundler query = null;
 
 			if (orderByComparator != null) {
-				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+				query = new StringBundler(4 +
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
-				query = new StringBundler(3);
+				query = new StringBundler(4);
 			}
 
 			query.append(_SQL_SELECT_DLFILEENTRYMETADATA_WHERE);
 
-			query.append(_FINDER_COLUMN_FILEENTRYTYPEID_FILEENTRYTYPEID_2);
+			boolean bindUuid = false;
+
+			if (uuid == null) {
+				query.append(_FINDER_COLUMN_UUID_C_UUID_1);
+			}
+			else if (uuid.equals("")) {
+				query.append(_FINDER_COLUMN_UUID_C_UUID_3);
+			}
+			else {
+				bindUuid = true;
+
+				query.append(_FINDER_COLUMN_UUID_C_UUID_2);
+			}
+
+			query.append(_FINDER_COLUMN_UUID_C_COMPANYID_2);
 
 			if (orderByComparator != null) {
 				appendOrderByComparator(query, _ORDER_BY_ENTITY_ALIAS,
@@ -750,7 +828,11 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				QueryPos qPos = QueryPos.getInstance(q);
 
-				qPos.add(fileEntryTypeId);
+				if (bindUuid) {
+					qPos.add(uuid);
+				}
+
+				qPos.add(companyId);
 
 				if (!pagination) {
 					list = (List<DLFileEntryMetadata>)QueryUtil.list(q,
@@ -767,10 +849,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -783,48 +865,53 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	}
 
 	/**
-	 * Returns the first document library file entry metadata in the ordered set where fileEntryTypeId = &#63;.
+	 * Returns the first document library file entry metadata in the ordered set where uuid = &#63; and companyId = &#63;.
 	 *
-	 * @param fileEntryTypeId the file entry type ID
+	 * @param uuid the uuid
+	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
+	 * @throws NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
 	 */
 	@Override
-	public DLFileEntryMetadata findByFileEntryTypeId_First(
-		long fileEntryTypeId, OrderByComparator orderByComparator)
+	public DLFileEntryMetadata findByUuid_C_First(String uuid, long companyId,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
-		DLFileEntryMetadata dlFileEntryMetadata = fetchByFileEntryTypeId_First(fileEntryTypeId,
-				orderByComparator);
+		DLFileEntryMetadata dlFileEntryMetadata = fetchByUuid_C_First(uuid,
+				companyId, orderByComparator);
 
 		if (dlFileEntryMetadata != null) {
 			return dlFileEntryMetadata;
 		}
 
-		StringBundler msg = new StringBundler(4);
+		StringBundler msg = new StringBundler(6);
 
 		msg.append(_NO_SUCH_ENTITY_WITH_KEY);
 
-		msg.append("fileEntryTypeId=");
-		msg.append(fileEntryTypeId);
+		msg.append("uuid=");
+		msg.append(uuid);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append(", companyId=");
+		msg.append(companyId);
+
+		msg.append("}");
 
 		throw new NoSuchFileEntryMetadataException(msg.toString());
 	}
 
 	/**
-	 * Returns the first document library file entry metadata in the ordered set where fileEntryTypeId = &#63;.
+	 * Returns the first document library file entry metadata in the ordered set where uuid = &#63; and companyId = &#63;.
 	 *
-	 * @param fileEntryTypeId the file entry type ID
+	 * @param uuid the uuid
+	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file entry metadata, or <code>null</code> if a matching document library file entry metadata could not be found
 	 */
 	@Override
-	public DLFileEntryMetadata fetchByFileEntryTypeId_First(
-		long fileEntryTypeId, OrderByComparator orderByComparator) {
-		List<DLFileEntryMetadata> list = findByFileEntryTypeId(fileEntryTypeId,
-				0, 1, orderByComparator);
+	public DLFileEntryMetadata fetchByUuid_C_First(String uuid, long companyId,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
+		List<DLFileEntryMetadata> list = findByUuid_C(uuid, companyId, 0, 1,
+				orderByComparator);
 
 		if (!list.isEmpty()) {
 			return list.get(0);
@@ -834,53 +921,58 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	}
 
 	/**
-	 * Returns the last document library file entry metadata in the ordered set where fileEntryTypeId = &#63;.
+	 * Returns the last document library file entry metadata in the ordered set where uuid = &#63; and companyId = &#63;.
 	 *
-	 * @param fileEntryTypeId the file entry type ID
+	 * @param uuid the uuid
+	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
+	 * @throws NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
 	 */
 	@Override
-	public DLFileEntryMetadata findByFileEntryTypeId_Last(
-		long fileEntryTypeId, OrderByComparator orderByComparator)
+	public DLFileEntryMetadata findByUuid_C_Last(String uuid, long companyId,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
-		DLFileEntryMetadata dlFileEntryMetadata = fetchByFileEntryTypeId_Last(fileEntryTypeId,
-				orderByComparator);
+		DLFileEntryMetadata dlFileEntryMetadata = fetchByUuid_C_Last(uuid,
+				companyId, orderByComparator);
 
 		if (dlFileEntryMetadata != null) {
 			return dlFileEntryMetadata;
 		}
 
-		StringBundler msg = new StringBundler(4);
+		StringBundler msg = new StringBundler(6);
 
 		msg.append(_NO_SUCH_ENTITY_WITH_KEY);
 
-		msg.append("fileEntryTypeId=");
-		msg.append(fileEntryTypeId);
+		msg.append("uuid=");
+		msg.append(uuid);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append(", companyId=");
+		msg.append(companyId);
+
+		msg.append("}");
 
 		throw new NoSuchFileEntryMetadataException(msg.toString());
 	}
 
 	/**
-	 * Returns the last document library file entry metadata in the ordered set where fileEntryTypeId = &#63;.
+	 * Returns the last document library file entry metadata in the ordered set where uuid = &#63; and companyId = &#63;.
 	 *
-	 * @param fileEntryTypeId the file entry type ID
+	 * @param uuid the uuid
+	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file entry metadata, or <code>null</code> if a matching document library file entry metadata could not be found
 	 */
 	@Override
-	public DLFileEntryMetadata fetchByFileEntryTypeId_Last(
-		long fileEntryTypeId, OrderByComparator orderByComparator) {
-		int count = countByFileEntryTypeId(fileEntryTypeId);
+	public DLFileEntryMetadata fetchByUuid_C_Last(String uuid, long companyId,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
+		int count = countByUuid_C(uuid, companyId);
 
 		if (count == 0) {
 			return null;
 		}
 
-		List<DLFileEntryMetadata> list = findByFileEntryTypeId(fileEntryTypeId,
+		List<DLFileEntryMetadata> list = findByUuid_C(uuid, companyId,
 				count - 1, count, orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -891,18 +983,19 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	}
 
 	/**
-	 * Returns the document library file entry metadatas before and after the current document library file entry metadata in the ordered set where fileEntryTypeId = &#63;.
+	 * Returns the document library file entry metadatas before and after the current document library file entry metadata in the ordered set where uuid = &#63; and companyId = &#63;.
 	 *
 	 * @param fileEntryMetadataId the primary key of the current document library file entry metadata
-	 * @param fileEntryTypeId the file entry type ID
+	 * @param uuid the uuid
+	 * @param companyId the company ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
+	 * @throws NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
 	 */
 	@Override
-	public DLFileEntryMetadata[] findByFileEntryTypeId_PrevAndNext(
-		long fileEntryMetadataId, long fileEntryTypeId,
-		OrderByComparator orderByComparator)
+	public DLFileEntryMetadata[] findByUuid_C_PrevAndNext(
+		long fileEntryMetadataId, String uuid, long companyId,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
 		DLFileEntryMetadata dlFileEntryMetadata = findByPrimaryKey(fileEntryMetadataId);
 
@@ -913,15 +1006,13 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 			DLFileEntryMetadata[] array = new DLFileEntryMetadataImpl[3];
 
-			array[0] = getByFileEntryTypeId_PrevAndNext(session,
-					dlFileEntryMetadata, fileEntryTypeId, orderByComparator,
-					true);
+			array[0] = getByUuid_C_PrevAndNext(session, dlFileEntryMetadata,
+					uuid, companyId, orderByComparator, true);
 
 			array[1] = dlFileEntryMetadata;
 
-			array[2] = getByFileEntryTypeId_PrevAndNext(session,
-					dlFileEntryMetadata, fileEntryTypeId, orderByComparator,
-					false);
+			array[2] = getByUuid_C_PrevAndNext(session, dlFileEntryMetadata,
+					uuid, companyId, orderByComparator, false);
 
 			return array;
 		}
@@ -933,23 +1024,38 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		}
 	}
 
-	protected DLFileEntryMetadata getByFileEntryTypeId_PrevAndNext(
-		Session session, DLFileEntryMetadata dlFileEntryMetadata,
-		long fileEntryTypeId, OrderByComparator orderByComparator,
+	protected DLFileEntryMetadata getByUuid_C_PrevAndNext(Session session,
+		DLFileEntryMetadata dlFileEntryMetadata, String uuid, long companyId,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator,
 		boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(5 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(4);
 		}
 
 		query.append(_SQL_SELECT_DLFILEENTRYMETADATA_WHERE);
 
-		query.append(_FINDER_COLUMN_FILEENTRYTYPEID_FILEENTRYTYPEID_2);
+		boolean bindUuid = false;
+
+		if (uuid == null) {
+			query.append(_FINDER_COLUMN_UUID_C_UUID_1);
+		}
+		else if (uuid.equals("")) {
+			query.append(_FINDER_COLUMN_UUID_C_UUID_3);
+		}
+		else {
+			bindUuid = true;
+
+			query.append(_FINDER_COLUMN_UUID_C_UUID_2);
+		}
+
+		query.append(_FINDER_COLUMN_UUID_C_COMPANYID_2);
 
 		if (orderByComparator != null) {
 			String[] orderByConditionFields = orderByComparator.getOrderByConditionFields();
@@ -1019,7 +1125,11 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 		QueryPos qPos = QueryPos.getInstance(q);
 
-		qPos.add(fileEntryTypeId);
+		if (bindUuid) {
+			qPos.add(uuid);
+		}
+
+		qPos.add(companyId);
 
 		if (orderByComparator != null) {
 			Object[] values = orderByComparator.getOrderByConditionValues(dlFileEntryMetadata);
@@ -1040,39 +1150,54 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	}
 
 	/**
-	 * Removes all the document library file entry metadatas where fileEntryTypeId = &#63; from the database.
+	 * Removes all the document library file entry metadatas where uuid = &#63; and companyId = &#63; from the database.
 	 *
-	 * @param fileEntryTypeId the file entry type ID
+	 * @param uuid the uuid
+	 * @param companyId the company ID
 	 */
 	@Override
-	public void removeByFileEntryTypeId(long fileEntryTypeId) {
-		for (DLFileEntryMetadata dlFileEntryMetadata : findByFileEntryTypeId(
-				fileEntryTypeId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
+	public void removeByUuid_C(String uuid, long companyId) {
+		for (DLFileEntryMetadata dlFileEntryMetadata : findByUuid_C(uuid,
+				companyId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
 			remove(dlFileEntryMetadata);
 		}
 	}
 
 	/**
-	 * Returns the number of document library file entry metadatas where fileEntryTypeId = &#63;.
+	 * Returns the number of document library file entry metadatas where uuid = &#63; and companyId = &#63;.
 	 *
-	 * @param fileEntryTypeId the file entry type ID
+	 * @param uuid the uuid
+	 * @param companyId the company ID
 	 * @return the number of matching document library file entry metadatas
 	 */
 	@Override
-	public int countByFileEntryTypeId(long fileEntryTypeId) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_FILEENTRYTYPEID;
+	public int countByUuid_C(String uuid, long companyId) {
+		FinderPath finderPath = FINDER_PATH_COUNT_BY_UUID_C;
 
-		Object[] finderArgs = new Object[] { fileEntryTypeId };
+		Object[] finderArgs = new Object[] { uuid, companyId };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
-			StringBundler query = new StringBundler(2);
+			StringBundler query = new StringBundler(3);
 
 			query.append(_SQL_COUNT_DLFILEENTRYMETADATA_WHERE);
 
-			query.append(_FINDER_COLUMN_FILEENTRYTYPEID_FILEENTRYTYPEID_2);
+			boolean bindUuid = false;
+
+			if (uuid == null) {
+				query.append(_FINDER_COLUMN_UUID_C_UUID_1);
+			}
+			else if (uuid.equals("")) {
+				query.append(_FINDER_COLUMN_UUID_C_UUID_3);
+			}
+			else {
+				bindUuid = true;
+
+				query.append(_FINDER_COLUMN_UUID_C_UUID_2);
+			}
+
+			query.append(_FINDER_COLUMN_UUID_C_COMPANYID_2);
 
 			String sql = query.toString();
 
@@ -1085,14 +1210,18 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				QueryPos qPos = QueryPos.getInstance(q);
 
-				qPos.add(fileEntryTypeId);
+				if (bindUuid) {
+					qPos.add(uuid);
+				}
+
+				qPos.add(companyId);
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1104,8 +1233,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		return count.intValue();
 	}
 
-	private static final String _FINDER_COLUMN_FILEENTRYTYPEID_FILEENTRYTYPEID_2 =
-		"dlFileEntryMetadata.fileEntryTypeId = ?";
+	private static final String _FINDER_COLUMN_UUID_C_UUID_1 = "dlFileEntryMetadata.uuid IS NULL AND ";
+	private static final String _FINDER_COLUMN_UUID_C_UUID_2 = "dlFileEntryMetadata.uuid = ? AND ";
+	private static final String _FINDER_COLUMN_UUID_C_UUID_3 = "(dlFileEntryMetadata.uuid IS NULL OR dlFileEntryMetadata.uuid = '') AND ";
+	private static final String _FINDER_COLUMN_UUID_C_COMPANYID_2 = "dlFileEntryMetadata.companyId = ?";
 	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_FILEENTRYID =
 		new FinderPath(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 			DLFileEntryMetadataModelImpl.FINDER_CACHE_ENABLED,
@@ -1145,7 +1276,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * Returns a range of all the document library file entry metadatas where fileEntryId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param fileEntryId the file entry ID
@@ -1163,7 +1294,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * Returns an ordered range of all the document library file entry metadatas where fileEntryId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param fileEntryId the file entry ID
@@ -1174,7 +1305,31 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public List<DLFileEntryMetadata> findByFileEntryId(long fileEntryId,
-		int start, int end, OrderByComparator orderByComparator) {
+		int start, int end,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
+		return findByFileEntryId(fileEntryId, start, end, orderByComparator,
+			true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file entry metadatas where fileEntryId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param fileEntryId the file entry ID
+	 * @param start the lower bound of the range of document library file entry metadatas
+	 * @param end the upper bound of the range of document library file entry metadatas (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file entry metadatas
+	 */
+	@Override
+	public List<DLFileEntryMetadata> findByFileEntryId(long fileEntryId,
+		int start, int end,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1190,15 +1345,19 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 			finderArgs = new Object[] { fileEntryId, start, end, orderByComparator };
 		}
 
-		List<DLFileEntryMetadata> list = (List<DLFileEntryMetadata>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileEntryMetadata> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileEntryMetadata dlFileEntryMetadata : list) {
-				if ((fileEntryId != dlFileEntryMetadata.getFileEntryId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileEntryMetadata>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileEntryMetadata dlFileEntryMetadata : list) {
+					if ((fileEntryId != dlFileEntryMetadata.getFileEntryId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -1208,7 +1367,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -1255,10 +1414,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1276,11 +1435,11 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * @param fileEntryId the file entry ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
+	 * @throws NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata findByFileEntryId_First(long fileEntryId,
-		OrderByComparator orderByComparator)
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
 		DLFileEntryMetadata dlFileEntryMetadata = fetchByFileEntryId_First(fileEntryId,
 				orderByComparator);
@@ -1296,7 +1455,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		msg.append("fileEntryId=");
 		msg.append(fileEntryId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchFileEntryMetadataException(msg.toString());
 	}
@@ -1310,7 +1469,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public DLFileEntryMetadata fetchByFileEntryId_First(long fileEntryId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
 		List<DLFileEntryMetadata> list = findByFileEntryId(fileEntryId, 0, 1,
 				orderByComparator);
 
@@ -1327,11 +1486,11 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * @param fileEntryId the file entry ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
+	 * @throws NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata findByFileEntryId_Last(long fileEntryId,
-		OrderByComparator orderByComparator)
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
 		DLFileEntryMetadata dlFileEntryMetadata = fetchByFileEntryId_Last(fileEntryId,
 				orderByComparator);
@@ -1347,7 +1506,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		msg.append("fileEntryId=");
 		msg.append(fileEntryId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchFileEntryMetadataException(msg.toString());
 	}
@@ -1361,7 +1520,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public DLFileEntryMetadata fetchByFileEntryId_Last(long fileEntryId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
 		int count = countByFileEntryId(fileEntryId);
 
 		if (count == 0) {
@@ -1385,12 +1544,12 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * @param fileEntryId the file entry ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
+	 * @throws NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata[] findByFileEntryId_PrevAndNext(
 		long fileEntryMetadataId, long fileEntryId,
-		OrderByComparator orderByComparator)
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
 		DLFileEntryMetadata dlFileEntryMetadata = findByPrimaryKey(fileEntryMetadataId);
 
@@ -1421,12 +1580,15 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 	protected DLFileEntryMetadata getByFileEntryId_PrevAndNext(
 		Session session, DLFileEntryMetadata dlFileEntryMetadata,
-		long fileEntryId, OrderByComparator orderByComparator, boolean previous) {
+		long fileEntryId,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator,
+		boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -1549,8 +1711,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 		Object[] finderArgs = new Object[] { fileEntryId };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(2);
@@ -1574,10 +1735,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1629,7 +1790,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * Returns a range of all the document library file entry metadatas where fileVersionId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param fileVersionId the file version ID
@@ -1647,7 +1808,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * Returns an ordered range of all the document library file entry metadatas where fileVersionId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param fileVersionId the file version ID
@@ -1658,7 +1819,31 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public List<DLFileEntryMetadata> findByFileVersionId(long fileVersionId,
-		int start, int end, OrderByComparator orderByComparator) {
+		int start, int end,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
+		return findByFileVersionId(fileVersionId, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file entry metadatas where fileVersionId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param fileVersionId the file version ID
+	 * @param start the lower bound of the range of document library file entry metadatas
+	 * @param end the upper bound of the range of document library file entry metadatas (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching document library file entry metadatas
+	 */
+	@Override
+	public List<DLFileEntryMetadata> findByFileVersionId(long fileVersionId,
+		int start, int end,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1678,15 +1863,19 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 				};
 		}
 
-		List<DLFileEntryMetadata> list = (List<DLFileEntryMetadata>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileEntryMetadata> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (DLFileEntryMetadata dlFileEntryMetadata : list) {
-				if ((fileVersionId != dlFileEntryMetadata.getFileVersionId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<DLFileEntryMetadata>)finderCache.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (DLFileEntryMetadata dlFileEntryMetadata : list) {
+					if ((fileVersionId != dlFileEntryMetadata.getFileVersionId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -1696,7 +1885,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -1743,10 +1932,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -1764,11 +1953,11 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * @param fileVersionId the file version ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
+	 * @throws NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata findByFileVersionId_First(long fileVersionId,
-		OrderByComparator orderByComparator)
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
 		DLFileEntryMetadata dlFileEntryMetadata = fetchByFileVersionId_First(fileVersionId,
 				orderByComparator);
@@ -1784,7 +1973,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		msg.append("fileVersionId=");
 		msg.append(fileVersionId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchFileEntryMetadataException(msg.toString());
 	}
@@ -1798,7 +1987,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public DLFileEntryMetadata fetchByFileVersionId_First(long fileVersionId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
 		List<DLFileEntryMetadata> list = findByFileVersionId(fileVersionId, 0,
 				1, orderByComparator);
 
@@ -1815,11 +2004,11 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * @param fileVersionId the file version ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
+	 * @throws NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata findByFileVersionId_Last(long fileVersionId,
-		OrderByComparator orderByComparator)
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
 		DLFileEntryMetadata dlFileEntryMetadata = fetchByFileVersionId_Last(fileVersionId,
 				orderByComparator);
@@ -1835,7 +2024,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		msg.append("fileVersionId=");
 		msg.append(fileVersionId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchFileEntryMetadataException(msg.toString());
 	}
@@ -1849,7 +2038,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public DLFileEntryMetadata fetchByFileVersionId_Last(long fileVersionId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
 		int count = countByFileVersionId(fileVersionId);
 
 		if (count == 0) {
@@ -1873,12 +2062,12 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * @param fileVersionId the file version ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
+	 * @throws NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata[] findByFileVersionId_PrevAndNext(
 		long fileEntryMetadataId, long fileVersionId,
-		OrderByComparator orderByComparator)
+		OrderByComparator<DLFileEntryMetadata> orderByComparator)
 		throws NoSuchFileEntryMetadataException {
 		DLFileEntryMetadata dlFileEntryMetadata = findByPrimaryKey(fileEntryMetadataId);
 
@@ -1909,13 +2098,15 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 	protected DLFileEntryMetadata getByFileVersionId_PrevAndNext(
 		Session session, DLFileEntryMetadata dlFileEntryMetadata,
-		long fileVersionId, OrderByComparator orderByComparator,
+		long fileVersionId,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator,
 		boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -2038,8 +2229,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 		Object[] finderArgs = new Object[] { fileVersionId };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(2);
@@ -2063,10 +2253,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -2092,12 +2282,12 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 			new String[] { Long.class.getName(), Long.class.getName() });
 
 	/**
-	 * Returns the document library file entry metadata where DDMStructureId = &#63; and fileVersionId = &#63; or throws a {@link com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException} if it could not be found.
+	 * Returns the document library file entry metadata where DDMStructureId = &#63; and fileVersionId = &#63; or throws a {@link NoSuchFileEntryMetadataException} if it could not be found.
 	 *
-	 * @param DDMStructureId the d d m structure ID
+	 * @param DDMStructureId the ddm structure ID
 	 * @param fileVersionId the file version ID
 	 * @return the matching document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
+	 * @throws NoSuchFileEntryMetadataException if a matching document library file entry metadata could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata findByD_F(long DDMStructureId, long fileVersionId)
@@ -2116,10 +2306,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 			msg.append(", fileVersionId=");
 			msg.append(fileVersionId);
 
-			msg.append(StringPool.CLOSE_CURLY_BRACE);
+			msg.append("}");
 
-			if (_log.isWarnEnabled()) {
-				_log.warn(msg.toString());
+			if (_log.isDebugEnabled()) {
+				_log.debug(msg.toString());
 			}
 
 			throw new NoSuchFileEntryMetadataException(msg.toString());
@@ -2131,7 +2321,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	/**
 	 * Returns the document library file entry metadata where DDMStructureId = &#63; and fileVersionId = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
 	 *
-	 * @param DDMStructureId the d d m structure ID
+	 * @param DDMStructureId the ddm structure ID
 	 * @param fileVersionId the file version ID
 	 * @return the matching document library file entry metadata, or <code>null</code> if a matching document library file entry metadata could not be found
 	 */
@@ -2144,9 +2334,9 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	/**
 	 * Returns the document library file entry metadata where DDMStructureId = &#63; and fileVersionId = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
 	 *
-	 * @param DDMStructureId the d d m structure ID
+	 * @param DDMStructureId the ddm structure ID
 	 * @param fileVersionId the file version ID
-	 * @param retrieveFromCache whether to use the finder cache
+	 * @param retrieveFromCache whether to retrieve from the finder cache
 	 * @return the matching document library file entry metadata, or <code>null</code> if a matching document library file entry metadata could not be found
 	 */
 	@Override
@@ -2157,7 +2347,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		Object result = null;
 
 		if (retrieveFromCache) {
-			result = FinderCacheUtil.getResult(FINDER_PATH_FETCH_BY_D_F,
+			result = finderCache.getResult(FINDER_PATH_FETCH_BY_D_F,
 					finderArgs, this);
 		}
 
@@ -2197,8 +2387,8 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 				List<DLFileEntryMetadata> list = q.list();
 
 				if (list.isEmpty()) {
-					FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_D_F,
-						finderArgs, list);
+					finderCache.putResult(FINDER_PATH_FETCH_BY_D_F, finderArgs,
+						list);
 				}
 				else {
 					DLFileEntryMetadata dlFileEntryMetadata = list.get(0);
@@ -2206,17 +2396,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 					result = dlFileEntryMetadata;
 
 					cacheResult(dlFileEntryMetadata);
-
-					if ((dlFileEntryMetadata.getDDMStructureId() != DDMStructureId) ||
-							(dlFileEntryMetadata.getFileVersionId() != fileVersionId)) {
-						FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_D_F,
-							finderArgs, dlFileEntryMetadata);
-					}
 				}
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_D_F,
-					finderArgs);
+				finderCache.removeResult(FINDER_PATH_FETCH_BY_D_F, finderArgs);
 
 				throw processException(e);
 			}
@@ -2236,7 +2419,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	/**
 	 * Removes the document library file entry metadata where DDMStructureId = &#63; and fileVersionId = &#63; from the database.
 	 *
-	 * @param DDMStructureId the d d m structure ID
+	 * @param DDMStructureId the ddm structure ID
 	 * @param fileVersionId the file version ID
 	 * @return the document library file entry metadata that was removed
 	 */
@@ -2252,7 +2435,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	/**
 	 * Returns the number of document library file entry metadatas where DDMStructureId = &#63; and fileVersionId = &#63;.
 	 *
-	 * @param DDMStructureId the d d m structure ID
+	 * @param DDMStructureId the ddm structure ID
 	 * @param fileVersionId the file version ID
 	 * @return the number of matching document library file entry metadatas
 	 */
@@ -2262,8 +2445,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 		Object[] finderArgs = new Object[] { DDMStructureId, fileVersionId };
 
-		Long count = (Long)FinderCacheUtil.getResult(finderPath, finderArgs,
-				this);
+		Long count = (Long)finderCache.getResult(finderPath, finderArgs, this);
 
 		if (count == null) {
 			StringBundler query = new StringBundler(3);
@@ -2291,10 +2473,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, count);
+				finderCache.putResult(finderPath, finderArgs, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -2311,6 +2493,24 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 	public DLFileEntryMetadataPersistenceImpl() {
 		setModelClass(DLFileEntryMetadata.class);
+
+		try {
+			Field field = BasePersistenceImpl.class.getDeclaredField(
+					"_dbColumnNames");
+
+			field.setAccessible(true);
+
+			Map<String, String> dbColumnNames = new HashMap<String, String>();
+
+			dbColumnNames.put("uuid", "uuid_");
+
+			field.set(this, dbColumnNames);
+		}
+		catch (Exception e) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(e, e);
+			}
+		}
 	}
 
 	/**
@@ -2320,11 +2520,11 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public void cacheResult(DLFileEntryMetadata dlFileEntryMetadata) {
-		EntityCacheUtil.putResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.putResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 			DLFileEntryMetadataImpl.class, dlFileEntryMetadata.getPrimaryKey(),
 			dlFileEntryMetadata);
 
-		FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_D_F,
+		finderCache.putResult(FINDER_PATH_FETCH_BY_D_F,
 			new Object[] {
 				dlFileEntryMetadata.getDDMStructureId(),
 				dlFileEntryMetadata.getFileVersionId()
@@ -2341,7 +2541,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	@Override
 	public void cacheResult(List<DLFileEntryMetadata> dlFileEntryMetadatas) {
 		for (DLFileEntryMetadata dlFileEntryMetadata : dlFileEntryMetadatas) {
-			if (EntityCacheUtil.getResult(
+			if (entityCache.getResult(
 						DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 						DLFileEntryMetadataImpl.class,
 						dlFileEntryMetadata.getPrimaryKey()) == null) {
@@ -2357,106 +2557,87 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * Clears the cache for all document library file entry metadatas.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
-		if (_HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE) {
-			CacheRegistryUtil.clear(DLFileEntryMetadataImpl.class.getName());
-		}
+		entityCache.clearCache(DLFileEntryMetadataImpl.class);
 
-		EntityCacheUtil.clearCache(DLFileEntryMetadataImpl.class);
-
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_ENTITY);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
 	/**
 	 * Clears the cache for the document library file entry metadata.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache(DLFileEntryMetadata dlFileEntryMetadata) {
-		EntityCacheUtil.removeResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.removeResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 			DLFileEntryMetadataImpl.class, dlFileEntryMetadata.getPrimaryKey());
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
-		clearUniqueFindersCache(dlFileEntryMetadata);
+		clearUniqueFindersCache((DLFileEntryMetadataModelImpl)dlFileEntryMetadata,
+			true);
 	}
 
 	@Override
 	public void clearCache(List<DLFileEntryMetadata> dlFileEntryMetadatas) {
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
 		for (DLFileEntryMetadata dlFileEntryMetadata : dlFileEntryMetadatas) {
-			EntityCacheUtil.removeResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
+			entityCache.removeResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 				DLFileEntryMetadataImpl.class,
 				dlFileEntryMetadata.getPrimaryKey());
 
-			clearUniqueFindersCache(dlFileEntryMetadata);
+			clearUniqueFindersCache((DLFileEntryMetadataModelImpl)dlFileEntryMetadata,
+				true);
 		}
 	}
 
 	protected void cacheUniqueFindersCache(
-		DLFileEntryMetadata dlFileEntryMetadata) {
-		if (dlFileEntryMetadata.isNew()) {
-			Object[] args = new Object[] {
-					dlFileEntryMetadata.getDDMStructureId(),
-					dlFileEntryMetadata.getFileVersionId()
-				};
+		DLFileEntryMetadataModelImpl dlFileEntryMetadataModelImpl) {
+		Object[] args = new Object[] {
+				dlFileEntryMetadataModelImpl.getDDMStructureId(),
+				dlFileEntryMetadataModelImpl.getFileVersionId()
+			};
 
-			FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_D_F, args,
-				Long.valueOf(1));
-			FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_D_F, args,
-				dlFileEntryMetadata);
-		}
-		else {
-			DLFileEntryMetadataModelImpl dlFileEntryMetadataModelImpl = (DLFileEntryMetadataModelImpl)dlFileEntryMetadata;
-
-			if ((dlFileEntryMetadataModelImpl.getColumnBitmask() &
-					FINDER_PATH_FETCH_BY_D_F.getColumnBitmask()) != 0) {
-				Object[] args = new Object[] {
-						dlFileEntryMetadata.getDDMStructureId(),
-						dlFileEntryMetadata.getFileVersionId()
-					};
-
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_D_F, args,
-					Long.valueOf(1));
-				FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_D_F, args,
-					dlFileEntryMetadata);
-			}
-		}
+		finderCache.putResult(FINDER_PATH_COUNT_BY_D_F, args, Long.valueOf(1),
+			false);
+		finderCache.putResult(FINDER_PATH_FETCH_BY_D_F, args,
+			dlFileEntryMetadataModelImpl, false);
 	}
 
 	protected void clearUniqueFindersCache(
-		DLFileEntryMetadata dlFileEntryMetadata) {
-		DLFileEntryMetadataModelImpl dlFileEntryMetadataModelImpl = (DLFileEntryMetadataModelImpl)dlFileEntryMetadata;
+		DLFileEntryMetadataModelImpl dlFileEntryMetadataModelImpl,
+		boolean clearCurrent) {
+		if (clearCurrent) {
+			Object[] args = new Object[] {
+					dlFileEntryMetadataModelImpl.getDDMStructureId(),
+					dlFileEntryMetadataModelImpl.getFileVersionId()
+				};
 
-		Object[] args = new Object[] {
-				dlFileEntryMetadata.getDDMStructureId(),
-				dlFileEntryMetadata.getFileVersionId()
-			};
-
-		FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_D_F, args);
-		FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_D_F, args);
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_D_F, args);
+			finderCache.removeResult(FINDER_PATH_FETCH_BY_D_F, args);
+		}
 
 		if ((dlFileEntryMetadataModelImpl.getColumnBitmask() &
 				FINDER_PATH_FETCH_BY_D_F.getColumnBitmask()) != 0) {
-			args = new Object[] {
+			Object[] args = new Object[] {
 					dlFileEntryMetadataModelImpl.getOriginalDDMStructureId(),
 					dlFileEntryMetadataModelImpl.getOriginalFileVersionId()
 				};
 
-			FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_D_F, args);
-			FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_D_F, args);
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_D_F, args);
+			finderCache.removeResult(FINDER_PATH_FETCH_BY_D_F, args);
 		}
 	}
 
@@ -2477,6 +2658,8 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 		dlFileEntryMetadata.setUuid(uuid);
 
+		dlFileEntryMetadata.setCompanyId(companyProvider.getCompanyId());
+
 		return dlFileEntryMetadata;
 	}
 
@@ -2485,7 +2668,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 *
 	 * @param fileEntryMetadataId the primary key of the document library file entry metadata
 	 * @return the document library file entry metadata that was removed
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
+	 * @throws NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata remove(long fileEntryMetadataId)
@@ -2498,7 +2681,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 *
 	 * @param primaryKey the primary key of the document library file entry metadata
 	 * @return the document library file entry metadata that was removed
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
+	 * @throws NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata remove(Serializable primaryKey)
@@ -2512,8 +2695,8 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 					primaryKey);
 
 			if (dlFileEntryMetadata == null) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+				if (_log.isDebugEnabled()) {
+					_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 				}
 
 				throw new NoSuchFileEntryMetadataException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -2536,8 +2719,6 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	@Override
 	protected DLFileEntryMetadata removeImpl(
 		DLFileEntryMetadata dlFileEntryMetadata) {
-		dlFileEntryMetadata = toUnwrappedModel(dlFileEntryMetadata);
-
 		Session session = null;
 
 		try {
@@ -2568,10 +2749,24 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 	@Override
 	public DLFileEntryMetadata updateImpl(
-		com.liferay.portlet.documentlibrary.model.DLFileEntryMetadata dlFileEntryMetadata) {
-		dlFileEntryMetadata = toUnwrappedModel(dlFileEntryMetadata);
-
+		DLFileEntryMetadata dlFileEntryMetadata) {
 		boolean isNew = dlFileEntryMetadata.isNew();
+
+		if (!(dlFileEntryMetadata instanceof DLFileEntryMetadataModelImpl)) {
+			InvocationHandler invocationHandler = null;
+
+			if (ProxyUtil.isProxyClass(dlFileEntryMetadata.getClass())) {
+				invocationHandler = ProxyUtil.getInvocationHandler(dlFileEntryMetadata);
+
+				throw new IllegalArgumentException(
+					"Implement ModelWrapper in dlFileEntryMetadata proxy " +
+					invocationHandler.getClass());
+			}
+
+			throw new IllegalArgumentException(
+				"Implement ModelWrapper in custom DLFileEntryMetadata implementation " +
+				dlFileEntryMetadata.getClass());
+		}
 
 		DLFileEntryMetadataModelImpl dlFileEntryMetadataModelImpl = (DLFileEntryMetadataModelImpl)dlFileEntryMetadata;
 
@@ -2592,7 +2787,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 				dlFileEntryMetadata.setNew(false);
 			}
 			else {
-				session.merge(dlFileEntryMetadata);
+				dlFileEntryMetadata = (DLFileEntryMetadata)session.merge(dlFileEntryMetadata);
 			}
 		}
 		catch (Exception e) {
@@ -2602,10 +2797,43 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 			closeSession(session);
 		}
 
-		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 
-		if (isNew || !DLFileEntryMetadataModelImpl.COLUMN_BITMASK_ENABLED) {
-			FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		if (!DLFileEntryMetadataModelImpl.COLUMN_BITMASK_ENABLED) {
+			finderCache.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		}
+		else
+		 if (isNew) {
+			Object[] args = new Object[] { dlFileEntryMetadataModelImpl.getUuid() };
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID,
+				args);
+
+			args = new Object[] {
+					dlFileEntryMetadataModelImpl.getUuid(),
+					dlFileEntryMetadataModelImpl.getCompanyId()
+				};
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID_C, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID_C,
+				args);
+
+			args = new Object[] { dlFileEntryMetadataModelImpl.getFileEntryId() };
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_FILEENTRYID, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYID,
+				args);
+
+			args = new Object[] { dlFileEntryMetadataModelImpl.getFileVersionId() };
+
+			finderCache.removeResult(FINDER_PATH_COUNT_BY_FILEVERSIONID, args);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEVERSIONID,
+				args);
+
+			finderCache.removeResult(FINDER_PATH_COUNT_ALL, FINDER_ARGS_EMPTY);
+			finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL,
+				FINDER_ARGS_EMPTY);
 		}
 
 		else {
@@ -2615,35 +2843,35 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 						dlFileEntryMetadataModelImpl.getOriginalUuid()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_UUID, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID,
 					args);
 
 				args = new Object[] { dlFileEntryMetadataModelImpl.getUuid() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_UUID, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID,
 					args);
 			}
 
 			if ((dlFileEntryMetadataModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYTYPEID.getColumnBitmask()) != 0) {
+					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID_C.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
-						dlFileEntryMetadataModelImpl.getOriginalFileEntryTypeId()
+						dlFileEntryMetadataModelImpl.getOriginalUuid(),
+						dlFileEntryMetadataModelImpl.getOriginalCompanyId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_FILEENTRYTYPEID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYTYPEID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID_C, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID_C,
 					args);
 
 				args = new Object[] {
-						dlFileEntryMetadataModelImpl.getFileEntryTypeId()
+						dlFileEntryMetadataModelImpl.getUuid(),
+						dlFileEntryMetadataModelImpl.getCompanyId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_FILEENTRYTYPEID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYTYPEID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_UUID_C, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_UUID_C,
 					args);
 			}
 
@@ -2653,18 +2881,16 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 						dlFileEntryMetadataModelImpl.getOriginalFileEntryId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_FILEENTRYID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_FILEENTRYID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYID,
 					args);
 
 				args = new Object[] {
 						dlFileEntryMetadataModelImpl.getFileEntryId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_FILEENTRYID,
-					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_FILEENTRYID, args);
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEENTRYID,
 					args);
 			}
 
@@ -2674,62 +2900,40 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 						dlFileEntryMetadataModelImpl.getOriginalFileVersionId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_FILEVERSIONID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_FILEVERSIONID,
 					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEVERSIONID,
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEVERSIONID,
 					args);
 
 				args = new Object[] {
 						dlFileEntryMetadataModelImpl.getFileVersionId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_FILEVERSIONID,
+				finderCache.removeResult(FINDER_PATH_COUNT_BY_FILEVERSIONID,
 					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEVERSIONID,
+				finderCache.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_FILEVERSIONID,
 					args);
 			}
 		}
 
-		EntityCacheUtil.putResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
+		entityCache.putResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 			DLFileEntryMetadataImpl.class, dlFileEntryMetadata.getPrimaryKey(),
 			dlFileEntryMetadata, false);
 
-		clearUniqueFindersCache(dlFileEntryMetadata);
-		cacheUniqueFindersCache(dlFileEntryMetadata);
+		clearUniqueFindersCache(dlFileEntryMetadataModelImpl, false);
+		cacheUniqueFindersCache(dlFileEntryMetadataModelImpl);
 
 		dlFileEntryMetadata.resetOriginalValues();
 
 		return dlFileEntryMetadata;
 	}
 
-	protected DLFileEntryMetadata toUnwrappedModel(
-		DLFileEntryMetadata dlFileEntryMetadata) {
-		if (dlFileEntryMetadata instanceof DLFileEntryMetadataImpl) {
-			return dlFileEntryMetadata;
-		}
-
-		DLFileEntryMetadataImpl dlFileEntryMetadataImpl = new DLFileEntryMetadataImpl();
-
-		dlFileEntryMetadataImpl.setNew(dlFileEntryMetadata.isNew());
-		dlFileEntryMetadataImpl.setPrimaryKey(dlFileEntryMetadata.getPrimaryKey());
-
-		dlFileEntryMetadataImpl.setUuid(dlFileEntryMetadata.getUuid());
-		dlFileEntryMetadataImpl.setFileEntryMetadataId(dlFileEntryMetadata.getFileEntryMetadataId());
-		dlFileEntryMetadataImpl.setDDMStorageId(dlFileEntryMetadata.getDDMStorageId());
-		dlFileEntryMetadataImpl.setDDMStructureId(dlFileEntryMetadata.getDDMStructureId());
-		dlFileEntryMetadataImpl.setFileEntryTypeId(dlFileEntryMetadata.getFileEntryTypeId());
-		dlFileEntryMetadataImpl.setFileEntryId(dlFileEntryMetadata.getFileEntryId());
-		dlFileEntryMetadataImpl.setFileVersionId(dlFileEntryMetadata.getFileVersionId());
-
-		return dlFileEntryMetadataImpl;
-	}
-
 	/**
-	 * Returns the document library file entry metadata with the primary key or throws a {@link com.liferay.portal.NoSuchModelException} if it could not be found.
+	 * Returns the document library file entry metadata with the primary key or throws a {@link com.liferay.portal.kernel.exception.NoSuchModelException} if it could not be found.
 	 *
 	 * @param primaryKey the primary key of the document library file entry metadata
 	 * @return the document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
+	 * @throws NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata findByPrimaryKey(Serializable primaryKey)
@@ -2737,8 +2941,8 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		DLFileEntryMetadata dlFileEntryMetadata = fetchByPrimaryKey(primaryKey);
 
 		if (dlFileEntryMetadata == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+			if (_log.isDebugEnabled()) {
+				_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 			}
 
 			throw new NoSuchFileEntryMetadataException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -2749,11 +2953,11 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	}
 
 	/**
-	 * Returns the document library file entry metadata with the primary key or throws a {@link com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException} if it could not be found.
+	 * Returns the document library file entry metadata with the primary key or throws a {@link NoSuchFileEntryMetadataException} if it could not be found.
 	 *
 	 * @param fileEntryMetadataId the primary key of the document library file entry metadata
 	 * @return the document library file entry metadata
-	 * @throws com.liferay.portlet.documentlibrary.NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
+	 * @throws NoSuchFileEntryMetadataException if a document library file entry metadata with the primary key could not be found
 	 */
 	@Override
 	public DLFileEntryMetadata findByPrimaryKey(long fileEntryMetadataId)
@@ -2769,12 +2973,14 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public DLFileEntryMetadata fetchByPrimaryKey(Serializable primaryKey) {
-		DLFileEntryMetadata dlFileEntryMetadata = (DLFileEntryMetadata)EntityCacheUtil.getResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
+		Serializable serializable = entityCache.getResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 				DLFileEntryMetadataImpl.class, primaryKey);
 
-		if (dlFileEntryMetadata == _nullDLFileEntryMetadata) {
+		if (serializable == nullModel) {
 			return null;
 		}
+
+		DLFileEntryMetadata dlFileEntryMetadata = (DLFileEntryMetadata)serializable;
 
 		if (dlFileEntryMetadata == null) {
 			Session session = null;
@@ -2789,13 +2995,12 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 					cacheResult(dlFileEntryMetadata);
 				}
 				else {
-					EntityCacheUtil.putResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
-						DLFileEntryMetadataImpl.class, primaryKey,
-						_nullDLFileEntryMetadata);
+					entityCache.putResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
+						DLFileEntryMetadataImpl.class, primaryKey, nullModel);
 				}
 			}
 			catch (Exception e) {
-				EntityCacheUtil.removeResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
+				entityCache.removeResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 					DLFileEntryMetadataImpl.class, primaryKey);
 
 				throw processException(e);
@@ -2845,18 +3050,20 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		Set<Serializable> uncachedPrimaryKeys = null;
 
 		for (Serializable primaryKey : primaryKeys) {
-			DLFileEntryMetadata dlFileEntryMetadata = (DLFileEntryMetadata)EntityCacheUtil.getResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
+			Serializable serializable = entityCache.getResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
 					DLFileEntryMetadataImpl.class, primaryKey);
 
-			if (dlFileEntryMetadata == null) {
-				if (uncachedPrimaryKeys == null) {
-					uncachedPrimaryKeys = new HashSet<Serializable>();
-				}
+			if (serializable != nullModel) {
+				if (serializable == null) {
+					if (uncachedPrimaryKeys == null) {
+						uncachedPrimaryKeys = new HashSet<Serializable>();
+					}
 
-				uncachedPrimaryKeys.add(primaryKey);
-			}
-			else {
-				map.put(primaryKey, dlFileEntryMetadata);
+					uncachedPrimaryKeys.add(primaryKey);
+				}
+				else {
+					map.put(primaryKey, (DLFileEntryMetadata)serializable);
+				}
 			}
 		}
 
@@ -2870,14 +3077,14 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 		query.append(_SQL_SELECT_DLFILEENTRYMETADATA_WHERE_PKS_IN);
 
 		for (Serializable primaryKey : uncachedPrimaryKeys) {
-			query.append(String.valueOf(primaryKey));
+			query.append((long)primaryKey);
 
-			query.append(StringPool.COMMA);
+			query.append(",");
 		}
 
 		query.setIndex(query.index() - 1);
 
-		query.append(StringPool.CLOSE_PARENTHESIS);
+		query.append(")");
 
 		String sql = query.toString();
 
@@ -2898,9 +3105,8 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 			}
 
 			for (Serializable primaryKey : uncachedPrimaryKeys) {
-				EntityCacheUtil.putResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
-					DLFileEntryMetadataImpl.class, primaryKey,
-					_nullDLFileEntryMetadata);
+				entityCache.putResult(DLFileEntryMetadataModelImpl.ENTITY_CACHE_ENABLED,
+					DLFileEntryMetadataImpl.class, primaryKey, nullModel);
 			}
 		}
 		catch (Exception e) {
@@ -2927,7 +3133,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * Returns a range of all the document library file entry metadatas.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of document library file entry metadatas
@@ -2943,7 +3149,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 * Returns an ordered range of all the document library file entry metadatas.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.documentlibrary.model.impl.DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of document library file entry metadatas
@@ -2953,7 +3159,27 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public List<DLFileEntryMetadata> findAll(int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<DLFileEntryMetadata> orderByComparator) {
+		return findAll(start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the document library file entry metadatas.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link DLFileEntryMetadataModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param start the lower bound of the range of document library file entry metadatas
+	 * @param end the upper bound of the range of document library file entry metadatas (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of document library file entry metadatas
+	 */
+	@Override
+	public List<DLFileEntryMetadata> findAll(int start, int end,
+		OrderByComparator<DLFileEntryMetadata> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -2969,8 +3195,12 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 			finderArgs = new Object[] { start, end, orderByComparator };
 		}
 
-		List<DLFileEntryMetadata> list = (List<DLFileEntryMetadata>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<DLFileEntryMetadata> list = null;
+
+		if (retrieveFromCache) {
+			list = (List<DLFileEntryMetadata>)finderCache.getResult(finderPath,
+					finderArgs, this);
+		}
 
 		if (list == null) {
 			StringBundler query = null;
@@ -2978,7 +3208,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 			if (orderByComparator != null) {
 				query = new StringBundler(2 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 
 				query.append(_SQL_SELECT_DLFILEENTRYMETADATA);
 
@@ -3017,10 +3247,10 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				cacheResult(list);
 
-				FinderCacheUtil.putResult(finderPath, finderArgs, list);
+				finderCache.putResult(finderPath, finderArgs, list);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(finderPath, finderArgs);
+				finderCache.removeResult(finderPath, finderArgs);
 
 				throw processException(e);
 			}
@@ -3050,7 +3280,7 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)FinderCacheUtil.getResult(FINDER_PATH_COUNT_ALL,
+		Long count = (Long)finderCache.getResult(FINDER_PATH_COUNT_ALL,
 				FINDER_ARGS_EMPTY, this);
 
 		if (count == null) {
@@ -3063,11 +3293,11 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_ALL,
-					FINDER_ARGS_EMPTY, count);
+				finderCache.putResult(FINDER_PATH_COUNT_ALL, FINDER_ARGS_EMPTY,
+					count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_ALL,
+				finderCache.removeResult(FINDER_PATH_COUNT_ALL,
 					FINDER_ARGS_EMPTY);
 
 				throw processException(e);
@@ -3081,42 +3311,32 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	}
 
 	@Override
-	protected Set<String> getBadColumnNames() {
+	public Set<String> getBadColumnNames() {
 		return _badColumnNames;
+	}
+
+	@Override
+	protected Map<String, Integer> getTableColumnsMap() {
+		return DLFileEntryMetadataModelImpl.TABLE_COLUMNS_MAP;
 	}
 
 	/**
 	 * Initializes the document library file entry metadata persistence.
 	 */
 	public void afterPropertiesSet() {
-		String[] listenerClassNames = StringUtil.split(GetterUtil.getString(
-					com.liferay.portal.util.PropsUtil.get(
-						"value.object.listener.com.liferay.portlet.documentlibrary.model.DLFileEntryMetadata")));
-
-		if (listenerClassNames.length > 0) {
-			try {
-				List<ModelListener<DLFileEntryMetadata>> listenersList = new ArrayList<ModelListener<DLFileEntryMetadata>>();
-
-				for (String listenerClassName : listenerClassNames) {
-					listenersList.add((ModelListener<DLFileEntryMetadata>)InstanceFactory.newInstance(
-							getClassLoader(), listenerClassName));
-				}
-
-				listeners = listenersList.toArray(new ModelListener[listenersList.size()]);
-			}
-			catch (Exception e) {
-				_log.error(e);
-			}
-		}
 	}
 
 	public void destroy() {
-		EntityCacheUtil.removeCache(DLFileEntryMetadataImpl.class.getName());
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_ENTITY);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
-		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		entityCache.removeCache(DLFileEntryMetadataImpl.class.getName());
+		finderCache.removeCache(FINDER_CLASS_NAME_ENTITY);
+		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
+		finderCache.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
+	@BeanReference(type = CompanyProviderWrapper.class)
+	protected CompanyProvider companyProvider;
+	protected EntityCache entityCache = EntityCacheUtil.getEntityCache();
+	protected FinderCache finderCache = FinderCacheUtil.getFinderCache();
 	private static final String _SQL_SELECT_DLFILEENTRYMETADATA = "SELECT dlFileEntryMetadata FROM DLFileEntryMetadata dlFileEntryMetadata";
 	private static final String _SQL_SELECT_DLFILEENTRYMETADATA_WHERE_PKS_IN = "SELECT dlFileEntryMetadata FROM DLFileEntryMetadata dlFileEntryMetadata WHERE fileEntryMetadataId IN (";
 	private static final String _SQL_SELECT_DLFILEENTRYMETADATA_WHERE = "SELECT dlFileEntryMetadata FROM DLFileEntryMetadata dlFileEntryMetadata WHERE ";
@@ -3125,28 +3345,8 @@ public class DLFileEntryMetadataPersistenceImpl extends BasePersistenceImpl<DLFi
 	private static final String _ORDER_BY_ENTITY_ALIAS = "dlFileEntryMetadata.";
 	private static final String _NO_SUCH_ENTITY_WITH_PRIMARY_KEY = "No DLFileEntryMetadata exists with the primary key ";
 	private static final String _NO_SUCH_ENTITY_WITH_KEY = "No DLFileEntryMetadata exists with the key {";
-	private static final boolean _HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE = com.liferay.portal.util.PropsValues.HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE;
-	private static Log _log = LogFactoryUtil.getLog(DLFileEntryMetadataPersistenceImpl.class);
-	private static Set<String> _badColumnNames = SetUtil.fromArray(new String[] {
+	private static final Log _log = LogFactoryUtil.getLog(DLFileEntryMetadataPersistenceImpl.class);
+	private static final Set<String> _badColumnNames = SetUtil.fromArray(new String[] {
 				"uuid"
 			});
-	private static DLFileEntryMetadata _nullDLFileEntryMetadata = new DLFileEntryMetadataImpl() {
-			@Override
-			public Object clone() {
-				return this;
-			}
-
-			@Override
-			public CacheModel<DLFileEntryMetadata> toCacheModel() {
-				return _nullDLFileEntryMetadataCacheModel;
-			}
-		};
-
-	private static CacheModel<DLFileEntryMetadata> _nullDLFileEntryMetadataCacheModel =
-		new CacheModel<DLFileEntryMetadata>() {
-			@Override
-			public DLFileEntryMetadata toEntityModel() {
-				return _nullDLFileEntryMetadata;
-			}
-		};
 }

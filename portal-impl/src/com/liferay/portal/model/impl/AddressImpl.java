@@ -16,20 +16,17 @@ package com.liferay.portal.model.impl;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.model.Country;
-import com.liferay.portal.model.ListType;
-import com.liferay.portal.model.Region;
-import com.liferay.portal.service.CountryServiceUtil;
-import com.liferay.portal.service.ListTypeServiceUtil;
-import com.liferay.portal.service.RegionServiceUtil;
+import com.liferay.portal.kernel.model.Country;
+import com.liferay.portal.kernel.model.ListType;
+import com.liferay.portal.kernel.model.Region;
+import com.liferay.portal.kernel.service.CountryServiceUtil;
+import com.liferay.portal.kernel.service.ListTypeServiceUtil;
+import com.liferay.portal.kernel.service.RegionServiceUtil;
 
 /**
  * @author Brian Wing Shun Chan
  */
 public class AddressImpl extends AddressBaseImpl {
-
-	public AddressImpl() {
-	}
 
 	@Override
 	public Country getCountry() {
@@ -42,7 +39,7 @@ public class AddressImpl extends AddressBaseImpl {
 			country = new CountryImpl();
 
 			if (_log.isWarnEnabled()) {
-				_log.warn(e);
+				_log.warn(e, e);
 			}
 		}
 
@@ -60,7 +57,7 @@ public class AddressImpl extends AddressBaseImpl {
 			region = new RegionImpl();
 
 			if (_log.isWarnEnabled()) {
-				_log.warn(e);
+				_log.warn(e, e);
 			}
 		}
 
@@ -78,13 +75,13 @@ public class AddressImpl extends AddressBaseImpl {
 			type = new ListTypeImpl();
 
 			if (_log.isWarnEnabled()) {
-				_log.warn(e);
+				_log.warn(e, e);
 			}
 		}
 
 		return type;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(AddressImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(AddressImpl.class);
 
 }

@@ -14,10 +14,11 @@
 
 package com.liferay.portal.nio.intraband.proxy;
 
+import com.liferay.petra.executor.PortalExecutorManager;
 import com.liferay.portal.kernel.io.Deserializer;
 import com.liferay.portal.kernel.io.Serializer;
 import com.liferay.portal.kernel.nio.intraband.Datagram;
-import com.liferay.portal.kernel.nio.intraband.PortalExecutorManagerUtilAdvice;
+import com.liferay.portal.kernel.nio.intraband.PortalExecutorManagerInvocationHandler;
 import com.liferay.portal.kernel.nio.intraband.proxy.AsyncIntrabandProxySkeleton;
 import com.liferay.portal.kernel.nio.intraband.proxy.IntrabandProxySkeleton;
 import com.liferay.portal.kernel.nio.intraband.proxy.IntrabandProxySkeletonRegistryUtil;
@@ -28,12 +29,14 @@ import com.liferay.portal.kernel.nio.intraband.rpc.RPCResponse;
 import com.liferay.portal.kernel.nio.intraband.test.MockIntraband;
 import com.liferay.portal.kernel.nio.intraband.test.MockRegistrationReference;
 import com.liferay.portal.kernel.process.ProcessCallable;
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.test.AdviseWith;
-import com.liferay.portal.test.AspectJMockingNewClassLoaderJUnitTestRunner;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.util.FileImpl;
+import com.liferay.registry.BasicRegistryImpl;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
 
 import java.io.Serializable;
 
@@ -43,18 +46,18 @@ import java.util.concurrent.Future;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Shuyang Zhou
  */
-@RunWith(AspectJMockingNewClassLoaderJUnitTestRunner.class)
 public class IntrabandProxyInstallationUtilTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	@Rule
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		CodeCoverageAssertor.INSTANCE;
 
 	@Before
 	public void setUp() {
@@ -97,6 +100,17 @@ public class IntrabandProxyInstallationUtilTest {
 		_stubProxyMethodSignatures =
 			IntrabandProxyUtil.getProxyMethodSignatures(
 				IntrabandProxyUtil.getStubClass(TestClass.class, "skeletonId"));
+
+		RegistryUtil.setRegistry(new BasicRegistryImpl());
+
+		Registry registry = RegistryUtil.getRegistry();
+
+		registry.registerService(
+			PortalExecutorManager.class,
+			(PortalExecutorManager)ProxyUtil.newProxyInstance(
+				IntrabandProxyInstallationUtilTest.class.getClassLoader(),
+				new Class<?>[] {PortalExecutorManager.class},
+				new PortalExecutorManagerInvocationHandler()));
 	}
 
 	@Test
@@ -104,9 +118,8 @@ public class IntrabandProxyInstallationUtilTest {
 		new IntrabandProxyInstallationUtil();
 	}
 
-	@AdviseWith(adviceClasses = {PortalExecutorManagerUtilAdvice.class})
 	@Test
-	public void testInstallSkeletonLocally() throws Exception {
+	public void testInstallSkeletonLocally() {
 		IntrabandProxyInstallationUtil.checkProxyMethodSignatures(
 			IntrabandProxyInstallationUtil.installSkeleton(
 				TestClass.class, _targetLocator),
@@ -119,9 +132,8 @@ public class IntrabandProxyInstallationUtilTest {
 			AsyncIntrabandProxySkeleton.class,
 			intrabandProxySkeleton.getClass());
 
-		intrabandProxySkeleton =
-			(IntrabandProxySkeleton)ReflectionTestUtil.getFieldValue(
-				intrabandProxySkeleton, "_intrabandProxySkeleton");
+		intrabandProxySkeleton = ReflectionTestUtil.getFieldValue(
+			intrabandProxySkeleton, "_intrabandProxySkeleton");
 
 		Assert.assertEquals(
 			_targetLocator,
@@ -161,7 +173,6 @@ public class IntrabandProxyInstallationUtilTest {
 		}
 	}
 
-	@AdviseWith(adviceClasses = {PortalExecutorManagerUtilAdvice.class})
 	@Test
 	public void testInstallSkeletonRemotely() throws Exception {
 		Future<String[]> skeletonProxyMethodSignaturesFuture =
@@ -181,9 +192,8 @@ public class IntrabandProxyInstallationUtilTest {
 			AsyncIntrabandProxySkeleton.class,
 			intrabandProxySkeleton.getClass());
 
-		intrabandProxySkeleton =
-			(IntrabandProxySkeleton)ReflectionTestUtil.getFieldValue(
-				intrabandProxySkeleton, "_intrabandProxySkeleton");
+		intrabandProxySkeleton = ReflectionTestUtil.getFieldValue(
+			intrabandProxySkeleton, "_intrabandProxySkeleton");
 
 		Assert.assertEquals(
 			_targetLocator,
@@ -263,21 +273,26 @@ public class IntrabandProxyInstallationUtilTest {
 			return null;
 		}
 
+		@Override
+		public int hashCode() {
+			return super.hashCode();
+		}
+
 		private final Class<?> _clazz;
 
 	}
 
 	private abstract class TestClass {
 
-		@Id
-		public abstract String getId();
+		@SuppressWarnings("unused")
+		public void copyMethod() {
+		}
 
 		@Proxy
 		public abstract Object doStuff();
 
-		@SuppressWarnings("unused")
-		public void copyMethod() {
-		}
+		@Id
+		public abstract String getId();
 
 	}
 

@@ -14,6 +14,10 @@
 
 package com.liferay.portal.kernel.test;
 
+import com.liferay.portal.kernel.util.StringBundler;
+
+import java.io.Closeable;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Handler;
@@ -24,7 +28,7 @@ import java.util.logging.Logger;
 /**
  * @author Shuyang Zhou
  */
-public class CaptureHandler extends Handler {
+public class CaptureHandler extends Handler implements Closeable {
 
 	public CaptureHandler(Logger logger, Level level) {
 		_logger = logger;
@@ -42,7 +46,7 @@ public class CaptureHandler extends Handler {
 	}
 
 	@Override
-	public void close() throws SecurityException {
+	public void close() {
 		_logRecords.clear();
 
 		_logger.removeHandler(this);
@@ -71,7 +75,7 @@ public class CaptureHandler extends Handler {
 
 	@Override
 	public void publish(LogRecord logRecord) {
-		_logRecords.add(logRecord);
+		_logRecords.add(new PrintableLogRecord(logRecord));
 	}
 
 	public List<LogRecord> resetLogLevel(Level level) {
@@ -82,10 +86,42 @@ public class CaptureHandler extends Handler {
 		return _logRecords;
 	}
 
-	private Handler[] _handlers;
-	private Level _level;
-	private Logger _logger;
-	private List<LogRecord> _logRecords = new CopyOnWriteArrayList<LogRecord>();
-	private boolean _useParentHandlers;
+	private final Handler[] _handlers;
+	private final Level _level;
+	private final Logger _logger;
+	private final List<LogRecord> _logRecords = new CopyOnWriteArrayList<>();
+	private final boolean _useParentHandlers;
+
+	private static class PrintableLogRecord extends LogRecord {
+
+		@Override
+		public String toString() {
+			StringBundler sb = new StringBundler(5);
+
+			sb.append("{level=");
+			sb.append(getLevel());
+			sb.append(", message=");
+			sb.append(getMessage());
+			sb.append("}");
+
+			return sb.toString();
+		}
+
+		private PrintableLogRecord(LogRecord logRecord) {
+			super(logRecord.getLevel(), logRecord.getMessage());
+
+			setLoggerName(logRecord.getLoggerName());
+			setMillis(logRecord.getMillis());
+			setParameters(logRecord.getParameters());
+			setResourceBundle(logRecord.getResourceBundle());
+			setResourceBundleName(logRecord.getResourceBundleName());
+			setSequenceNumber(logRecord.getSequenceNumber());
+			setSourceClassName(logRecord.getSourceClassName());
+			setSourceMethodName(logRecord.getSourceMethodName());
+			setThreadID(logRecord.getThreadID());
+			setThrown(logRecord.getThrown());
+		}
+
+	}
 
 }

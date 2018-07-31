@@ -14,10 +14,10 @@
 
 package com.liferay.portal.servlet.filters.sessionid;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.CookieKeys;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 
 import javax.servlet.http.Cookie;
@@ -98,9 +98,9 @@ public class SessionIdServletRequest extends HttpServletRequestWrapper {
 	private static final String _JESSIONID_ALREADY_SET =
 		"JESSIONID_ALREADY_SET";
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		SessionIdServletRequest.class);
 
-	private HttpServletResponse _response;
+	private final HttpServletResponse _response;
 
 }

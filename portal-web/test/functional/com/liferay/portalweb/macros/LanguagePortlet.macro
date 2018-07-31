@@ -1,0 +1,164 @@
+<definition>
+	<command name="configureViewAvailableLanguages">
+		<execute function="SelectFrame" locator1="IFrame#CONFIGURATION" />
+
+		<execute macro="Panel#expandPanel">
+			<var name="panel" value="Languages" />
+		</execute>
+
+		<for list="${availableLanguages}" param="availableLanguage">
+			<execute function="AssertTextEquals#assertPartialText" locator1="LanguageConfiguration#LANGUAGES_AVAILABLE" value1="${availableLanguage}" />
+		</for>
+
+		<execute function="SelectFrame" value1="relative=top" />
+	</command>
+
+	<command name="configureViewCurrentLanguages">
+		<execute function="SelectFrame" locator1="IFrame#CONFIGURATION" />
+
+		<execute macro="Panel#expandPanel">
+			<var name="panel" value="Languages" />
+		</execute>
+
+		<for list="${currentLanguages}" param="currentLanguage">
+			<execute function="AssertTextEquals#assertPartialText" locator1="LanguageConfiguration#LANGUAGES_CURRENT" value1="${currentLanguage}" />
+		</for>
+
+		<execute function="SelectFrame" value1="relative=top" />
+	</command>
+
+	<command name="moveLanguagesToAvailable">
+		<execute function="SelectFrame" locator1="IFrame#CONFIGURATION" />
+
+		<execute macro="Panel#expandPanel">
+			<var name="panel" value="Languages" />
+		</execute>
+
+		<while>
+			<condition function="IsElementPresent" locator1="LanguageConfiguration#LANGUAGES_CURRENT_SELECT" />
+			<then>
+				<execute function="Click" locator1="LanguageConfiguration#LANGUAGES_CURRENT_SELECT" />
+
+				<execute function="Click" locator1="LanguageConfiguration#MOVE_CURRENT_TO_AVAILABLE_BUTTON" />
+			</then>
+		</while>
+	</command>
+
+	<command name="moveLanguagesToCurrent">
+		<for list="${currentLanguages}" param="currentLanguage">
+			<var name="key_currentLanguage" value="${currentLanguage}" />
+
+			<execute function="Select" locator1="LanguageConfiguration#LANGUAGES_AVAILABLE" value1="${currentLanguage}" />
+
+			<execute function="Click" locator1="LanguageConfiguration#MOVE_AVAILABLE_TO_CURRENT_BUTTON" />
+
+			<execute function="AssertTextEquals#assertPartialText" locator1="LanguageConfiguration#LANGUAGES_CURRENT" value1="${currentLanguage}" />
+		</for>
+
+		<execute macro="PortletEntry#save" />
+
+		<execute function="SelectFrame" value1="relative=top" />
+	</command>
+
+	<command name="selectLanguagePG">
+		<var name="portletName" value="${portletName}" />
+
+		<if>
+			<contains string="${portletName}" substring="{portletName}" />
+			<then>
+				<var name="portletName" value="LanguagePortlet" />
+			</then>
+		</if>
+
+		<if>
+			<condition function="IsTextNotEqual" locator1="Language#DROPDOWN_LANGUAGE" value1="${locale}">
+				<var name="key_portletName" value="${portletName}" />
+			</condition>
+
+			<then>
+				<execute function="Click" locator1="Language#DROPDOWN">
+					<var name="key_portletName" value="${portletName}" />
+				</execute>
+
+				<execute macro="MenuItem#click">
+					<var name="menuItem" value="${textIcon}" />
+				</execute>
+			</then>
+		</if>
+	</command>
+
+	<command name="tearDownLanguagePG">
+		<execute macro="LanguagePortlet#selectLanguagePG">
+			<var name="locale" value="en_US" />
+			<var name="textIcon" value="English-United States" />
+		</execute>
+	</command>
+
+	<command name="toggleDisplayTemplate">
+		<execute function="SelectFrame" locator1="IFrame#CONFIGURATION" />
+
+		<execute macro="Panel#expandPanel">
+			<var name="panel" value="Languages" />
+		</execute>
+
+		<execute function="Select" locator1="LanguageConfiguration#DISPLAY_TEMPLATE_SELECT" value1="${displayStyle}" />
+
+		<execute macro="Button#clickSave" />
+
+		<execute function="SelectFrame" value1="relative=top" />
+	</command>
+
+	<command name="viewDisplayTemplateLongText">
+		<var name="key_language" value="${language}" />
+
+		<execute function="AssertTextEquals#assertPartialText" locator1="Language#LONG_TEXT_LINK" value1="${language}" />
+	</command>
+
+	<command name="viewDisplayTemplateSelectBox">
+		<execute function="AssertTextEquals#assertPartialText" locator1="Language#LANGUAGE_MENU_SELECT" value1="${language}" />
+	</command>
+
+	<command name="viewDisplayTemplateShortText">
+		<var name="key_languageKey" value="${languageKey}" />
+
+		<execute function="AssertTextEquals#assertPartialText" locator1="Language#SHORT_TEXT_LINK" value1="${languageKey}" />
+	</command>
+
+	<command name="viewLanguageCurrent">
+		<execute function="AssertElementPresent" locator1="Language#DROPDOWN_CURRENT_LANGUAGE">
+			<var name="key_locale" value="${locale}" />
+		</execute>
+	</command>
+
+	<command name="viewLanguagesAbsent">
+		<execute function="Click" locator1="Language#DROPDOWN">
+			<var name="key_portletName" value="LanguagePortlet" />
+		</execute>
+
+		<for list="${missingLocales}" param="missingLocale">
+			<execute macro="MenuItem#viewNotPresent">
+				<var name="menuItem" value="${missingLocale}" />
+			</execute>
+		</for>
+
+		<execute function="Click" locator1="Language#DROPDOWN">
+			<var name="key_portletName" value="LanguagePortlet" />
+		</execute>
+	</command>
+
+	<command name="viewLanguagesPresent">
+		<execute function="Click" locator1="Language#DROPDOWN">
+			<var name="key_portletName" value="LanguagePortlet" />
+		</execute>
+
+		<for list="${currentLocales}" param="currentLocale">
+			<execute macro="MenuItem#viewPresent">
+				<var name="menuItem" value="${currentLocale}" />
+			</execute>
+		</for>
+
+		<execute function="Click" locator1="Language#DROPDOWN">
+			<var name="key_portletName" value="LanguagePortlet" />
+		</execute>
+	</command>
+</definition>

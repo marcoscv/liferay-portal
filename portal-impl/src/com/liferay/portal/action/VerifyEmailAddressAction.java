@@ -16,21 +16,27 @@ package com.liferay.portal.action;
 
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.model.Ticket;
+import com.liferay.portal.kernel.model.TicketConstants;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
+import com.liferay.portal.kernel.security.auth.AuthTokenUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextFactory;
+import com.liferay.portal.kernel.service.TicketLocalServiceUtil;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.User;
-import com.liferay.portal.security.auth.AuthTokenUtil;
-import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.service.ServiceContextFactory;
-import com.liferay.portal.service.UserLocalServiceUtil;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.struts.ActionConstants;
-import com.liferay.portal.theme.ThemeDisplay;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PortletKeys;
-import com.liferay.portal.util.WebKeys;
-import com.liferay.portlet.PortletURLImpl;
+
+import java.util.List;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
@@ -73,9 +79,8 @@ public class VerifyEmailAddressAction extends Action {
 			verifyEmailAddress(request, response, themeDisplay);
 
 			if (!themeDisplay.isSignedIn()) {
-				PortletURL portletURL = new PortletURLImpl(
-					request, PortletKeys.LOGIN, themeDisplay.getPlid(),
-					PortletRequest.RENDER_PHASE);
+				PortletURL portletURL = PortletURLFactoryUtil.create(
+					request, PortletKeys.LOGIN, PortletRequest.RENDER_PHASE);
 
 				response.sendRedirect(portletURL.toString());
 
@@ -109,8 +114,20 @@ public class VerifyEmailAddressAction extends Action {
 		ServiceContext serviceContext = ServiceContextFactory.getInstance(
 			request);
 
-		UserLocalServiceUtil.sendEmailAddressVerification(
-			user, user.getEmailAddress(), serviceContext);
+		List<Ticket> tickets = TicketLocalServiceUtil.getTickets(
+			themeDisplay.getCompanyId(), User.class.getName(), user.getUserId(),
+			TicketConstants.TYPE_EMAIL_ADDRESS);
+
+		if (ListUtil.isEmpty(tickets)) {
+			UserLocalServiceUtil.sendEmailAddressVerification(
+				user, user.getEmailAddress(), serviceContext);
+		}
+		else {
+			Ticket ticket = tickets.get(0);
+
+			UserLocalServiceUtil.sendEmailAddressVerification(
+				user, ticket.getExtraInfo(), serviceContext);
+		}
 	}
 
 	protected void verifyEmailAddress(

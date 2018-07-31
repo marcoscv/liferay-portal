@@ -14,8 +14,8 @@
 
 package com.liferay.portal.dao.orm.hibernate;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 /**
@@ -26,8 +26,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 public class DB2Dialect extends org.hibernate.dialect.DB2Dialect {
 
 	public DB2Dialect() {
-		super();
-
 		registerKeyword("for");
 		registerKeyword("optimize");
 	}
@@ -67,8 +65,8 @@ public class DB2Dialect extends org.hibernate.dialect.DB2Dialect {
 
 		// Inner query
 
-		sb.append("SELECT innerQuery.*, ");
-		sb.append("ROW_NUMBER() OVER() AS rowNumber_ FROM (");
+		sb.append("SELECT innerQuery.*, ROW_NUMBER() OVER() AS rowNumber_ ");
+		sb.append("FROM (");
 
 		addQueryForLimitedRows(sb, sql, limit);
 

@@ -14,38 +14,56 @@
 
 package com.liferay.portal.kernel.nio.intraband;
 
+import com.liferay.petra.executor.PortalExecutorManager;
 import com.liferay.portal.kernel.test.CaptureHandler;
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.JDKLoggerTestUtil;
-import com.liferay.portal.test.AdviseWith;
-import com.liferay.portal.test.AspectJMockingNewClassLoaderJUnitTestRunner;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
+import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.registry.BasicRegistryImpl;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
 
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Shuyang Zhou
  */
-@RunWith(AspectJMockingNewClassLoaderJUnitTestRunner.class)
 public class BaseAsyncDatagramReceiveHandlerTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	@Rule
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		CodeCoverageAssertor.INSTANCE;
 
-	@AdviseWith(adviceClasses = {PortalExecutorManagerUtilAdvice.class})
+	@Before
+	public void setUp() {
+		RegistryUtil.setRegistry(new BasicRegistryImpl());
+
+		Registry registry = RegistryUtil.getRegistry();
+
+		registry.registerService(
+			PortalExecutorManager.class,
+			(PortalExecutorManager)ProxyUtil.newProxyInstance(
+				BaseAsyncDatagramReceiveHandlerTest.class.getClassLoader(),
+				new Class<?>[] {PortalExecutorManager.class},
+				new PortalExecutorManagerInvocationHandler()));
+	}
+
 	@Test
 	public void testErrorDispatch() {
-		CaptureHandler captureHandler = JDKLoggerTestUtil.configureJDKLogger(
-			BaseAsyncDatagramReceiveHandler.class.getName(), Level.SEVERE);
+		try (CaptureHandler captureHandler =
+				JDKLoggerTestUtil.configureJDKLogger(
+					BaseAsyncDatagramReceiveHandler.class.getName(),
+					Level.SEVERE)) {
 
-		try {
 			List<LogRecord> logRecords = captureHandler.getLogRecords();
 
 			ErrorAsyncDatagramReceiveHandler errorAsyncDatagramReceiveHandler =
@@ -53,7 +71,7 @@ public class BaseAsyncDatagramReceiveHandlerTest {
 
 			errorAsyncDatagramReceiveHandler.receive(null, null);
 
-			Assert.assertEquals(1, logRecords.size());
+			Assert.assertEquals(logRecords.toString(), 1, logRecords.size());
 
 			LogRecord logRecord = logRecords.get(0);
 
@@ -63,12 +81,8 @@ public class BaseAsyncDatagramReceiveHandlerTest {
 
 			Assert.assertEquals(Exception.class, throwable.getClass());
 		}
-		finally {
-			captureHandler.close();
-		}
 	}
 
-	@AdviseWith(adviceClasses = {PortalExecutorManagerUtilAdvice.class})
 	@Test
 	public void testNormalDispatch() {
 		DummyAsyncDatagramReceiveHandler dummyAsyncDatagramReceiveHandler =

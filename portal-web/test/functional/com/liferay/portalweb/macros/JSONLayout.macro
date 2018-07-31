@@ -1,0 +1,83 @@
+<definition>
+	<command name="_addLayout">
+		<if>
+			<not>
+				<isset var="groupId" />
+			</not>
+			<then>
+				<fail message="Please set 'groupId'." />
+			</then>
+		</if>
+
+		<if>
+			<isset var="layoutName" />
+			<then>
+				<var method="URLUtil#encodeUTF8('${layoutName}')" name="layoutNameEncoded" />
+			</then>
+			<else>
+				<fail message="Please set 'layoutName'." />
+			</else>
+		</if>
+
+		<execute macro="JSONCompany#getPortalURL">
+			<return name="portalURL" />
+		</execute>
+
+		<var name="curl"><![CDATA[
+			${portalURL}/api/jsonws/layout/add-layout \
+				-u test@liferay.com:test \
+				-d groupId=${groupId} \
+				-d privateLayout=false \
+				-d parentLayoutId=0 \
+				-d name=${layoutNameEncoded} \
+				-d title= \
+				-d description= \
+				-d type=portlet \
+				-d hidden=false \
+				-d friendlyURL=
+		]]></var>
+
+		<execute macro="JSONGroup#getGroupName">
+			<return name="groupName" />
+			<var name="groupId" value="${groupId}" />
+		</execute>
+
+		<echo message="## Adding a 'Layout' with the following info using JSONWS:" />
+
+		<echo message="## * Group Name: ${groupName}" />
+
+		<echo message="## * Layout Name: ${layoutName}" />
+
+		<var method="JSONCurlUtil#post('${curl}', '$[\'layoutId\']')" name="layoutId" />
+	</command>
+
+	<command name="addLayoutByGroupName">
+		<if>
+			<not>
+				<isset var="groupName" />
+			</not>
+			<then>
+				<fail message="Please set 'groupName'." />
+			</then>
+		</if>
+
+		<if>
+			<not>
+				<isset var="layoutName" />
+			</not>
+			<then>
+				<fail message="Please set 'layoutName'." />
+			</then>
+		</if>
+
+		<execute macro="JSONGroup#getGroupIdByName">
+			<return name="groupId" />
+			<var name="groupName" value="${groupName}" />
+		</execute>
+
+		<execute macro="JSONLayout#_addLayout">
+			<var name="groupId" value="${groupId}" />
+			<var name="layoutName" value="${layoutName}" />
+		</execute>
+	</command>
+</definition>

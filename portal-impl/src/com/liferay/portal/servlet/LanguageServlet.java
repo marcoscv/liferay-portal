@@ -14,20 +14,20 @@
 
 package com.liferay.portal.servlet;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.auth.AuthTokenUtil;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.LocaleUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.security.auth.AuthTokenUtil;
 
 import java.io.IOException;
 
@@ -58,7 +58,7 @@ public class LanguageServlet extends HttpServlet {
 				request, LanguageServlet.class.getName());
 		}
 		catch (PortalException pe) {
-			_log.error("Invalid authentication token received");
+			_log.error("Invalid authentication token received", pe);
 
 			return;
 		}
@@ -127,6 +127,7 @@ public class LanguageServlet extends HttpServlet {
 	private static final String _CONTENT_DISPOSITION =
 		"attachment; filename=language.txt";
 
-	private static Log _log = LogFactoryUtil.getLog(LanguageServlet.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		LanguageServlet.class);
 
 }

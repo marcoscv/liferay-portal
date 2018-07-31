@@ -14,8 +14,11 @@
 
 package com.liferay.portal.json.jabsorb.serializer;
 
+import com.liferay.petra.lang.ClassLoaderPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.io.Serializable;
 
@@ -86,6 +89,13 @@ public class LiferaySerializer extends AbstractSerializer {
 		if (ser.getMarshallClassHints()) {
 			try {
 				jsonObject.put("javaClass", javaClass.getName());
+
+				String contextName = ClassLoaderPool.getContextName(
+					javaClass.getClassLoader());
+
+				if (Validator.isNotNull(contextName)) {
+					jsonObject.put("contextName", contextName);
+				}
 			}
 			catch (Exception e) {
 				throw new MarshallException("Unable to put javaClass", e);
@@ -107,7 +117,7 @@ public class LiferaySerializer extends AbstractSerializer {
 		String fieldName = null;
 
 		try {
-			Set<String> processedFieldNames = new HashSet<String>();
+			Set<String> processedFieldNames = new HashSet<>();
 
 			while (javaClass != null) {
 				Field[] declaredFields = javaClass.getDeclaredFields();
@@ -125,11 +135,9 @@ public class LiferaySerializer extends AbstractSerializer {
 
 					int modifiers = field.getModifiers();
 
-					// Only marshall fields that are not final, static, or
-					// transient
+					// Only marshall fields that are not static or transient
 
-					if (((modifiers & Modifier.FINAL) == Modifier.FINAL) ||
-						((modifiers & Modifier.STATIC) == Modifier.STATIC) ||
+					if (((modifiers & Modifier.STATIC) == Modifier.STATIC) ||
 						((modifiers & Modifier.TRANSIENT) ==
 							Modifier.TRANSIENT)) {
 
@@ -153,6 +161,10 @@ public class LiferaySerializer extends AbstractSerializer {
 
 					if (JSONSerializer.CIRC_REF_OR_DUPLICATE != fieldObject) {
 						serializableJSONObject.put(fieldName, fieldObject);
+					}
+					else if (!serializableJSONObject.has(fieldName)) {
+						serializableJSONObject.put(
+							fieldName, field.get(object));
 					}
 				}
 
@@ -192,13 +204,33 @@ public class LiferaySerializer extends AbstractSerializer {
 		}
 
 		try {
-			Class<?> javaClass = Class.forName(javaClassName);
+			ClassLoader classLoader = null;
 
-			Serializable.class.isAssignableFrom(javaClass);
+			if (jsonObject.has("contextName")) {
+				String contextName = jsonObject.getString("contextName");
+
+				classLoader = ClassLoaderPool.getClassLoader(contextName);
+
+				if (classLoader == null) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							StringBundler.concat(
+								"Unable to get class loader for class ",
+								javaClassName, " in context ", contextName));
+					}
+				}
+			}
+
+			if (classLoader != null) {
+				Class.forName(javaClassName, true, classLoader);
+			}
+			else {
+				Class.forName(javaClassName);
+			}
 		}
 		catch (Exception e) {
 			throw new UnmarshallException(
-				"Unable to load javaClass " + javaClassName, e);
+				"Unable to get class " + javaClassName, e);
 		}
 
 		JSONObject serializableJSONObject = null;
@@ -270,13 +302,35 @@ public class LiferaySerializer extends AbstractSerializer {
 		Object javaClassInstance = null;
 
 		try {
-			javaClass = Class.forName(javaClassName);
+			ClassLoader classLoader = null;
+
+			if (jsonObject.has("contextName")) {
+				String contextName = jsonObject.getString("contextName");
+
+				classLoader = ClassLoaderPool.getClassLoader(contextName);
+
+				if (classLoader == null) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							StringBundler.concat(
+								"Unable to get class loader for class ",
+								javaClassName, " in context ", contextName));
+					}
+				}
+			}
+
+			if (classLoader != null) {
+				javaClass = Class.forName(javaClassName, true, classLoader);
+			}
+			else {
+				javaClass = Class.forName(javaClassName);
+			}
 
 			javaClassInstance = javaClass.newInstance();
 		}
 		catch (Exception e) {
 			throw new UnmarshallException(
-				"Unable to load javaClass " + javaClassName, e);
+				"Unable to get class " + javaClassName, e);
 		}
 
 		JSONObject serializableJSONObject = null;
@@ -297,7 +351,7 @@ public class LiferaySerializer extends AbstractSerializer {
 		String fieldName = null;
 
 		try {
-			Set<String> processedFieldNames = new HashSet<String>();
+			Set<String> processedFieldNames = new HashSet<>();
 
 			while (javaClass != null) {
 				Field[] fields = javaClass.getDeclaredFields();
@@ -315,11 +369,9 @@ public class LiferaySerializer extends AbstractSerializer {
 
 					int modifiers = field.getModifiers();
 
-					// Only unmarshall fields that are not final, static, or
-					// transient
+					// Only unmarshall fields that are not static or transient
 
-					if (((modifiers & Modifier.FINAL) == Modifier.FINAL) ||
-						((modifiers & Modifier.STATIC) == Modifier.STATIC) ||
+					if (((modifiers & Modifier.STATIC) == Modifier.STATIC) ||
 						((modifiers & Modifier.TRANSIENT) ==
 							Modifier.TRANSIENT)) {
 
@@ -336,12 +388,19 @@ public class LiferaySerializer extends AbstractSerializer {
 
 					Object value = null;
 
+					if (!serializableJSONObject.has(fieldName)) {
+						continue;
+					}
+
 					try {
 						value = ser.unmarshall(
 							serializerState, field.getType(),
 							serializableJSONObject.get(fieldName));
 					}
 					catch (Exception e) {
+						if (_log.isDebugEnabled()) {
+							_log.debug(e, e);
+						}
 					}
 
 					if (value != null) {
@@ -370,6 +429,7 @@ public class LiferaySerializer extends AbstractSerializer {
 	private static final Class<?>[] _SERIALIZABLE_CLASSES =
 		{Serializable.class};
 
-	private static Log _log = LogFactoryUtil.getLog(LiferaySerializer.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		LiferaySerializer.class);
 
 }

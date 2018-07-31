@@ -14,11 +14,11 @@
 
 package com.liferay.portal.sharepoint.methods;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.sharepoint.Property;
 import com.liferay.portal.sharepoint.ResponseElement;
 import com.liferay.portal.sharepoint.SharepointException;
@@ -100,6 +100,6 @@ public abstract class BaseMethodImpl implements Method {
 		return html;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(BaseMethodImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(BaseMethodImpl.class);
 
 }

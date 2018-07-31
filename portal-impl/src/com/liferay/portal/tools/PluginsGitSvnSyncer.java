@@ -73,7 +73,6 @@ public class PluginsGitSvnSyncer {
 
 		Process process = runtime.exec(cmd);
 
-		String[] stdout = _getExecOutput(process.getInputStream());
 		String[] stderr = _getExecOutput(process.getErrorStream());
 
 		if (stderr.length > 0) {
@@ -92,11 +91,11 @@ public class PluginsGitSvnSyncer {
 			throw new Exception(sb.toString());
 		}
 
-		return stdout;
+		return _getExecOutput(process.getInputStream());
 	}
 
 	private String[] _getExecOutput(InputStream is) throws IOException {
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 
 		UnsyncBufferedReader unsyncBufferedReader = null;
 
@@ -242,7 +241,7 @@ public class PluginsGitSvnSyncer {
 		List<String> ignores = null;
 
 		if (!dirName.contains("/docroot")) {
-			ignores = new ArrayList<String>();
+			ignores = new ArrayList<>();
 
 			ignores.add("bin");
 			ignores.add("classes");
@@ -300,8 +299,9 @@ public class PluginsGitSvnSyncer {
 			_fileUtil.write(tempFile, StringUtil.merge(ignoresArray, "\n"));
 
 			_exec(
-				_SVN_SET_IGNORES + "-F \"" + tempFile.getCanonicalPath() +
-					"\" \"" + destDirName + dirName + "\"");
+				StringBundler.concat(
+					_SVN_SET_IGNORES, "-F \"", tempFile.getCanonicalPath(),
+					"\" \"", destDirName, dirName, "\""));
 		}
 		finally {
 			_fileUtil.delete(tempFile);
@@ -313,9 +313,8 @@ public class PluginsGitSvnSyncer {
 		"/docroot/WEB-INF/tld"
 	};
 
-	private static final String[] _PLUGIN_TYPES = {
-		"clients", "ext", "hooks", "layouttpl", "portlets", "themes", "webs"
-	};
+	private static final String[] _PLUGIN_TYPES =
+		{"clients", "ext", "hooks", "layouttpl", "portlets", "themes", "webs"};
 
 	private static final String _SVN_DEL_IGNORES = "svn propdel svn:ignore ";
 
@@ -323,6 +322,6 @@ public class PluginsGitSvnSyncer {
 
 	private static final String _SVN_SET_IGNORES = "svn propset svn:ignore ";
 
-	private static FileImpl _fileUtil = FileImpl.getInstance();
+	private static final FileImpl _fileUtil = FileImpl.getInstance();
 
 }

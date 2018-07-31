@@ -14,10 +14,10 @@
 
 package com.liferay.portal.sharepoint.methods;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FileUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.sharepoint.Property;
 import com.liferay.portal.sharepoint.ResponseElement;
 import com.liferay.portal.sharepoint.SharepointRequest;
@@ -65,7 +65,7 @@ public class GetDocumentMethodImpl extends BaseMethodImpl {
 			SharepointRequest sharepointRequest)
 		throws Exception {
 
-		List<ResponseElement> elements = new ArrayList<ResponseElement>();
+		List<ResponseElement> elements = new ArrayList<>();
 
 		SharepointStorage storage = sharepointRequest.getSharepointStorage();
 

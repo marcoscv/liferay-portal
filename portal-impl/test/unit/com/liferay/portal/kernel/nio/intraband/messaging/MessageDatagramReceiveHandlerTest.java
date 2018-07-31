@@ -14,8 +14,8 @@
 
 package com.liferay.portal.kernel.nio.intraband.messaging;
 
+import com.liferay.petra.executor.PortalExecutorManager;
 import com.liferay.portal.kernel.messaging.BaseDestination;
-import com.liferay.portal.kernel.messaging.DefaultMessageBus;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.messaging.MessageBus;
 import com.liferay.portal.kernel.messaging.MessageBusException;
@@ -23,36 +23,61 @@ import com.liferay.portal.kernel.messaging.MessageListener;
 import com.liferay.portal.kernel.messaging.MessageListenerException;
 import com.liferay.portal.kernel.messaging.SynchronousDestination;
 import com.liferay.portal.kernel.nio.intraband.Datagram;
-import com.liferay.portal.kernel.nio.intraband.PortalExecutorManagerUtilAdvice;
+import com.liferay.portal.kernel.nio.intraband.PortalExecutorManagerInvocationHandler;
 import com.liferay.portal.kernel.nio.intraband.SystemDataType;
 import com.liferay.portal.kernel.nio.intraband.test.MockIntraband;
 import com.liferay.portal.kernel.nio.intraband.test.MockRegistrationReference;
-import com.liferay.portal.kernel.test.CodeCoverageAssertor;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.rule.CodeCoverageAssertor;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
-import com.liferay.portal.test.AdviseWith;
-import com.liferay.portal.test.AspectJMockingNewClassLoaderJUnitTestRunner;
+import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.registry.BasicRegistryImpl;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
 
 import java.nio.ByteBuffer;
 
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import org.mockito.Matchers;
+import org.mockito.Mockito;
 
 /**
  * @author Shuyang Zhou
  */
-@RunWith(AspectJMockingNewClassLoaderJUnitTestRunner.class)
 public class MessageDatagramReceiveHandlerTest {
 
 	@ClassRule
-	public static CodeCoverageAssertor codeCoverageAssertor =
-		new CodeCoverageAssertor();
+	@Rule
+	public static final CodeCoverageAssertor codeCoverageAssertor =
+		CodeCoverageAssertor.INSTANCE;
 
-	@AdviseWith(adviceClasses = {PortalExecutorManagerUtilAdvice.class})
+	@Before
+	public void setUp() {
+		RegistryUtil.setRegistry(new BasicRegistryImpl());
+
+		Registry registry = RegistryUtil.getRegistry();
+
+		registry.registerService(
+			PortalExecutorManager.class,
+			(PortalExecutorManager)ProxyUtil.newProxyInstance(
+				MessageDatagramReceiveHandlerTest.class.getClassLoader(),
+				new Class<?>[] {PortalExecutorManager.class},
+				new PortalExecutorManagerInvocationHandler()));
+	}
+
+	@Test
+	public void testDeprecatedConstructor() {
+		new MessageDatagramReceiveHandler(null);
+	}
+
 	@Test
 	public void testDoReceive1() throws Exception {
 
@@ -61,10 +86,14 @@ public class MessageDatagramReceiveHandlerTest {
 		PortalClassLoaderUtil.setClassLoader(
 			MessageDatagramReceiveHandlerTest.class.getClassLoader());
 
-		MessageBus messageBus = new DefaultMessageBus();
+		Registry registry = RegistryUtil.getRegistry();
+
+		MessageBus messageBus = Mockito.mock(MessageBus.class);
+
+		registry.registerService(MessageBus.class, messageBus);
 
 		MessageDatagramReceiveHandler messageDatagramReceiveHandler =
-			new MessageDatagramReceiveHandler(messageBus);
+			new MessageDatagramReceiveHandler();
 
 		SystemDataType systemDataType = SystemDataType.MESSAGE;
 
@@ -111,6 +140,12 @@ public class MessageDatagramReceiveHandlerTest {
 
 		messageBus.addDestination(baseDestination);
 
+		Mockito.when(
+			messageBus.getDestination(Matchers.anyString())
+		).thenReturn(
+			baseDestination
+		);
+
 		datagram = Datagram.createRequestDatagram(
 			systemDataType.getValue(), messageRoutingBag.toByteArray());
 
@@ -130,7 +165,7 @@ public class MessageDatagramReceiveHandlerTest {
 		// Normal destination, synchronized, with listener
 
 		final AtomicReference<Message> messageReference =
-			new AtomicReference<Message>();
+			new AtomicReference<>();
 
 		baseDestination.register(
 			new MessageListener() {
@@ -140,8 +175,7 @@ public class MessageDatagramReceiveHandlerTest {
 					messageReference.set(message);
 				}
 
-			}
-		);
+			});
 
 		datagram = Datagram.createRequestDatagram(
 			systemDataType.getValue(), messageRoutingBag.toByteArray());
@@ -179,8 +213,7 @@ public class MessageDatagramReceiveHandlerTest {
 					throw messageListenerException;
 				}
 
-			}
-		);
+			});
 
 		datagram = Datagram.createRequestDatagram(
 			systemDataType.getValue(), messageRoutingBag.toByteArray());
@@ -203,7 +236,7 @@ public class MessageDatagramReceiveHandlerTest {
 			MessageDatagramReceiveHandlerTest.class.getName());
 
 		final AtomicReference<MessageRoutingBag> messageRoutingBagReference =
-			new AtomicReference<MessageRoutingBag>();
+			new AtomicReference<>();
 
 		IntrabandBridgeDestination intrabandBridgeDestination =
 			new IntrabandBridgeDestination(baseDestination) {
@@ -218,6 +251,12 @@ public class MessageDatagramReceiveHandlerTest {
 			};
 
 		messageBus.addDestination(intrabandBridgeDestination);
+
+		Mockito.when(
+			messageBus.getDestination(Matchers.anyString())
+		).thenReturn(
+			intrabandBridgeDestination
+		);
 
 		datagram = Datagram.createRequestDatagram(
 			systemDataType.getValue(), messageRoutingBag.toByteArray());
@@ -240,8 +279,7 @@ public class MessageDatagramReceiveHandlerTest {
 					messageReference.set(message);
 				}
 
-			}
-		);
+			});
 
 		datagram = Datagram.createRequestDatagram(
 			systemDataType.getValue(), messageRoutingBag.toByteArray());
@@ -253,9 +291,8 @@ public class MessageDatagramReceiveHandlerTest {
 	}
 
 	protected void assertMessageRoutingBagEquals(
-			MessageRoutingBag expectedMessageRoutingBag,
-			MessageRoutingBag actualMessageRoutingBag)
-		throws Exception {
+		MessageRoutingBag expectedMessageRoutingBag,
+		MessageRoutingBag actualMessageRoutingBag) {
 
 		Assert.assertEquals(
 			expectedMessageRoutingBag.getDestinationName(),
@@ -264,14 +301,14 @@ public class MessageDatagramReceiveHandlerTest {
 			expectedMessageRoutingBag.isRoutingDowncast(),
 			actualMessageRoutingBag.isRoutingDowncast());
 		Assert.assertEquals(
-			ReflectionTestUtil.getFieldValue(
+			ReflectionTestUtil.<ArrayList<String>>getFieldValue(
 				expectedMessageRoutingBag, "_routingTrace"),
-			ReflectionTestUtil.getFieldValue(
+			ReflectionTestUtil.<ArrayList<String>>getFieldValue(
 				actualMessageRoutingBag, "_routingTrace"));
 	}
 
-	private MockIntraband _mockIntraband = new MockIntraband();
-	private MockRegistrationReference _mockRegistrationReference =
+	private final MockIntraband _mockIntraband = new MockIntraband();
+	private final MockRegistrationReference _mockRegistrationReference =
 		new MockRegistrationReference(_mockIntraband);
 
 }

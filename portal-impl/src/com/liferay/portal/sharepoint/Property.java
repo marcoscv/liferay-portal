@@ -14,8 +14,8 @@
 
 package com.liferay.portal.sharepoint;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 
 /**
  * @author Bruno Farache
@@ -54,8 +54,8 @@ public class Property implements ResponseElement {
 		return sb.toString();
 	}
 
-	private String _key;
-	private boolean _newLine;
-	private String _value;
+	private final String _key;
+	private final boolean _newLine;
+	private final String _value;
 
 }

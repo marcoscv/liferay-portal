@@ -14,17 +14,19 @@
 
 package com.liferay.util;
 
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author Brian Wing Shun Chan
+ * @author     Brian Wing Shun Chan
+ * @deprecated As of Judson (7.1.x), with no direct replacement
  */
+@Deprecated
 public class PKParser {
 
 	public PKParser(String pk) {
@@ -38,8 +40,8 @@ public class PKParser {
 
 		String[] array = StringUtil.split(pk);
 
-		for (int i = 0; i < array.length; i++) {
-			String[] kvp = StringUtil.split(array[i], CharPool.EQUAL);
+		for (String s : array) {
+			String[] kvp = StringUtil.split(s, CharPool.EQUAL);
 
 			String key = kvp[0].trim();
 			String value = kvp[1].trim();
@@ -79,6 +81,6 @@ public class PKParser {
 		}
 	}
 
-	private Map<String, String> _fields = new HashMap<String, String>();
+	private final Map<String, String> _fields = new HashMap<>();
 
 }

@@ -1,0 +1,256 @@
+<definition>
+
+	<command name="_addOrganization">
+		<if>
+			<isset var="organizationName" />
+			<then>
+				<var method="URLUtil#encodeUTF8('${organizationName}')" name="organizationNameEncoded" />
+			</then>
+			<else>
+				<fail message="Please set 'organizationName'." />
+			</else>
+		</if>
+
+		<if>
+			<not>
+				<isset var="organizationSite" />
+			</not>
+			<then>
+				<var name="organizationSite" value="false" />
+			</then>
+		</if>
+
+		<execute macro="JSONCompany#getPortalURL">
+			<return name="portalURL" />
+		</execute>
+
+		<var name="curl"><![CDATA[
+			${portalURL}/api/jsonws/organization/add-organization \
+				-u test@liferay.com:test \
+				-d parentOrganizationId=0 \
+				-d name=${organizationNameEncoded} \
+				-d type=organization \
+				-d regionId=0 \
+				-d countryId=0 \
+				-d statusId=12017 \
+				-d comments= \
+				-d site=${organizationSite}
+		]]></var>
+
+		<echo message="## Adding a 'Organization' with the following info using jsonws:" />
+
+		<echo message="## * Organization Name: ${organizationName}" />
+
+		<echo message="## * Organization Site: ${organizationSite}" />
+
+		<var method="JSONCurlUtil#post('${curl}', '$[\'organizationId\']')" name="organizationId" />
+	</command>
+
+	<command name="_assignUserToOrganization">
+		<if>
+			<not>
+				<isset var="organizationId" />
+			</not>
+			<then>
+				<fail message="Please set 'organizationId'." />
+			</then>
+		</if>
+
+		<if>
+			<not>
+				<isset var="userId" />
+			</not>
+			<then>
+				<fail message="Please set 'userId'." />
+			</then>
+		</if>
+
+		<execute macro="JSONCompany#getPortalURL">
+			<return name="portalURL" />
+		</execute>
+
+		<var name="curl"><![CDATA[
+			${portalURL}/api/jsonws/user/add-organization-users \
+				-u test@liferay.com:test \
+				-d organizationId=${organizationId} \
+				-d userIds=${userId}
+		]]></var>
+
+		<execute macro="JSONOrganization#getOrganizationName">
+			<return name="organizationName" />
+			<var name="organizationId" value="${organizationId}" />
+		</execute>
+
+		<execute macro="JSONUser#getUserEmailAddress">
+			<return name="userEmailAddress" />
+			<var name="userId" value="${userId}" />
+		</execute>
+
+		<echo message="## Assigning a 'User' to an 'Organization' with the following info using JSONWS:" />
+
+		<echo message="## * Organization Name: ${organizationName}" />
+
+		<echo message="## * User Email Address: ${userEmailAddress}" />
+
+		<var method="JSONCurlUtil#post('${curl}', '$')" name="temp" />
+	</command>
+
+	<command name="_deleteOrganization">
+		<if>
+			<not>
+				<isset var="organizationId" />
+			</not>
+			<then>
+				<fail message="Please set 'organizationId'." />
+			</then>
+		</if>
+
+		<execute macro="JSONCompany#getPortalURL">
+			<return name="portalURL" />
+		</execute>
+
+		<var name="curl"><![CDATA[
+			${portalURL}/api/jsonws/organization/delete-organization \
+				-u test@liferay.com:test \
+				-d organizationId=${organizationId}
+		]]></var>
+
+		<execute macro="JSONOrganization#getOrganizationName">
+			<return name="organizationName" />
+			<var name="organizationId" value="${organizationId}" />
+		</execute>
+
+		<echo message="## Deleting an 'Organization' with the following info using JSONWS:" />
+
+		<echo message="## * Organization Name: ${organizationName}" />
+
+		<var method="JSONCurlUtil#post('${curl}', '$['organizationId']')" name="organizationId" />
+	</command>
+
+	<command name="addOrganization">
+		<if>
+			<not>
+				<isset var="organizationName" />
+			</not>
+			<then>
+				<fail message="Please set 'organizationName'." />
+			</then>
+		</if>
+
+		<execute macro="JSONOrganization#_addOrganization">
+			<var name="organizationName" value="${organizationName}" />
+			<var name="organizationSite" value="${organizationSite}" />
+		</execute>
+	</command>
+
+	<command name="assignUserToOrganization">
+		<if>
+			<not>
+				<isset var="organizationName" />
+			</not>
+			<then>
+				<fail message="Please set 'organizationName'." />
+			</then>
+		</if>
+
+		<if>
+			<not>
+				<isset var="userEmailAddress" />
+			</not>
+			<then>
+				<fail message="Please set 'userEmailAddress'." />
+			</then>
+		</if>
+
+		<execute macro="JSONOrganization#getOrganizationIdByName">
+			<return name="organizationId" />
+			<var name="organizationName" value="${organizationName}" />
+		</execute>
+
+		<execute macro="JSONUser#getUserIdByEmailAddress">
+			<return name="userId" />
+			<var name="userEmailAddress" value="${userEmailAddress}" />
+		</execute>
+
+		<execute macro="JSONOrganization#_assignUserToOrganization">
+			<var name="organizationId" value="${organizationId}" />
+			<var name="userId" value="${userId}" />
+		</execute>
+	</command>
+
+	<command name="deleteOrganizationByName">
+		<if>
+			<not>
+				<isset var="organizationName" />
+			</not>
+			<then>
+				<fail message="Please set 'organizationName'." />
+			</then>
+		</if>
+
+		<execute macro="JSONOrganization#getOrganizationIdByName">
+			<return name="organizationId" />
+			<var name="organizationName" value="${organizationName}" />
+		</execute>
+
+		<execute macro="JSONOrganization#_deleteOrganization">
+			<var name="organizationId" value="${organizationId}" />
+		</execute>
+	</command>
+
+	<command name="getOrganizationIdByName">
+		<if>
+			<not>
+				<isset var="organizationName" />
+			</not>
+			<then>
+				<fail message="Please set 'organizationName'." />
+			</then>
+		</if>
+
+		<execute macro="JSONCompany#getCompanyId">
+			<return name="companyId" />
+		</execute>
+
+		<execute macro="JSONCompany#getPortalURL">
+			<return name="portalURL" />
+		</execute>
+
+		<var name="curl"><![CDATA[
+			${portalURL}/api/jsonws/organization/get-organizations/company-id/${companyId}/parent-organization-id/0 \
+				-u test@liferay.com:test
+		]]></var>
+
+		<var method="JSONCurlUtil#get('${curl}', '$.[?(@[\'name\'] == \'${organizationName}\')][\'organizationId\']')" name="organizationId" />
+
+		<var method="StringUtil#replace('${organizationId}', '[&quot;', '')" name="organizationId" />
+
+		<var method="StringUtil#replace('${organizationId}', '&quot;]', '')" name="organizationId" />
+
+		<return value="${organizationId}" />
+	</command>
+
+	<command name="getOrganizationName">
+		<if>
+			<not>
+				<isset var="organizationId" />
+			</not>
+			<then>
+				<fail message="Please set 'organizationId'." />
+			</then>
+		</if>
+
+		<execute macro="JSONCompany#getPortalURL">
+			<return name="portalURL" />
+		</execute>
+
+		<var name="curl"><![CDATA[
+			${portalURL}/api/jsonws/organization/get-organization/organization-id/${organizationId} \
+				-u test@liferay.com:test
+		]]></var>
+
+		<var method="JSONCurlUtil#get('${curl}', '$[\'name\']')" name="organizationName" />
+
+		<return value="${organizationName}" />
+	</command>
+</definition>

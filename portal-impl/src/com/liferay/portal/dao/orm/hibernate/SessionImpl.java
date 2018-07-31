@@ -22,11 +22,14 @@ import com.liferay.portal.kernel.dao.orm.SQLQuery;
 import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.security.pacl.NotPrivileged;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.security.lang.DoPrivilegedUtil;
 
 import java.io.Serializable;
 
 import java.sql.Connection;
+
+import org.hibernate.LockOptions;
 
 /**
  * @author Brian Wing Shun Chan
@@ -82,11 +85,10 @@ public class SessionImpl implements Session {
 		throws ORMException {
 
 		try {
-			queryString = SQLTransformer.transformFromJpqlToHql(queryString);
+			queryString = SQLTransformer.transformFromJPQLToHQL(queryString);
 
 			return DoPrivilegedUtil.wrapWhenActive(
-				new QueryImpl(_session.createQuery(queryString), strictName)
-			);
+				new QueryImpl(_session.createQuery(queryString), strictName));
 		}
 		catch (Exception e) {
 			throw ExceptionTranslator.translate(e);
@@ -103,12 +105,11 @@ public class SessionImpl implements Session {
 		throws ORMException {
 
 		try {
-			queryString = SQLTransformer.transformFromJpqlToHql(queryString);
+			queryString = SQLTransformer.transformFromJPQLToHQL(queryString);
 
 			return DoPrivilegedUtil.wrapWhenActive(
 				new SQLQueryImpl(
-					_session.createSQLQuery(queryString), strictName)
-			);
+					_session.createSQLQuery(queryString), strictName));
 		}
 		catch (Exception e) {
 			throw ExceptionTranslator.translate(e);
@@ -128,7 +129,7 @@ public class SessionImpl implements Session {
 		throws ORMException {
 
 		try {
-			queryString = SQLTransformer.transformFromJpqlToHql(queryString);
+			queryString = SQLTransformer.transformFromJPQLToHQL(queryString);
 
 			SQLQuery sqlQuery = new SQLQueryImpl(
 				_session.createSQLQuery(queryString), strictName);
@@ -189,18 +190,16 @@ public class SessionImpl implements Session {
 		}
 	}
 
-	/**
-	 * @deprecated As of 6.1.0
-	 */
-	@Deprecated
 	@NotPrivileged
 	@Override
 	public Object get(Class<?> clazz, Serializable id, LockMode lockMode)
 		throws ORMException {
 
+		LockOptions lockOptions = new LockOptions(
+			LockModeTranslator.translate(lockMode));
+
 		try {
-			return _session.get(
-				clazz, id, LockModeTranslator.translate(lockMode));
+			return _session.get(clazz, id, lockOptions);
 		}
 		catch (Exception e) {
 			throw ExceptionTranslator.translate(e);
@@ -268,6 +267,17 @@ public class SessionImpl implements Session {
 		}
 	}
 
-	private org.hibernate.Session _session;
+	@Override
+	public String toString() {
+		StringBundler sb = new StringBundler(3);
+
+		sb.append("{_session=");
+		sb.append(String.valueOf(_session));
+		sb.append("}");
+
+		return sb.toString();
+	}
+
+	private final org.hibernate.Session _session;
 
 }

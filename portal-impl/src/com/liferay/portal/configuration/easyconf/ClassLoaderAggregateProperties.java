@@ -21,20 +21,27 @@ import com.germinus.easyconf.DatasourceURL;
 import com.germinus.easyconf.FileConfigurationChangedReloadingStrategy;
 import com.germinus.easyconf.JndiURL;
 
+import com.liferay.petra.reflect.ReflectionUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.StringBundler;
+
+import java.lang.reflect.Field;
 
 import java.net.URL;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.configuration.AbstractFileConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.FileConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.PropertiesConfigurationLayout;
 import org.apache.commons.configuration.SubsetConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
@@ -64,8 +71,12 @@ public class ClassLoaderAggregateProperties extends AggregatedProperties {
 		Configuration configuration = _addPropertiesSource(
 			fileName, url, _baseCompositeConfiguration);
 
-		if ((configuration != null) && !configuration.isEmpty()) {
+		if (configuration != null) {
 			_baseConfigurationLoaded = true;
+
+			if (configuration.isEmpty() && _log.isDebugEnabled()) {
+				_log.debug("Empty configuration " + fileName);
+			}
 		}
 	}
 
@@ -152,7 +163,14 @@ public class ClassLoaderAggregateProperties extends AggregatedProperties {
 
 		try {
 			FileConfiguration newFileConfiguration =
-				new PropertiesConfiguration(fileName);
+				new PropertiesConfiguration(fileName) {
+
+					@Override
+					public String getEncoding() {
+						return StringPool.UTF8;
+					}
+
+				};
 
 			URL url = newFileConfiguration.getURL();
 
@@ -169,8 +187,10 @@ public class ClassLoaderAggregateProperties extends AggregatedProperties {
 
 				if (_log.isDebugEnabled()) {
 					_log.debug(
-						"File " + url + " will be reloaded every " +
-							delay + " seconds");
+						StringBundler.concat(
+							"File ", String.valueOf(url),
+							" will be reloaded every ", String.valueOf(delay),
+							" seconds"));
 				}
 
 				long milliseconds = delay.longValue() * 1000;
@@ -290,8 +310,9 @@ public class ClassLoaderAggregateProperties extends AggregatedProperties {
 		catch (Exception e) {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
-					"Configuration source " + sourceName + " ignored: " +
-						e.getMessage());
+					StringBundler.concat(
+						"Configuration source ", sourceName, " ignored: ",
+						e.getMessage()));
 			}
 
 			return null;
@@ -303,15 +324,43 @@ public class ClassLoaderAggregateProperties extends AggregatedProperties {
 		throws ConfigurationException {
 
 		try {
-			FileConfiguration newFileConfiguration =
-				new PropertiesConfiguration(url);
+			PropertiesConfiguration propertiesConfiguration =
+				new PropertiesConfiguration(url) {
+
+					@Override
+					public String getEncoding() {
+						return StringPool.UTF8;
+					}
+
+				};
+
+			PropertiesConfigurationLayout propertiesConfigurationLayout =
+				propertiesConfiguration.getLayout();
+
+			try {
+				Map<String, Object> layoutData =
+					(Map<String, Object>)_layoutDataField.get(
+						propertiesConfigurationLayout);
+
+				for (Object propertyLayoutData : layoutData.values()) {
+					_commentField.set(propertyLayoutData, null);
+				}
+			}
+			catch (ReflectiveOperationException roe) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						"Unable to clear out comments from " +
+							propertiesConfiguration,
+						roe);
+				}
+			}
 
 			if (_log.isDebugEnabled()) {
 				_log.debug("Adding resource " + url);
 			}
 
 			Long delay = _getReloadDelay(
-				loadedCompositeConfiguration, newFileConfiguration);
+				loadedCompositeConfiguration, propertiesConfiguration);
 
 			if (delay != null) {
 				FileChangedReloadingStrategy fileChangedReloadingStrategy =
@@ -319,22 +368,24 @@ public class ClassLoaderAggregateProperties extends AggregatedProperties {
 
 				if (_log.isDebugEnabled()) {
 					_log.debug(
-						"Resource " + url + " will be reloaded every " +
-							delay + " seconds");
+						StringBundler.concat(
+							"Resource ", String.valueOf(url),
+							" will be reloaded every ", String.valueOf(delay),
+							" seconds"));
 				}
 
 				long milliseconds = delay.longValue() * 1000;
 
 				fileChangedReloadingStrategy.setRefreshDelay(milliseconds);
 
-				newFileConfiguration.setReloadingStrategy(
+				propertiesConfiguration.setReloadingStrategy(
 					fileChangedReloadingStrategy);
 			}
 
 			_addIncludedPropertiesSources(
-				newFileConfiguration, loadedCompositeConfiguration);
+				propertiesConfiguration, loadedCompositeConfiguration);
 
-			return newFileConfiguration;
+			return propertiesConfiguration;
 		}
 		catch (org.apache.commons.configuration.ConfigurationException ce) {
 			if (_log.isDebugEnabled()) {
@@ -364,20 +415,43 @@ public class ClassLoaderAggregateProperties extends AggregatedProperties {
 		return delay;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ClassLoaderAggregateProperties.class);
 
-	private CompositeConfiguration _baseCompositeConfiguration =
+	private static final Field _commentField;
+	private static final Field _layoutDataField;
+
+	static {
+		try {
+			ClassLoader classLoader =
+				PropertiesConfigurationLayout.class.getClassLoader();
+
+			Class<?> propertyLayoutDataClass = classLoader.loadClass(
+				PropertiesConfigurationLayout.class.getName() +
+					"$PropertyLayoutData");
+
+			_commentField = ReflectionUtil.getDeclaredField(
+				propertyLayoutDataClass, "comment");
+
+			_layoutDataField = ReflectionUtil.getDeclaredField(
+				PropertiesConfigurationLayout.class, "layoutData");
+		}
+		catch (Exception e) {
+			throw new ExceptionInInitializerError(e);
+		}
+	}
+
+	private final CompositeConfiguration _baseCompositeConfiguration =
 		new CompositeConfiguration();
 	private boolean _baseConfigurationLoaded;
-	private ClassLoader _classLoader;
-	private String _companyId;
-	private String _componentName;
-	private CompositeConfiguration _globalCompositeConfiguration =
+	private final ClassLoader _classLoader;
+	private final String _companyId;
+	private final String _componentName;
+	private final CompositeConfiguration _globalCompositeConfiguration =
 		new CompositeConfiguration();
-	private List<String> _loadedSources = new ArrayList<String>();
-	private Configuration _prefixedSystemConfiguration;
-	private SystemConfiguration _systemConfiguration =
+	private final List<String> _loadedSources = new ArrayList<>();
+	private final Configuration _prefixedSystemConfiguration;
+	private final SystemConfiguration _systemConfiguration =
 		new SystemConfiguration();
 
 }

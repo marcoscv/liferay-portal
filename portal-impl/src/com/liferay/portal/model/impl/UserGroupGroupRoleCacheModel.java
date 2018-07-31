@@ -14,10 +14,15 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.UserGroupGroupRole;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.petra.string.StringBundler;
+
+import com.liferay.portal.kernel.model.CacheModel;
+import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.model.UserGroupGroupRole;
+import com.liferay.portal.kernel.service.persistence.UserGroupGroupRolePK;
+import com.liferay.portal.kernel.util.HashUtil;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -31,8 +36,37 @@ import java.io.ObjectOutput;
  * @see UserGroupGroupRole
  * @generated
  */
+@ProviderType
 public class UserGroupGroupRoleCacheModel implements CacheModel<UserGroupGroupRole>,
 	Externalizable, MVCCModel {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof UserGroupGroupRoleCacheModel)) {
+			return false;
+		}
+
+		UserGroupGroupRoleCacheModel userGroupGroupRoleCacheModel = (UserGroupGroupRoleCacheModel)obj;
+
+		if (userGroupGroupRolePK.equals(
+					userGroupGroupRoleCacheModel.userGroupGroupRolePK) &&
+				(mvccVersion == userGroupGroupRoleCacheModel.mvccVersion)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		int hashCode = HashUtil.hash(0, userGroupGroupRolePK);
+
+		return HashUtil.hash(hashCode, mvccVersion);
+	}
+
 	@Override
 	public long getMvccVersion() {
 		return mvccVersion;
@@ -45,7 +79,7 @@ public class UserGroupGroupRoleCacheModel implements CacheModel<UserGroupGroupRo
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(9);
+		StringBundler sb = new StringBundler(11);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -55,6 +89,8 @@ public class UserGroupGroupRoleCacheModel implements CacheModel<UserGroupGroupRo
 		sb.append(groupId);
 		sb.append(", roleId=");
 		sb.append(roleId);
+		sb.append(", companyId=");
+		sb.append(companyId);
 		sb.append("}");
 
 		return sb.toString();
@@ -68,6 +104,7 @@ public class UserGroupGroupRoleCacheModel implements CacheModel<UserGroupGroupRo
 		userGroupGroupRoleImpl.setUserGroupId(userGroupId);
 		userGroupGroupRoleImpl.setGroupId(groupId);
 		userGroupGroupRoleImpl.setRoleId(roleId);
+		userGroupGroupRoleImpl.setCompanyId(companyId);
 
 		userGroupGroupRoleImpl.resetOriginalValues();
 
@@ -77,22 +114,37 @@ public class UserGroupGroupRoleCacheModel implements CacheModel<UserGroupGroupRo
 	@Override
 	public void readExternal(ObjectInput objectInput) throws IOException {
 		mvccVersion = objectInput.readLong();
+
 		userGroupId = objectInput.readLong();
+
 		groupId = objectInput.readLong();
+
 		roleId = objectInput.readLong();
+
+		companyId = objectInput.readLong();
+
+		userGroupGroupRolePK = new UserGroupGroupRolePK(userGroupId, groupId,
+				roleId);
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput objectOutput)
 		throws IOException {
 		objectOutput.writeLong(mvccVersion);
+
 		objectOutput.writeLong(userGroupId);
+
 		objectOutput.writeLong(groupId);
+
 		objectOutput.writeLong(roleId);
+
+		objectOutput.writeLong(companyId);
 	}
 
 	public long mvccVersion;
 	public long userGroupId;
 	public long groupId;
 	public long roleId;
+	public long companyId;
+	public transient UserGroupGroupRolePK userGroupGroupRolePK;
 }

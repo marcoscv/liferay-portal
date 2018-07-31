@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.image.ImageTool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 
 import com.xuggle.ferry.RefCounted;
 import com.xuggle.xuggler.Global;
@@ -417,19 +418,10 @@ public abstract class LiferayConverter {
 	}
 
 	protected int getAudioBitRate(ICodec outputICodec, int originalBitRate) {
-		if ((originalBitRate == 0) || (originalBitRate > AUDIO_BIT_RATE_MAX)) {
-			originalBitRate = AUDIO_BIT_RATE_DEFAULT;
-		}
-
-		ICodec.ID iCodecID = outputICodec.getID();
-
-		if (iCodecID.equals(ICodec.ID.CODEC_ID_VORBIS)) {
-			if (originalBitRate < 64000) {
-				originalBitRate = 64000;
-			}
-		}
-
-		return originalBitRate;
+		return getCodecBitRate(
+			outputICodec,
+			getProperty(
+				originalBitRate, AUDIO_BIT_RATE_DEFAULT, AUDIO_BIT_RATE_MAX));
 	}
 
 	protected int getAudioEncodingChannels(
@@ -487,16 +479,32 @@ public abstract class LiferayConverter {
 		return AUDIO_SAMPLE_RATE_DEFAULT;
 	}
 
+	protected int getCodecBitRate(ICodec outputICodec, int originalBitRate) {
+		if ((originalBitRate == 0) || (originalBitRate > AUDIO_BIT_RATE_MAX)) {
+			originalBitRate = AUDIO_BIT_RATE_DEFAULT;
+		}
+
+		ICodec.ID iCodecID = outputICodec.getID();
+
+		if (iCodecID.equals(ICodec.ID.CODEC_ID_VORBIS)) {
+			if (originalBitRate < 64000) {
+				return 64000;
+			}
+		}
+
+		return originalBitRate;
+	}
+
 	protected abstract IContainer getInputIContainer();
 
 	protected int getProperty(
 		int originalValue, int defaultValue, int maxValue) {
 
 		if (originalValue <= 0) {
-			originalValue = defaultValue;
+			return defaultValue;
 		}
 		else if (originalValue > maxValue) {
-			originalValue = maxValue;
+			return maxValue;
 		}
 
 		return originalValue;
@@ -507,7 +515,8 @@ public abstract class LiferayConverter {
 		String container, int defaultValue, int maxValue) {
 
 		int property = GetterUtil.getInteger(
-			properties.getProperty(propertyName + "[" + container + "]"),
+			properties.getProperty(
+				StringBundler.concat(propertyName, "[", container, "]")),
 			defaultValue);
 
 		if (property > maxValue) {
@@ -516,8 +525,9 @@ public abstract class LiferayConverter {
 
 		if (_log.isInfoEnabled()) {
 			_log.info(
-				"Default " + prettyPropertyName + " for " + container +
-					" configured to " + property);
+				StringBundler.concat(
+					"Default ", prettyPropertyName, " for ", container,
+					" configured to ", String.valueOf(property)));
 		}
 
 		return property;
@@ -530,7 +540,7 @@ public abstract class LiferayConverter {
 
 		long videoSeconds = inputIContainer.getDuration() / 1000000L;
 
-		long seekSeconds = ((videoSeconds * percentage) / 100L);
+		long seekSeconds = (videoSeconds * percentage) / 100L;
 
 		for (int i = 0; i < inputIContainer.getNumStreams(); i++) {
 			IStream inputIStream = inputIContainer.getStream(i);
@@ -669,8 +679,9 @@ public abstract class LiferayConverter {
 
 		if (iCodec == null) {
 			throw new RuntimeException(
-				"Unable to determine " + inputICodecType + " encoder for " +
-					outputURL);
+				StringBundler.concat(
+					"Unable to determine ", String.valueOf(inputICodecType),
+					" encoder for ", outputURL));
 		}
 
 		IStream outputIStream = outputIContainer.addNewStream(iCodec);
@@ -807,6 +818,11 @@ public abstract class LiferayConverter {
 		int value = inputIContainer.seekKeyFrame(index, -1, 0);
 
 		if (value < 0) {
+			value = inputIContainer.seekKeyFrame(
+				index, -1, IContainer.SEEK_FLAG_BACKWARDS);
+		}
+
+		if (value < 0) {
 			throw new RuntimeException("Error while seeking file");
 		}
 
@@ -889,7 +905,8 @@ public abstract class LiferayConverter {
 
 	protected static final int DECODE_VIDEO_THUMBNAIL = 2;
 
-	private static Log _log = LogFactoryUtil.getLog(LiferayConverter.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		LiferayConverter.class);
 
 	private ConverterFactory.Type _converterFactoryType;
 	private IConverter _videoIConverter;

@@ -46,7 +46,7 @@ public class LiferayResourceBundle extends ResourceBundle {
 
 		setParent(parentResourceBundle);
 
-		_map = new HashMap<String, String>();
+		_map = new HashMap<>();
 
 		Properties properties = PropertiesUtil.load(inputStream, charsetName);
 
@@ -54,11 +54,28 @@ public class LiferayResourceBundle extends ResourceBundle {
 	}
 
 	public LiferayResourceBundle(String string) throws IOException {
-		_map = new HashMap<String, String>();
+		_map = new HashMap<>();
 
 		Properties properties = PropertiesUtil.load(string);
 
 		LanguageResources.fixValues(_map, properties);
+	}
+
+	@Override
+	public boolean containsKey(String key) {
+		if (key == null) {
+			throw new NullPointerException();
+		}
+
+		if (_map.containsKey(key)) {
+			return true;
+		}
+
+		if (parent != null) {
+			return parent.containsKey(key);
+		}
+
+		return false;
 	}
 
 	@Override
@@ -86,6 +103,6 @@ public class LiferayResourceBundle extends ResourceBundle {
 		return _map.keySet();
 	}
 
-	private Map<String, String> _map;
+	private final Map<String, String> _map;
 
 }

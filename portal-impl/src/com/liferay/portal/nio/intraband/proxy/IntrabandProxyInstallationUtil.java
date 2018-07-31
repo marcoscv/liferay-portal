@@ -14,6 +14,7 @@
 
 package com.liferay.portal.nio.intraband.proxy;
 
+import com.liferay.petra.lang.ClassLoaderPool;
 import com.liferay.portal.kernel.nio.intraband.RegistrationReference;
 import com.liferay.portal.kernel.nio.intraband.proxy.IntrabandProxySkeleton;
 import com.liferay.portal.kernel.nio.intraband.proxy.IntrabandProxySkeletonRegistryUtil;
@@ -21,7 +22,7 @@ import com.liferay.portal.kernel.nio.intraband.proxy.TargetLocator;
 import com.liferay.portal.kernel.nio.intraband.rpc.IntrabandRPCUtil;
 import com.liferay.portal.kernel.process.ProcessCallable;
 import com.liferay.portal.kernel.process.ProcessException;
-import com.liferay.portal.kernel.util.ClassLoaderPool;
+import com.liferay.portal.kernel.util.StringBundler;
 
 import java.lang.reflect.Constructor;
 
@@ -49,9 +50,10 @@ public class IntrabandProxyInstallationUtil {
 			stubProxyMethodSignatures);
 
 		throw new IllegalStateException(
-			"Skeleton and stub proxy method signatures do not match. " +
-				"Skeleton is " + skeletonProxyMethodSignaturesString +
-					". Stub is " + stubProxyMethodSignaturesString + ".");
+			StringBundler.concat(
+				"Skeleton and stub proxy method signatures do not match. ",
+				"Skeleton is ", skeletonProxyMethodSignaturesString,
+				". Stub is ", stubProxyMethodSignaturesString, "."));
 	}
 
 	public static String[] installSkeleton(
@@ -104,15 +106,6 @@ public class IntrabandProxyInstallationUtil {
 	protected static class InstallSkeletonProcessCallable
 		implements ProcessCallable<String[]> {
 
-		InstallSkeletonProcessCallable(
-			ClassLoader classLoader, Class<?> clazz,
-			TargetLocator targetLocator) {
-
-			_servletContextName = ClassLoaderPool.getContextName(classLoader);
-			_skeletonId = clazz.getName();
-			_targetLocator = targetLocator;
-		}
-
 		@Override
 		public String[] call() throws ProcessException {
 			ClassLoader classLoader = ClassLoaderPool.getClassLoader(
@@ -126,6 +119,15 @@ public class IntrabandProxyInstallationUtil {
 			catch (Exception e) {
 				throw new ProcessException(e);
 			}
+		}
+
+		protected InstallSkeletonProcessCallable(
+			ClassLoader classLoader, Class<?> clazz,
+			TargetLocator targetLocator) {
+
+			_servletContextName = ClassLoaderPool.getContextName(classLoader);
+			_skeletonId = clazz.getName();
+			_targetLocator = targetLocator;
 		}
 
 		private static final long serialVersionUID = 1L;

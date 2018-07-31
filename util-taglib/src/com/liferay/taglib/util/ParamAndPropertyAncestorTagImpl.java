@@ -15,8 +15,9 @@
 package com.liferay.taglib.util;
 
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
-import com.liferay.portal.kernel.servlet.taglib.BaseBodyTagSupport;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.taglib.BaseBodyTagSupport;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -37,6 +38,10 @@ public class ParamAndPropertyAncestorTagImpl
 
 	@Override
 	public void addParam(String name, String value) {
+		if (Validator.isNull(name)) {
+			throw new IllegalArgumentException();
+		}
+
 		if (_dynamicServletRequest == null) {
 			_dynamicServletRequest = new DynamicServletRequest(request);
 
@@ -52,7 +57,7 @@ public class ParamAndPropertyAncestorTagImpl
 			params.remove(name);
 
 			if (_removedParameterNames == null) {
-				_removedParameterNames = new HashSet<String>();
+				_removedParameterNames = new HashSet<>();
 			}
 
 			_removedParameterNames.add(name);
@@ -62,7 +67,7 @@ public class ParamAndPropertyAncestorTagImpl
 
 		String[] values = params.get(name);
 
-		if (values == null) {
+		if (!_copyCurrentRenderParameters || (values == null)) {
 			values = new String[] {value};
 		}
 		else {
@@ -81,12 +86,12 @@ public class ParamAndPropertyAncestorTagImpl
 	@Override
 	public void addProperty(String name, String value) {
 		if (_properties == null) {
-			_properties = new LinkedHashMap<String, String[]>();
+			_properties = new LinkedHashMap<>();
 		}
 
 		String[] values = _properties.get(name);
 
-		if (values == null) {
+		if (!_copyCurrentRenderParameters || (values == null)) {
 			values = new String[] {value};
 		}
 		else {
@@ -154,12 +159,19 @@ public class ParamAndPropertyAncestorTagImpl
 		servletContext = null;
 
 		_allowEmptyParam = false;
+		_copyCurrentRenderParameters = true;
 		_properties = null;
 		_removedParameterNames = null;
 	}
 
 	public void setAllowEmptyParam(boolean allowEmptyParam) {
 		_allowEmptyParam = allowEmptyParam;
+	}
+
+	public void setCopyCurrentRenderParameters(
+		boolean copyCurrentRenderParameters) {
+
+		_copyCurrentRenderParameters = copyCurrentRenderParameters;
 	}
 
 	@Override
@@ -183,6 +195,7 @@ public class ParamAndPropertyAncestorTagImpl
 	protected ServletContext servletContext;
 
 	private boolean _allowEmptyParam;
+	private boolean _copyCurrentRenderParameters = true;
 	private DynamicServletRequest _dynamicServletRequest;
 	private Map<String, String[]> _properties;
 	private Set<String> _removedParameterNames;

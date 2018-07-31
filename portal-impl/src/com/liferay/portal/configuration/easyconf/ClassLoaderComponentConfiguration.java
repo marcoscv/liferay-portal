@@ -20,11 +20,23 @@ import com.germinus.easyconf.ComponentProperties;
 import com.germinus.easyconf.ConfigurationNotFoundException;
 import com.germinus.easyconf.Conventions;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.portal.kernel.exception.LoggedExceptionInInitializerError;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.configuration.Configuration;
 
 /**
  * @author Raymond Augé
@@ -101,6 +113,57 @@ public class ClassLoaderComponentConfiguration extends ComponentConfiguration {
 		throw new UnsupportedOperationException();
 	}
 
+	protected static String decode(String s) {
+		int index = -1;
+		int openUnderLine = -1;
+		int position = 0;
+		StringBundler sb = new StringBundler();
+
+		while ((index = s.indexOf(CharPool.UNDERLINE, index + 1)) != -1) {
+			if (openUnderLine == -1) {
+				sb.append(s.substring(position, index));
+
+				openUnderLine = index;
+				position = index;
+
+				continue;
+			}
+
+			String encoded = s.substring(openUnderLine + 1, index);
+
+			Character character = _charPoolChars.get(
+				StringUtil.toUpperCase(encoded));
+
+			if (character == null) {
+				int value = GetterUtil.get(encoded, -1);
+
+				if (Character.isDefined(value)) {
+					sb.append(new String(Character.toChars(value)));
+				}
+				else {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							StringBundler.concat(
+								"Unable to decode part \"", encoded,
+								"\" from \"", s, "\", preserve it literally"));
+					}
+
+					sb.append(s.substring(openUnderLine, index + 1));
+				}
+			}
+			else {
+				sb.append(character);
+			}
+
+			openUnderLine = -1;
+			position = index + 1;
+		}
+
+		sb.append(s.substring(position));
+
+		return sb.toString();
+	}
+
 	private ComponentProperties _getAvailableProperties() {
 		if (_properties != null) {
 			return _properties;
@@ -121,12 +184,16 @@ public class ClassLoaderComponentConfiguration extends ComponentConfiguration {
 
 		if (_log.isInfoEnabled()) {
 			_log.info(
-				"Properties for " + _componentName + " loaded from " +
-					classLoaderAggregateProperties.loadedSources());
+				StringBundler.concat(
+					"Properties for ", _componentName, " loaded from ",
+					String.valueOf(
+						classLoaderAggregateProperties.loadedSources())));
 		}
 
+		_loadEnvOverrides(classLoaderAggregateProperties);
+
 		try {
-			_properties = _constructor.newInstance(
+			_properties = _CONSTRUCTOR.newInstance(
 				new Object[] {classLoaderAggregateProperties});
 		}
 		catch (Exception e) {
@@ -136,26 +203,76 @@ public class ClassLoaderComponentConfiguration extends ComponentConfiguration {
 		return _properties;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
-		ClassLoaderComponentConfiguration.class);
+	private void _loadEnvOverrides(Configuration configuration) {
+		Map<String, String> env = System.getenv();
 
-	private static Constructor<ComponentProperties> _constructor;
+		for (Map.Entry<String, String> entry : env.entrySet()) {
+			String key = entry.getKey();
 
-	static {
-		try {
-			_constructor = ComponentProperties.class.getDeclaredConstructor(
-				AggregatedProperties.class);
+			if (!key.startsWith(_ENV_OVERRIDE_PREFIX)) {
+				continue;
+			}
 
-			_constructor.setAccessible(true);
-		}
-		catch (Exception e) {
-			_log.error(e, e);
+			String newKey = decode(
+				StringUtil.toLowerCase(
+					key.substring(_ENV_OVERRIDE_PREFIX.length())));
+
+			configuration.setProperty(newKey, entry.getValue());
+
+			if (_log.isInfoEnabled()) {
+				_log.info(
+					StringBundler.concat(
+						"Overrode property ", newKey,
+						" with the value from the environment variable ", key));
+			}
 		}
 	}
 
-	private ClassLoader _classLoader;
-	private String _companyId;
-	private String _componentName;
+	private static final Constructor<ComponentProperties> _CONSTRUCTOR;
+
+	private static final String _ENV_OVERRIDE_PREFIX = "LIFERAY_";
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		ClassLoaderComponentConfiguration.class);
+
+	private static final Map<String, Character> _charPoolChars =
+		new HashMap<>();
+
+	static {
+		try {
+			for (Field field : CharPool.class.getFields()) {
+				if (Modifier.isStatic(field.getModifiers()) &&
+					(field.getType() == char.class)) {
+
+					_charPoolChars.put(
+						StringUtil.removeChar(
+							field.getName(), CharPool.UNDERLINE),
+						field.getChar(null));
+				}
+			}
+		}
+		catch (ReflectiveOperationException roe) {
+			throw new ExceptionInInitializerError(roe);
+		}
+
+		Constructor<ComponentProperties> constructor = null;
+
+		try {
+			constructor = ComponentProperties.class.getDeclaredConstructor(
+				AggregatedProperties.class);
+
+			constructor.setAccessible(true);
+		}
+		catch (Exception e) {
+			throw new LoggedExceptionInInitializerError(e);
+		}
+
+		_CONSTRUCTOR = constructor;
+	}
+
+	private final ClassLoader _classLoader;
+	private final String _companyId;
+	private final String _componentName;
 	private ComponentProperties _properties;
 
 }

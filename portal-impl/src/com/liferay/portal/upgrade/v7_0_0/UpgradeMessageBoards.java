@@ -14,22 +14,21 @@
 
 package com.liferay.portal.upgrade.v7_0_0;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.upgrade.BaseUpgradePortletPreferences;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.util.PortletKeys;
-import com.liferay.portlet.PortletPreferencesFactoryUtil;
 
 import javax.portlet.PortletPreferences;
 import javax.portlet.ReadOnlyException;
 
 /**
- * @author Ivan Zaera
+ * @author Iván Zaera
  */
 public class UpgradeMessageBoards extends BaseUpgradePortletPreferences {
 
@@ -54,7 +53,7 @@ public class UpgradeMessageBoards extends BaseUpgradePortletPreferences {
 
 	@Override
 	protected String[] getPortletIds() {
-		return new String[] {PortletKeys.MESSAGE_BOARDS};
+		return new String[] {"19"};
 	}
 
 	protected void upgradeEmailSignature(

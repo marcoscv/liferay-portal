@@ -27,7 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * @author     Brian Wing Shun Chan
  * @author     Shuyang Zhou
- * @deprecated As of 6.2.0, replaced by {@link
+ * @deprecated As of Newton (6.2.x), replaced by {@link
  *             com.liferay.portal.kernel.util.CookieKeys}
  */
 @Deprecated
@@ -73,7 +73,7 @@ public class CookieUtil {
 			cookieMap = Collections.emptyMap();
 		}
 		else {
-			cookieMap = new HashMap<String, Cookie>(cookies.length * 4 / 3);
+			cookieMap = new HashMap<>(cookies.length * 4 / 3);
 
 			for (Cookie cookie : cookies) {
 				String cookieName = GetterUtil.getString(cookie.getName());
