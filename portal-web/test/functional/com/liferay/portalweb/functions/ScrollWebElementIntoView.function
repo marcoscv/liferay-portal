@@ -1,0 +1,12 @@
+@default = "scrollWebElementIntoView"
+definition {
+	function scrollWebElementIntoView {
+		WaitForSPARefresh();
+
+		selenium.scrollWebElementIntoView();
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+}

@@ -18,8 +18,8 @@ import com.liferay.portal.kernel.repository.BaseRepository;
 
 /**
  * @author     Mika Koivisto
- * @deprecated As of 7.0.0, replaced by {@link
- *             com.liferay.portal.repository.util.ExternalRepositoryFactoryImpl}
+ * @deprecated As of Wilberforce (7.0.x), replaced by {@link
+ *             ExternalRepositoryFactoryImpl}
  */
 @Deprecated
 public class RepositoryFactoryImpl implements RepositoryFactory {
@@ -39,6 +39,6 @@ public class RepositoryFactoryImpl implements RepositoryFactory {
 		return _externalRepositoryFactory.getInstance();
 	}
 
-	private ExternalRepositoryFactory _externalRepositoryFactory;
+	private final ExternalRepositoryFactory _externalRepositoryFactory;
 
 }

@@ -1,0 +1,7 @@
+definition {
+	macro save {
+		Button.clickSave();
+
+		Alert.viewSuccessMessage();
+	}
+}

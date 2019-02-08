@@ -1,0 +1,243 @@
+@component-name = "portal-security"
+definition {
+	property portal.upstream = "true";
+	property testray.main.component.name = "OAuth 2";
+
+	setUp {
+		TestCase.setUpPortalInstance();
+
+		User.firstLoginPG();
+	}
+
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
+
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			Page.tearDownCP();
+		}
+	}
+
+	test addAndEditApplication {
+		property app.server.types = "jboss,resin,tcserver,tomcat,weblogic,websphere,wildfly";
+		property database.types = "db2,hypersonic,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
+		property environment.acceptance = "true";
+
+		ProductMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "OAuth 2 Administration"
+		);
+
+		OAuth2.addApplication(
+			applicationName = "OAuth Application",
+			callbackURI = "http://www.liferay.com",
+			clientProfile = "Web Application",
+			websiteURL = "http://www.liferay.com"
+		);
+
+		var generatedClientId = selenium.getElementValue("OAuth2#ADMIN_INPUT_FORM_CLIENT_ID");
+		var generatedClientSecret = selenium.getElementValue("OAuth2#ADMIN_INPUT_FORM_CLIENT_SECRET");
+
+		OAuth2.inputApplicationValues(
+			description = "Registering a new application",
+			privacyPolicyURL = "http://www.liferay.com"
+		);
+
+		Navigator.gotoBack();
+
+		OAuth2.viewApplicationInTable(
+			applicationName = "OAuth Application",
+			clientId = "${generatedClientId}",
+			description = "Registering a new application"
+		);
+
+		OAuth2.viewApplication(
+			applicationName = "OAuth Application",
+			callbackURI = "http://www.liferay.com",
+			checkboxCheckList = "Authorization Code,Client Credentials,Refresh Token,Resource Owner Password Credentials",
+			clientId = "${generatedClientId}",
+			clientProfile = "Web Application",
+			clientSecret = "${generatedClientSecret}",
+			description = "Registering a new application",
+			privacyPolicyURL = "http://www.liferay.com",
+			websiteURL = "http://www.liferay.com"
+		);
+
+		OAuth2.editApplication(
+			applicationName = "OAuth Application",
+			callbackURI = "http://www.liferay.com/callback",
+			checkboxCheckList = "Token Introspection",
+			checkboxUncheckList = "Refresh Token,Resource Owner Password Credentials",
+			clientId = "abcd1234",
+			clientProfile = "Native Application",
+			clientSecret = "abcd1234",
+			description = "Editing a new application",
+			newApplicationName = "OAuth Application Edited",
+			privacyPolicyURL = "http://www.google.com",
+			websiteURL = "http://www.google.com"
+		);
+
+		Navigator.gotoBack();
+
+		OAuth2.viewApplicationInTable(
+			applicationName = "OAuth Application Edited",
+			clientId = "abcd1234",
+			description = "Editing a new application"
+		);
+
+		OAuth2.viewApplication(
+			applicationName = "OAuth Application Edited",
+			callbackURI = "http://www.liferay.com/callback",
+			checkboxCheckList = "Token Introspection",
+			clientId = "abcd1234",
+			clientProfile = "Native Application",
+			clientSecret = "abcd1234",
+			description = "Editing a new application",
+			privacyPolicyURL = "http://www.google.com",
+			websiteURL = "http://www.google.com"
+		);
+
+		var newGeneratedClientSecret = OAuth2.editApplication(
+			applicationName = "OAuth Application Edited",
+			generateNewSecret = "true"
+		);
+
+		Navigator.gotoBack();
+
+		OAuth2.viewApplication(
+			applicationName = "OAuth Application Edited",
+			clientSecret = "${newGeneratedClientSecret}"
+		);
+
+		OAuth2.deleteApplication(applicationName = "OAuth Application Edited");
+	}
+
+	test editApplicationScopes {
+		property prepare.oauth2.global.scopes = "true";
+
+		ProductMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "OAuth 2 Administration"
+		);
+
+		OAuth2.addApplication(
+			applicationName = "OAuth Application",
+			checkboxUncheckList = "Authorization Code"
+		);
+
+		Navigator.gotoBack();
+
+		OAuth2.editScopes(
+			applicationName = "OAuth Application",
+			resourceCheckList = "everything.write,everything.read.userprofile",
+			resourcePanels = "Portal Services"
+		);
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "OAuth2#ADMIN_TABLE_APP_SCOPES_COUNT",
+			value1 = "2",
+			key_tableName = "OAuth Application"
+		);
+
+		OAuth2.viewScopes(
+			applicationName = "OAuth Application",
+			resourceCheckedList = "everything.write,everything.read.userprofile",
+			resourcePanels = "Portal Services"
+		);
+
+		OAuth2.editScopes(
+			applicationName = "OAuth Application",
+			checkGlobalScope = "Everything"
+		);
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "OAuth2#ADMIN_TABLE_APP_SCOPES_COUNT",
+			value1 = "7",
+			key_tableName = "OAuth Application"
+		);
+
+		OAuth2.viewScopes(
+			applicationName = "OAuth Application",
+			checkedGlobalScope = "Everything",
+			resourceCheckedList = "example-scope-1,example-scope-2,everything.read,everything.write,everything.read.userprofile",
+			resourcePanels = "Portal Services,Sample QA app"
+		);
+
+		OAuth2.editScopes(
+			applicationName = "OAuth Application",
+			resourcePanels = "Portal Services,Sample QA app",
+			uncheckAllResourceScopes = "true",
+			uncheckGlobalScope = "Everything"
+		);
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "OAuth2#ADMIN_TABLE_APP_SCOPES_COUNT",
+			value1 = "0",
+			key_tableName = "OAuth Application"
+		);
+
+		OAuth2.viewScopes(
+			allResourceScopesUnchecked = "true",
+			applicationName = "OAuth Application",
+			resourcePanels = "Portal Services,Sample QA app",
+			uncheckedGlobalScope = "Everything"
+		);
+	}
+
+	test viewAndRevokeGrantedAuthorizations {
+		property app.server.types = "jboss,resin,tcserver,tomcat,weblogic,websphere,wildfly";
+		property database.types = "db2,hypersonic,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
+		property environment.acceptance = "true";
+
+		ProductMenu.gotoPortlet(
+			category = "Configuration",
+			panel = "Control Panel",
+			portlet = "OAuth 2 Administration"
+		);
+
+		OAuth2.addApplication(
+			applicationName = "OAuth Application",
+			checkboxUncheckList = "Authorization Code"
+		);
+
+		var generatedClientId = selenium.getElementValue("OAuth2#ADMIN_INPUT_FORM_CLIENT_ID");
+		var generatedClientSecret = selenium.getElementValue("OAuth2#ADMIN_INPUT_FORM_CLIENT_SECRET");
+		var portalURL = PropsUtil.get("portal.url");
+
+		var curl = '''
+			${portalURL}/o/oauth2/token \
+				--data grant_type=client_credentials&client_id=${generatedClientId}&client_secret=${generatedClientSecret}
+		''';
+
+		com.liferay.poshi.runner.util.JSONCurlUtil.post("${curl}");
+
+		Navigator.gotoBack();
+
+		OAuth2.viewGrantedAuthViaAdmin(
+			applicationName = "OAuth Application",
+			userName = "Test Test"
+		);
+
+		OAuth2.revokeGrantedAuthViaAdmin(
+			applicationName = "OAuth Application",
+			userName = "Test Test"
+		);
+
+		OAuth2.viewGrantedAuthViaAdmin(
+			applicationName = "OAuth Application",
+			noAuthorizations = "true"
+		);
+
+		com.liferay.poshi.runner.util.JSONCurlUtil.post("${curl}");
+
+		OAuth2.viewGrantedAuthViaUser(applicationName = "OAuth Application");
+
+		OAuth2.revokeGrantedAuthViaUser(applicationName = "OAuth Application");
+
+		OAuth2.viewGrantedAuthViaUser(noAuthorizations = "true");
+	}
+}

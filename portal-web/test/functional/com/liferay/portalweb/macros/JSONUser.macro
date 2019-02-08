@@ -1,0 +1,226 @@
+definition {
+
+	macro _addUser {
+		if (!(isSet(userEmailAddress))) {
+			fail("Please set 'userEmailAddress'.");
+		}
+
+		if (isSet(userFirstName)) {
+			var userFirstNameEncoded = URLUtil.encodeUTF8("${userFirstName}");
+		}
+		else {
+			fail("Please set 'userFirstName'.");
+		}
+
+		if (isSet(userLastName)) {
+			var userLastNameEncoded = URLUtil.encodeUTF8("${userLastName}");
+		}
+		else {
+			fail("Please set 'userLastName'.");
+		}
+
+		if (!(isSet(userScreenName))) {
+			fail("Please set 'userScreenName'.");
+		}
+
+		var companyId = JSONCompany.getCompanyId();
+
+		var portalURL = JSONCompany.getPortalURL();
+
+		var curl = '''
+			${portalURL}/api/jsonws/user/add-user \
+				-u test@liferay.com:test \
+				-d companyId=${companyId} \
+				-d autoPassword=true \
+				-d password1=test \
+				-d password2=test \
+				-d autoScreenName=false \
+				-d screenName=${userScreenName} \
+				-d emailAddress=${userEmailAddress} \
+				-d facebookId=0 \
+				-d openId= \
+				-d locale= \
+				-d firstName=${userFirstNameEncoded} \
+				-d middleName= \
+				-d lastName=${userLastNameEncoded} \
+				-d prefixId=0 \
+				-d suffixId=0 \
+				-d male=true \
+				-d birthdayMonth=4 \
+				-d birthdayDay=31 \
+				-d birthdayYear=1986 \
+				-d jobTitle= \
+				-d groupIds= \
+				-d organizationIds= \
+				-d roleIds= \
+				-d userGroupIds= \
+				-d sendEmail=true
+		''';
+
+		echo("## Adding a 'User' with the following info using JSONWS:");
+
+		echo("## * Company ID: ${companyId}");
+
+		echo("## * Email Address: ${userEmailAddress}");
+
+		echo("## * First Name: ${userFirstName}");
+
+		echo("## * Last Name: ${userLastName}");
+
+		echo("## * Screen Name: ${userScreenName}");
+
+		var userId = JSONCurlUtil.post("${curl}", "$['userId']");
+	}
+
+	macro _deleteUser {
+		if (!(isSet(userId))) {
+			fail("Please set 'userId'.");
+		}
+
+		var userEmailAddress = JSONUser.getUserEmailAddress(userId = "${userId}");
+
+		var portalURL = JSONCompany.getPortalURL();
+
+		var curl = '''
+			${portalURL}/api/jsonws/user/delete-user \
+				-u test@liferay.com:test \
+				-d userId=${userId}
+		''';
+
+		echo("## Deleting a 'User' with the following info using JSONWS:");
+
+		echo("## * Email Address: ${userEmailAddress}");
+
+		var temporary = JSONCurlUtil.post("${curl}", "");
+	}
+
+	macro addUser {
+		if (!(isSet(userEmailAddress))) {
+			fail("Please set 'userEmailAddress'.");
+		}
+
+		if (!(isSet(userFirstName))) {
+			fail("Please set 'userFirstName'.");
+		}
+
+		if (!(isSet(userLastName))) {
+			fail("Please set 'userLastName'.");
+		}
+
+		if (!(isSet(userScreenName))) {
+			fail("Please set 'userScreenName'.");
+		}
+
+		JSONUser._addUser(
+			userEmailAddress = "${userEmailAddress}",
+			userFirstName = "${userFirstName}",
+			userLastName = "${userLastName}",
+			userScreenName = "${userScreenName}"
+		);
+	}
+
+	macro deleteUserByEmailAddress {
+		if (!(isSet(userEmailAddress))) {
+			fail("Please set 'userEmailAddress'.");
+		}
+
+		var userId = JSONUser.getUserIdByEmailAddress(userEmailAddress = "${userEmailAddress}");
+
+		JSONUser._deleteUser(userId = "${userId}");
+	}
+
+	macro deleteUserByUserId {
+		if (!(isSet(userId))) {
+			fail("Please set 'userId'.");
+		}
+
+		JSONUser._deleteUser(userId = "${userId}");
+	}
+
+	macro getUserEmailAddress {
+		if (!(isSet(userId))) {
+			fail("Please set 'userId'.");
+		}
+
+		var companyId = JSONCompany.getCompanyId();
+
+		var portalURL = JSONCompany.getPortalURL();
+
+		var curl = '''
+			${portalURL}/api/jsonws/user/get-user-by-id/user-id/${userId} \
+				-u test@liferay.com:test
+		''';
+		var userEmailAddress = JSONCurlUtil.get("${curl}", "$['emailAddress']");
+
+		return "${userEmailAddress}";
+	}
+
+	macro getUserFirstName {
+		if (!(isSet(userId))) {
+			fail("Please set 'userId'.");
+		}
+
+		var companyId = JSONCompany.getCompanyId();
+
+		var portalURL = JSONCompany.getPortalURL();
+
+		var curl = '''
+			${portalURL}/api/jsonws/user/get-user-by-id/user-id/${userId} \
+				-u test@liferay.com:test
+		''';
+		var userFirstName = JSONCurlUtil.get("${curl}", "$['firstName']");
+
+		return "${userFirstName}";
+	}
+
+	macro getUserIdByEmailAddress {
+		if (!(isSet(userEmailAddress))) {
+			fail("Please set 'userEmailAddress'.");
+		}
+
+		var companyId = JSONCompany.getCompanyId();
+
+		var portalURL = JSONCompany.getPortalURL();
+
+		var curl = '''
+			${portalURL}/api/jsonws/user/get-user-by-email-address/company-id/${companyId}/email-address/${userEmailAddress} \
+				-u test@liferay.com:test
+		''';
+		var userId = JSONCurlUtil.get("${curl}", "$['userId']");
+
+		return "${userId}";
+	}
+
+	macro tearDownByFirstName {
+		if (!(isSet(userFirstName))) {
+			fail("Please set 'userFirstName'.");
+		}
+
+		var companyId = JSONCompany.getCompanyId();
+
+		var portalURL = JSONCompany.getPortalURL();
+
+		var curl = '''
+			${portalURL}/api/jsonws/user/get-company-users-count/company-id/${companyId} \
+				-u test@liferay.com:test
+		''';
+		var userCount = JSONCurlUtil.get("${curl}", "$");
+
+		var curl = '''
+			${portalURL}/api/jsonws/user/get-company-users/company-id/${companyId}/start/0/end/${userCount} \
+				-u test@liferay.com:test
+		''';
+		var userIds = JSONCurlUtil.get("${curl}", "$..['userId']");
+		var userIds = StringUtil.replace("${userIds}", "[", "");
+		var userIds = StringUtil.replace("${userIds}", "]", "");
+		var userIds = StringUtil.replace("${userIds}", "&quot;", "");
+
+		for (var userId : list "${userIds}") {
+			var currentUserFirstName = JSONUser.getUserFirstName(userId = "${userId}");
+
+			if (contains("${currentUserFirstName}", "${userFirstName}")) {
+				JSONUser.deleteUserByUserId(userId = "${userId}");
+			}
+		}
+	}
+}

@@ -1,0 +1,15 @@
+{
+    "ignore": [
+		"**/alloy/js/*.js",
+		"**/alloy/js/**/*.js"
+    ],
+    "plugins": [
+        "transform-class-properties",
+        "transform-decorators-legacy",
+        "transform-object-rest-spread"
+    ],
+    "presets": [
+        "env",
+        "metal-jsx"
+    ]
+}

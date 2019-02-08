@@ -18,13 +18,13 @@ import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.service.CountryServiceUtil;
+import com.liferay.portal.kernel.service.CountryServiceUtil;
 
 import java.rmi.RemoteException;
 
 /**
  * Provides the SOAP utility for the
- * {@link com.liferay.portal.service.CountryServiceUtil} service utility. The
+ * {@link CountryServiceUtil} service utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it is difficult for SOAP to
  * support certain types.
@@ -32,10 +32,10 @@ import java.rmi.RemoteException;
  * <p>
  * ServiceBuilder follows certain rules in translating the methods. For example,
  * if the method in the service utility returns a {@link java.util.List}, that
- * is translated to an array of {@link com.liferay.portal.model.CountrySoap}.
+ * is translated to an array of {@link com.liferay.portal.kernel.model.CountrySoap}.
  * If the method in the service utility returns a
- * {@link com.liferay.portal.model.Country}, that is translated to a
- * {@link com.liferay.portal.model.CountrySoap}. Methods that SOAP cannot
+ * {@link com.liferay.portal.kernel.model.Country}, that is translated to a
+ * {@link com.liferay.portal.kernel.model.CountrySoap}. Methods that SOAP cannot
  * safely wire are skipped.
  * </p>
  *
@@ -58,91 +58,20 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see CountryServiceHttp
- * @see com.liferay.portal.model.CountrySoap
- * @see com.liferay.portal.service.CountryServiceUtil
+ * @see com.liferay.portal.kernel.model.CountrySoap
+ * @see CountryServiceUtil
  * @generated
  */
 @ProviderType
 public class CountryServiceSoap {
-	public static com.liferay.portal.model.CountrySoap addCountry(
-		java.lang.String name, java.lang.String a2, java.lang.String a3,
-		java.lang.String number, java.lang.String idd, boolean active)
-		throws RemoteException {
-		try {
-			com.liferay.portal.model.Country returnValue = CountryServiceUtil.addCountry(name,
-					a2, a3, number, idd, active);
-
-			return com.liferay.portal.model.CountrySoap.toSoapModel(returnValue);
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-
-			throw new RemoteException(e.getMessage());
-		}
-	}
-
-	public static com.liferay.portal.model.CountrySoap fetchCountry(
-		long countryId) throws RemoteException {
-		try {
-			com.liferay.portal.model.Country returnValue = CountryServiceUtil.fetchCountry(countryId);
-
-			return com.liferay.portal.model.CountrySoap.toSoapModel(returnValue);
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-
-			throw new RemoteException(e.getMessage());
-		}
-	}
-
-	public static com.liferay.portal.model.CountrySoap fetchCountryByA2(
-		java.lang.String a2) throws RemoteException {
-		try {
-			com.liferay.portal.model.Country returnValue = CountryServiceUtil.fetchCountryByA2(a2);
-
-			return com.liferay.portal.model.CountrySoap.toSoapModel(returnValue);
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-
-			throw new RemoteException(e.getMessage());
-		}
-	}
-
-	public static com.liferay.portal.model.CountrySoap fetchCountryByA3(
-		java.lang.String a3) throws RemoteException {
-		try {
-			com.liferay.portal.model.Country returnValue = CountryServiceUtil.fetchCountryByA3(a3);
-
-			return com.liferay.portal.model.CountrySoap.toSoapModel(returnValue);
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-
-			throw new RemoteException(e.getMessage());
-		}
-	}
-
-	public static com.liferay.portal.model.CountrySoap[] getCountries()
-		throws RemoteException {
-		try {
-			java.util.List<com.liferay.portal.model.Country> returnValue = CountryServiceUtil.getCountries();
-
-			return com.liferay.portal.model.CountrySoap.toSoapModels(returnValue);
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-
-			throw new RemoteException(e.getMessage());
-		}
-	}
-
-	public static com.liferay.portal.model.CountrySoap[] getCountries(
+	public static com.liferay.portal.kernel.model.CountrySoap addCountry(
+		String name, String a2, String a3, String number, String idd,
 		boolean active) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portal.model.Country> returnValue = CountryServiceUtil.getCountries(active);
+			com.liferay.portal.kernel.model.Country returnValue = CountryServiceUtil.addCountry(name,
+					a2, a3, number, idd, active);
 
-			return com.liferay.portal.model.CountrySoap.toSoapModels(returnValue);
+			return com.liferay.portal.kernel.model.CountrySoap.toSoapModel(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -151,12 +80,12 @@ public class CountryServiceSoap {
 		}
 	}
 
-	public static com.liferay.portal.model.CountrySoap getCountry(
+	public static com.liferay.portal.kernel.model.CountrySoap fetchCountry(
 		long countryId) throws RemoteException {
 		try {
-			com.liferay.portal.model.Country returnValue = CountryServiceUtil.getCountry(countryId);
+			com.liferay.portal.kernel.model.Country returnValue = CountryServiceUtil.fetchCountry(countryId);
 
-			return com.liferay.portal.model.CountrySoap.toSoapModel(returnValue);
+			return com.liferay.portal.kernel.model.CountrySoap.toSoapModel(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -165,12 +94,12 @@ public class CountryServiceSoap {
 		}
 	}
 
-	public static com.liferay.portal.model.CountrySoap getCountryByA2(
-		java.lang.String a2) throws RemoteException {
+	public static com.liferay.portal.kernel.model.CountrySoap fetchCountryByA2(
+		String a2) throws RemoteException {
 		try {
-			com.liferay.portal.model.Country returnValue = CountryServiceUtil.getCountryByA2(a2);
+			com.liferay.portal.kernel.model.Country returnValue = CountryServiceUtil.fetchCountryByA2(a2);
 
-			return com.liferay.portal.model.CountrySoap.toSoapModel(returnValue);
+			return com.liferay.portal.kernel.model.CountrySoap.toSoapModel(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -179,12 +108,12 @@ public class CountryServiceSoap {
 		}
 	}
 
-	public static com.liferay.portal.model.CountrySoap getCountryByA3(
-		java.lang.String a3) throws RemoteException {
+	public static com.liferay.portal.kernel.model.CountrySoap fetchCountryByA3(
+		String a3) throws RemoteException {
 		try {
-			com.liferay.portal.model.Country returnValue = CountryServiceUtil.getCountryByA3(a3);
+			com.liferay.portal.kernel.model.Country returnValue = CountryServiceUtil.fetchCountryByA3(a3);
 
-			return com.liferay.portal.model.CountrySoap.toSoapModel(returnValue);
+			return com.liferay.portal.kernel.model.CountrySoap.toSoapModel(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -193,12 +122,82 @@ public class CountryServiceSoap {
 		}
 	}
 
-	public static com.liferay.portal.model.CountrySoap getCountryByName(
-		java.lang.String name) throws RemoteException {
+	public static com.liferay.portal.kernel.model.CountrySoap[] getCountries()
+		throws RemoteException {
 		try {
-			com.liferay.portal.model.Country returnValue = CountryServiceUtil.getCountryByName(name);
+			java.util.List<com.liferay.portal.kernel.model.Country> returnValue = CountryServiceUtil.getCountries();
 
-			return com.liferay.portal.model.CountrySoap.toSoapModel(returnValue);
+			return com.liferay.portal.kernel.model.CountrySoap.toSoapModels(returnValue);
+		}
+		catch (Exception e) {
+			_log.error(e, e);
+
+			throw new RemoteException(e.getMessage());
+		}
+	}
+
+	public static com.liferay.portal.kernel.model.CountrySoap[] getCountries(
+		boolean active) throws RemoteException {
+		try {
+			java.util.List<com.liferay.portal.kernel.model.Country> returnValue = CountryServiceUtil.getCountries(active);
+
+			return com.liferay.portal.kernel.model.CountrySoap.toSoapModels(returnValue);
+		}
+		catch (Exception e) {
+			_log.error(e, e);
+
+			throw new RemoteException(e.getMessage());
+		}
+	}
+
+	public static com.liferay.portal.kernel.model.CountrySoap getCountry(
+		long countryId) throws RemoteException {
+		try {
+			com.liferay.portal.kernel.model.Country returnValue = CountryServiceUtil.getCountry(countryId);
+
+			return com.liferay.portal.kernel.model.CountrySoap.toSoapModel(returnValue);
+		}
+		catch (Exception e) {
+			_log.error(e, e);
+
+			throw new RemoteException(e.getMessage());
+		}
+	}
+
+	public static com.liferay.portal.kernel.model.CountrySoap getCountryByA2(
+		String a2) throws RemoteException {
+		try {
+			com.liferay.portal.kernel.model.Country returnValue = CountryServiceUtil.getCountryByA2(a2);
+
+			return com.liferay.portal.kernel.model.CountrySoap.toSoapModel(returnValue);
+		}
+		catch (Exception e) {
+			_log.error(e, e);
+
+			throw new RemoteException(e.getMessage());
+		}
+	}
+
+	public static com.liferay.portal.kernel.model.CountrySoap getCountryByA3(
+		String a3) throws RemoteException {
+		try {
+			com.liferay.portal.kernel.model.Country returnValue = CountryServiceUtil.getCountryByA3(a3);
+
+			return com.liferay.portal.kernel.model.CountrySoap.toSoapModel(returnValue);
+		}
+		catch (Exception e) {
+			_log.error(e, e);
+
+			throw new RemoteException(e.getMessage());
+		}
+	}
+
+	public static com.liferay.portal.kernel.model.CountrySoap getCountryByName(
+		String name) throws RemoteException {
+		try {
+			com.liferay.portal.kernel.model.Country returnValue = CountryServiceUtil.getCountryByName(name);
+
+			return com.liferay.portal.kernel.model.CountrySoap.toSoapModel(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);

@@ -21,11 +21,12 @@ import com.liferay.portal.util.PropsValues;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author     Mika Koivisto
- * @deprecated As of 7.0.0, replaced by {@link
- *             com.liferay.portal.repository.util.ExternalRepositoryFactoryUtil}
+ * @deprecated As of Wilberforce (7.0.x), replaced by {@link
+ *             ExternalRepositoryFactoryUtil}
  */
 @Deprecated
 public class RepositoryFactoryUtil {
@@ -66,19 +67,20 @@ public class RepositoryFactoryUtil {
 		_repositoryFactories.remove(className);
 	}
 
-	private static ConcurrentHashMap<String, RepositoryFactory>
+	private static final ConcurrentMap<String, RepositoryFactory>
 		_repositoryFactories =
-			new ConcurrentHashMap<String, RepositoryFactory>();
+			new ConcurrentHashMap<String, RepositoryFactory>() {
+				{
+					ClassLoader classLoader =
+						PortalClassLoaderUtil.getClassLoader();
 
-	static {
-		ClassLoader classLoader = PortalClassLoaderUtil.getClassLoader();
+					for (String className : PropsValues.DL_REPOSITORY_IMPL) {
+						RepositoryFactory repositoryFactory =
+							new RepositoryFactoryImpl(className, classLoader);
 
-		for (String className : PropsValues.DL_REPOSITORY_IMPL) {
-			RepositoryFactory repositoryFactory = new RepositoryFactoryImpl(
-				className, classLoader);
-
-			_repositoryFactories.put(className, repositoryFactory);
-		}
-	}
+						put(className, repositoryFactory);
+					}
+				}
+			};
 
 }

@@ -14,8 +14,8 @@
 
 package com.liferay.portal.sharepoint;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +50,6 @@ public class Tree implements ResponseElement {
 		return sb.toString();
 	}
 
-	private List<ResponseElement> _children = new ArrayList<ResponseElement>();
+	private final List<ResponseElement> _children = new ArrayList<>();
 
 }

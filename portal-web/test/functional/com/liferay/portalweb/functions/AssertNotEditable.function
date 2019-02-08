@@ -1,0 +1,14 @@
+@default = "assertNotEditable"
+definition {
+	function assertNotEditable {
+		WaitForSPARefresh();
+
+		selenium.waitForVisible();
+
+		selenium.assertNotEditable();
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+}

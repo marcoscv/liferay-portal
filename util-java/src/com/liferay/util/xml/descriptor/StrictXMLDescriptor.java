@@ -34,9 +34,8 @@ public class StrictXMLDescriptor implements XMLDescriptor {
 		if (_compare(el1, el2) == 0) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override
@@ -180,7 +179,6 @@ public class StrictXMLDescriptor implements XMLDescriptor {
 		return firstValue;
 	}
 
-	private static final String[] _ROOT_ORDERED_CHILDREN = {
-	};
+	private static final String[] _ROOT_ORDERED_CHILDREN = {};
 
 }

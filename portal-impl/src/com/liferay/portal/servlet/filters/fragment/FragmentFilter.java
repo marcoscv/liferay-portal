@@ -33,7 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 public class FragmentFilter extends BasePortalFilter {
 
 	public static final String SKIP_FILTER =
-		FragmentFilter.class.getName() + "SKIP_FILTER";
+		FragmentFilter.class.getName() + "#SKIP_FILTER";
 
 	@Override
 	public boolean isFilterEnabled(
@@ -42,9 +42,8 @@ public class FragmentFilter extends BasePortalFilter {
 		if (isFragment(request, response) && !isAlreadyFiltered(request)) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected String getContent(HttpServletRequest request, String content) {
@@ -66,9 +65,8 @@ public class FragmentFilter extends BasePortalFilter {
 		if (request.getAttribute(SKIP_FILTER) != null) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected boolean isFragment(
@@ -79,9 +77,8 @@ public class FragmentFilter extends BasePortalFilter {
 		if (Validator.isNotNull(fragmentId)) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override
@@ -102,7 +99,7 @@ public class FragmentFilter extends BasePortalFilter {
 			new BufferCacheServletResponse(response);
 
 		processFilter(
-			FragmentFilter.class, request, bufferCacheServletResponse,
+			FragmentFilter.class.getName(), request, bufferCacheServletResponse,
 			filterChain);
 
 		String content = bufferCacheServletResponse.getString();
@@ -112,6 +109,6 @@ public class FragmentFilter extends BasePortalFilter {
 		ServletResponseUtil.write(response, content);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(FragmentFilter.class);
+	private static final Log _log = LogFactoryUtil.getLog(FragmentFilter.class);
 
 }

@@ -15,10 +15,10 @@
 package com.liferay.portal.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.model.PasswordPolicy;
-import com.liferay.portal.model.PasswordTracker;
-import com.liferay.portal.model.User;
-import com.liferay.portal.security.pwd.PasswordEncryptorUtil;
+import com.liferay.portal.kernel.model.PasswordPolicy;
+import com.liferay.portal.kernel.model.PasswordTracker;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.pwd.PasswordEncryptorUtil;
 import com.liferay.portal.service.base.PasswordTrackerLocalServiceBaseImpl;
 
 import java.util.Date;
@@ -51,18 +51,15 @@ public class PasswordTrackerLocalServiceImpl
 			if (currentPwd.equals(newEncPwd)) {
 				return true;
 			}
-			else {
-				return false;
-			}
+
+			return false;
 		}
-		else {
-			if (currentPwd.equals(newClearTextPwd)) {
-				return true;
-			}
-			else {
-				return false;
-			}
+
+		if (currentPwd.equals(newClearTextPwd)) {
+			return true;
 		}
+
+		return false;
 	}
 
 	@Override
@@ -72,7 +69,7 @@ public class PasswordTrackerLocalServiceImpl
 		PasswordPolicy passwordPolicy =
 			passwordPolicyLocalService.getPasswordPolicyByUserId(userId);
 
-		if ((passwordPolicy == null) || !passwordPolicy.getHistory()) {
+		if ((passwordPolicy == null) || !passwordPolicy.isHistory()) {
 			return true;
 		}
 
@@ -89,6 +86,7 @@ public class PasswordTrackerLocalServiceImpl
 			}
 
 			String oldEncPwd = passwordTracker.getPassword();
+
 			String newEncPwd = PasswordEncryptorUtil.encrypt(
 				newClearTextPwd, oldEncPwd);
 

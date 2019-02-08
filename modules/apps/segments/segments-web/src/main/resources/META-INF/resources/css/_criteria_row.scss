@@ -1,0 +1,81 @@
+.criterion-row-root {
+	border: 2px solid transparent;
+	border-radius: 4px;
+	display: flex;
+	flex: 1;
+	padding: 8px 0;
+
+	.criterion-string {
+		color: $mainLighten28;
+		font-weight: 600;
+
+		b {
+			color: $main;
+			font-weight: bold;
+		}
+	}
+
+	.drag-icon {
+		margin-right: 8px;
+	}
+
+	.duplicate-button {
+		visibility: hidden;
+	}
+
+	.edit-container {
+		align-items: center;
+		display: flex;
+		margin: 0;
+		padding: 0;
+		width: 100%;
+
+		.criterion-input {
+			flex: 1;
+			margin-right: 8px;
+			min-width: 120px;
+
+			&.date-input {
+				min-width: 180px;
+			}
+
+			&.select-entity-input {
+				min-width: 200px;
+			}
+		}
+
+		.criterion-string {
+			flex: 1;
+			margin-right: 8px;
+		}
+	}
+
+	.operator, .operator-input {
+		text-transform: lowercase;
+	}
+
+	.read-only-container {
+		display: flex;
+		margin: 0;
+		padding: 0;
+		width: 100%;
+
+		.criterion-string {
+			margin-left: 8px;
+		}
+	}
+
+	&.dnd-drag {
+		opacity: 0.4;
+	}
+
+	&.dnd-hover {
+		border: 2px solid $primary;
+	}
+
+	&:hover {
+		.duplicate-button {
+			visibility: visible;
+		}
+	}
+}

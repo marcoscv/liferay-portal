@@ -14,8 +14,8 @@
 
 package com.liferay.portal.servlet;
 
+import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.portal.kernel.servlet.PersistentHttpServletRequestWrapper;
-import com.liferay.portal.kernel.util.AutoResetThreadLocal;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.io.Closeable;
@@ -26,6 +26,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Function;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletRequest;
@@ -49,7 +50,7 @@ public class ThreadLocalFacadeHttpServletRequestWrapper
 
 		_nextHttpServletRequestThreadLocal.set(httpServletRequest);
 
-		_locales = new ArrayList<Locale>();
+		_locales = new ArrayList<>();
 
 		Enumeration<Locale> enumeration = httpServletRequest.getLocales();
 
@@ -154,22 +155,13 @@ public class ThreadLocalFacadeHttpServletRequestWrapper
 			(HttpServletRequest)servletRequest);
 	}
 
-	private static ThreadLocal<HttpServletRequest>
-		_nextHttpServletRequestThreadLocal =
-			new AutoResetThreadLocal<HttpServletRequest>(
-				ThreadLocalFacadeHttpServletRequestWrapper.class +
-					"._nextHttpServletRequestThreadLocal") {
+	private static final ThreadLocal<HttpServletRequest>
+		_nextHttpServletRequestThreadLocal = new CentralizedThreadLocal<>(
+			ThreadLocalFacadeHttpServletRequestWrapper.class +
+				"._nextHttpServletRequestThreadLocal",
+			null, Function.identity(), true);
 
-				@Override
-				protected HttpServletRequest copy(
-					HttpServletRequest httpServletRequest) {
-
-					return httpServletRequest;
-				}
-
-			};
-
-	private List<Locale> _locales;
-	private ServletRequestWrapper _servletRequestWrapper;
+	private final List<Locale> _locales;
+	private final ServletRequestWrapper _servletRequestWrapper;
 
 }

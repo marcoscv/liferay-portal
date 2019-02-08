@@ -14,9 +14,9 @@
 
 package com.liferay.taglib.ui;
 
-import com.liferay.portal.kernel.servlet.taglib.FileAvailabilityUtil;
 import com.liferay.portal.kernel.util.ServerDetector;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.taglib.FileAvailabilityUtil;
 import com.liferay.taglib.util.IncludeTag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,7 +39,7 @@ public class ToggleAreaTag extends IncludeTag {
 				jspWriter.write("</div>");
 			}
 			else {
-				include(_endPage);
+				include(_endPage, false);
 			}
 
 			return EVAL_PAGE;
@@ -67,22 +67,22 @@ public class ToggleAreaTag extends IncludeTag {
 			HttpServletRequest request =
 				(HttpServletRequest)pageContext.getRequest();
 
+			request.setAttribute("liferay-ui:toggle-area:align", _align);
+			request.setAttribute(
+				"liferay-ui:toggle-area:defaultShowContent",
+				String.valueOf(_defaultShowContent));
+			request.setAttribute(
+				"liferay-ui:toggle-area:hideImage", _hideImage);
+			request.setAttribute(
+				"liferay-ui:toggle-area:hideMessage", _hideMessage);
 			request.setAttribute("liferay-ui:toggle-area:id", _id);
 			request.setAttribute(
 				"liferay-ui:toggle-area:showImage", _showImage);
 			request.setAttribute(
-				"liferay-ui:toggle-area:hideImage", _hideImage);
-			request.setAttribute(
 				"liferay-ui:toggle-area:showMessage", _showMessage);
-			request.setAttribute(
-				"liferay-ui:toggle-area:hideMessage", _hideMessage);
-			request.setAttribute(
-				"liferay-ui:toggle-area:defaultShowContent",
-				String.valueOf(_defaultShowContent));
 			request.setAttribute("liferay-ui:toggle-area:stateVar", _stateVar);
-			request.setAttribute("liferay-ui:toggle-area:align", _align);
 
-			include(getStartPage());
+			include(getStartPage(), true);
 
 			return EVAL_BODY_INCLUDE;
 		}
@@ -136,9 +136,8 @@ public class ToggleAreaTag extends IncludeTag {
 		if (Validator.isNull(_endPage)) {
 			return _END_PAGE;
 		}
-		else {
-			return _endPage;
-		}
+
+		return _endPage;
 	}
 
 	@Override
@@ -146,9 +145,8 @@ public class ToggleAreaTag extends IncludeTag {
 		if (Validator.isNull(_startPage)) {
 			return _START_PAGE;
 		}
-		else {
-			return _startPage;
-		}
+
+		return _startPage;
 	}
 
 	private static final String _END_PAGE =

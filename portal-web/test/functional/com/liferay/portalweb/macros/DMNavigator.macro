@@ -1,0 +1,186 @@
+definition {
+	var dmDocumentTypeName = "Basic Document";
+
+	macro gotoAddDocumentType {
+		LexiconEntry.gotoAdd();
+
+		var key_dmDocumentTypeName = "${dmDocumentTypeName}";
+
+		MenuItem.click(menuItem = "${dmDocumentTypeName}");
+	}
+
+	macro gotoAddRepositoryCP {
+		AssertVisible(locator1 = "Button#PLUS");
+
+		LexiconEntry.gotoAdd();
+
+		MenuItem.click(menuItem = "Repository");
+	}
+
+	macro gotoAddRepositoryPG {
+		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
+
+		MenuItem.click(menuItem = "Repository");
+	}
+
+	macro gotoCheckedOutDocument {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmCheckedOutDocumentTitle}"
+		);
+	}
+
+	macro gotoDocumentCP {
+		LexiconEntry.gotoEntry(rowEntry = "${dmDocumentTitle}");
+	}
+
+	macro gotoDocumentDetails {
+		Click(locator1 = "Button#INFO");
+
+		AssertClick(locator1 = "NavBar#DETAILS", value1 = "Details");
+	}
+
+	macro gotoDocumentPermissionsCP {
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Permissions",
+			rowEntry = "${dmDocumentTitle}"
+		);
+
+		SelectFrame(locator1 = "IFrame#DIALOG");
+	}
+
+	macro gotoDocumentPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+	}
+
+	macro gotoDocumentType {
+		Navigator.gotoNavItem(navItem = "Document Types");
+	}
+
+	macro gotoDocumentVersion {
+		DMNavigator.gotoDocumentDetails();
+
+		MenuItem.click(menuItem = "Versions");
+	}
+
+	macro gotoFolder {
+		var key_dmFolderName = "${dmFolderName}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
+			value1 = "${dmFolderName}"
+		);
+
+		AssertVisible(locator1 = "DocumentsAndMedia#BREADCRUMB_FOLDER_NAME");
+	}
+
+	macro gotoFolderPermissions {
+		var key_dmFolderName = "${dmFolderName}";
+
+		Click(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Permissions");
+
+		SelectFrame(locator1 = "IFrame#DIALOG");
+	}
+
+	macro gotoFolderViaBreadcrumb {
+		var key_dmFolderName = "${dmFolderName}";
+
+		AssertClick.assertTextClickAt(
+			locator1 = "DocumentsAndMedia#BREADCRUMB_FOLDER_NAME"
+		);
+	}
+
+	macro gotoHomeCP {
+		AssertClick.assertTextClickAt(
+			locator1 = "DocumentsAndMedia#BREADCRUMB_HOME",
+			value1 = "Home"
+		);
+	}
+
+	macro gotoMetadataSets {
+		Navigator.gotoNavItem(navItem = "Metadata Sets");
+	}
+
+	macro gotoRelatedAssetPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		var key_assetTitle = "${key_assetTitle}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_RELATED_ASSETS_HEADER",
+			value1 = "Related Assets:"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_RELATED_ASSETS_TITLE",
+			value1 = "${assetTitle}"
+		);
+
+		AssertClick(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_RELATED_ASSETS_TITLE",
+			value1 = "${assetTitle}"
+		);
+	}
+
+	macro gotoRepository {
+		var key_dmFolderName = "${dmRepositoryName}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
+			value1 = "${dmRepositoryName}"
+		);
+
+		AssertVisible(locator1 = "DocumentsAndMedia#BREADCRUMB_FOLDER_NAME");
+	}
+
+	macro gotoShare {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		DMDocument.viewDocumentTitleCmdPG(dmDocumentTitle = "${dmDocumentTitle}");
+
+		var key_text = "Share";
+
+		AssertClick(locator1 = "Button#ANY", value1 = "Share");
+	}
+
+	macro gotoShareViaSharedWithMe {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		Click(
+			locator1 = "DocumentsAndMediaShare#SHARED_WITH_ME_DOCUMENT_OPTIONS",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		MenuItem.click(menuItem = "Share");
+	}
+
+	macro gotoURLDetail {
+		Click(locator1 = "Icon#INFO");
+
+		Click(locator1 = "DocumentsAndMediaDocument#DETAILS_URL");
+	}
+}

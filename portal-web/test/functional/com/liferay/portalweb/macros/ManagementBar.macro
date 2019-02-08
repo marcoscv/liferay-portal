@@ -1,0 +1,25 @@
+definition {
+	macro setFilterAndOrder {
+		if (isSet(filterBy)) {
+			var menuItem = "${filterBy}";
+		}
+		else if (isSet(orderBy)) {
+			var menuItem = "${orderBy}";
+		}
+
+		Click(locator1 = "ManagementBar#FILTER_AND_ORDER");
+
+		MenuItem.click(menuItem = "${menuItem}");
+	}
+
+	macro toggleViewOrder {
+		if (IsElementNotPresent(locator1 = "ManagementBar#ORDER_ICON_SPECIFIC", key_order = "${order}")) {
+			Click(locator1 = "ManagementBar#ORDER_ICON_GENERIC");
+		}
+
+		AssertElementPresent(
+			locator1 = "ManagementBar#ORDER_ICON_SPECIFIC",
+			key_order = "${order}"
+		);
+	}
+}

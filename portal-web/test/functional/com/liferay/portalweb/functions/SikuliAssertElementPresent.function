@@ -1,0 +1,12 @@
+@default = "sikuliAssertElementPresent"
+definition {
+	function sikuliAssertElementPresent {
+		WaitForSPARefresh();
+
+		selenium.sikuliAssertElementPresent();
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+}

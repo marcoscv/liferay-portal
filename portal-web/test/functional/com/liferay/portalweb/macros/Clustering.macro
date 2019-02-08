@@ -1,0 +1,11 @@
+definition {
+	macro viewClusterStatusInConsole {
+		AssertConsoleTextPresent(value1 = "Accepted view");
+
+		AssertConsoleTextPresent(value1 = "com.liferay.portal.cluster.multiple");
+
+		AssertConsoleTextPresent(value1 = "com.liferay.portal.cache.multiple");
+
+		AssertConsoleTextPresent(value1 = "com.liferay.portal.scheduler.multiple");
+	}
+}

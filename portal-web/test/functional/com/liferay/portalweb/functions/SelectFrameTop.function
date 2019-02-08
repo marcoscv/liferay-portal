@@ -1,0 +1,12 @@
+@default = "selectFrameTop"
+definition {
+	function selectFrameTop {
+		selenium.selectFrame("relative=top");
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+
+		WaitForSPARefresh();
+	}
+}

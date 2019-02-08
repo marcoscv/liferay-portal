@@ -1,0 +1,14 @@
+@default = "assertNotVisible"
+definition {
+	function assertNotVisible {
+		WaitForSPARefresh();
+
+		selenium.waitForNotVisible();
+
+		selenium.assertNotVisible();
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+}

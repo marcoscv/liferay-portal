@@ -34,6 +34,8 @@ public class SearchFormTag<R> extends IncludeTag {
 
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
 		_searchContainer = null;
 		_showAddButton = false;
 	}
@@ -46,6 +48,11 @@ public class SearchFormTag<R> extends IncludeTag {
 
 		if (searchContainerTag != null) {
 			_searchContainer = searchContainerTag.getSearchContainer();
+
+			request.setAttribute(
+				"liferay-ui:search:compactEmptyResultsMessage",
+				String.valueOf(
+					searchContainerTag.isCompactEmptyResultsMessage()));
 		}
 
 		request.setAttribute(

@@ -1,0 +1,17 @@
+definition {
+	macro addContent {
+		SelectFrame(locator1 = "CKEditor#BODY_FIELD_IFRAME");
+
+		KeyPress(locator1 = "CKEditor#BODY", value1 = "${content}");
+
+		SelectFrame(value1 = "relative=top");
+	}
+
+	macro assertEditorPresent {
+		AssertElementPresent(locator1 = "CKEditor#BODY_FIELD");
+	}
+
+	macro viewEntryContent {
+		AssertTextEquals(locator1 = "CKEditor#BODY", value1 = "${content}");
+	}
+}

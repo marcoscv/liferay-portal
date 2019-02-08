@@ -36,9 +36,9 @@ public class ColorUtil {
 
 	public static Color blend(int[] color1, int[] color2, double ratio) {
 		Color blended = new Color(
-			(int)(((color2[0]-color1[0]) * ratio) + color1[0]),
-			(int)(((color2[1]-color1[1]) * ratio) + color1[1]),
-			(int)(((color2[2]-color1[2]) * ratio) + color1[2]));
+			(int)(((color2[0] - color1[0]) * ratio) + color1[0]),
+			(int)(((color2[1] - color1[1]) * ratio) + color1[1]),
+			(int)(((color2[2] - color1[2]) * ratio) + color1[2]));
 
 		return blended;
 	}
@@ -83,7 +83,7 @@ public class ColorUtil {
 
 	public static int[] getRGB(String hex) {
 		if (hex.startsWith("#")) {
-			hex = StringUtil.toUpperCase(hex.substring(1, hex.length()));
+			hex = StringUtil.toUpperCase(hex.substring(1));
 		}
 		else {
 			hex = StringUtil.toUpperCase(hex);
@@ -114,13 +114,16 @@ public class ColorUtil {
 					hexArray[i] = 15;
 				}
 				else {
+					Character characterValue = Character.valueOf(c[i]);
+
 					hexArray[i] = GetterUtil.getInteger(
-						new Character(c[i]).toString());
+						characterValue.toString());
 				}
 			}
 		}
 
 		int[] rgb = new int[3];
+
 		rgb[0] = (hexArray[0] * 16) + hexArray[1];
 		rgb[1] = (hexArray[2] * 16) + hexArray[3];
 		rgb[2] = (hexArray[4] * 16) + hexArray[5];

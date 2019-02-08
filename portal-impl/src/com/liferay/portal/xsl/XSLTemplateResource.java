@@ -14,15 +14,17 @@
 
 package com.liferay.portal.xsl;
 
+import com.liferay.petra.lang.HashUtil;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.template.TemplateResource;
-import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Reader;
+
+import java.util.Objects;
 
 /**
  * @author Tina Tian
@@ -72,7 +74,7 @@ public class XSLTemplateResource implements TemplateResource {
 
 		if (_templateId.equals(xslTemplateResource._templateId) &&
 			_xsl.equals(xslTemplateResource._xsl) &&
-			Validator.equals(
+			Objects.equals(
 				_xslURIResolver, xslTemplateResource._xslURIResolver) &&
 			_xml.equals(xslTemplateResource._xml)) {
 

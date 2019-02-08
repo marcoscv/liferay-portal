@@ -19,13 +19,13 @@ import aQute.bnd.annotation.ProviderType;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
-import com.liferay.portlet.social.service.SocialActivitySettingServiceUtil;
+import com.liferay.social.kernel.service.SocialActivitySettingServiceUtil;
 
 import java.rmi.RemoteException;
 
 /**
  * Provides the SOAP utility for the
- * {@link com.liferay.portlet.social.service.SocialActivitySettingServiceUtil} service utility. The
+ * {@link SocialActivitySettingServiceUtil} service utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it is difficult for SOAP to
  * support certain types.
@@ -33,10 +33,10 @@ import java.rmi.RemoteException;
  * <p>
  * ServiceBuilder follows certain rules in translating the methods. For example,
  * if the method in the service utility returns a {@link java.util.List}, that
- * is translated to an array of {@link com.liferay.portlet.social.model.SocialActivitySettingSoap}.
+ * is translated to an array of {@link com.liferay.social.kernel.model.SocialActivitySettingSoap}.
  * If the method in the service utility returns a
- * {@link com.liferay.portlet.social.model.SocialActivitySetting}, that is translated to a
- * {@link com.liferay.portlet.social.model.SocialActivitySettingSoap}. Methods that SOAP cannot
+ * {@link com.liferay.social.kernel.model.SocialActivitySetting}, that is translated to a
+ * {@link com.liferay.social.kernel.model.SocialActivitySettingSoap}. Methods that SOAP cannot
  * safely wire are skipped.
  * </p>
  *
@@ -59,19 +59,19 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see SocialActivitySettingServiceHttp
- * @see com.liferay.portlet.social.model.SocialActivitySettingSoap
- * @see com.liferay.portlet.social.service.SocialActivitySettingServiceUtil
+ * @see com.liferay.social.kernel.model.SocialActivitySettingSoap
+ * @see SocialActivitySettingServiceUtil
  * @generated
  */
 @ProviderType
 public class SocialActivitySettingServiceSoap {
-	public static com.liferay.portlet.social.model.SocialActivitySettingSoap[] getActivitySettings(
+	public static com.liferay.social.kernel.model.SocialActivitySettingSoap[] getActivitySettings(
 		long groupId) throws RemoteException {
 		try {
-			java.util.List<com.liferay.portlet.social.model.SocialActivitySetting> returnValue =
+			java.util.List<com.liferay.social.kernel.model.SocialActivitySetting> returnValue =
 				SocialActivitySettingServiceUtil.getActivitySettings(groupId);
 
-			return com.liferay.portlet.social.model.SocialActivitySettingSoap.toSoapModels(returnValue);
+			return com.liferay.social.kernel.model.SocialActivitySettingSoap.toSoapModels(returnValue);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -80,8 +80,8 @@ public class SocialActivitySettingServiceSoap {
 		}
 	}
 
-	public static java.lang.String getJSONActivityDefinitions(long groupId,
-		java.lang.String className) throws RemoteException {
+	public static String getJSONActivityDefinitions(long groupId,
+		String className) throws RemoteException {
 		try {
 			com.liferay.portal.kernel.json.JSONArray returnValue = SocialActivitySettingServiceUtil.getJSONActivityDefinitions(groupId,
 					className);
@@ -95,8 +95,8 @@ public class SocialActivitySettingServiceSoap {
 		}
 	}
 
-	public static void updateActivitySetting(long groupId,
-		java.lang.String className, boolean enabled) throws RemoteException {
+	public static void updateActivitySetting(long groupId, String className,
+		boolean enabled) throws RemoteException {
 		try {
 			SocialActivitySettingServiceUtil.updateActivitySetting(groupId,
 				className, enabled);
@@ -108,9 +108,9 @@ public class SocialActivitySettingServiceSoap {
 		}
 	}
 
-	public static void updateActivitySetting(long groupId,
-		java.lang.String className, int activityType,
-		com.liferay.portlet.social.model.SocialActivityCounterDefinition activityCounterDefinition)
+	public static void updateActivitySetting(long groupId, String className,
+		int activityType,
+		com.liferay.social.kernel.model.SocialActivityCounterDefinition activityCounterDefinition)
 		throws RemoteException {
 		try {
 			SocialActivitySettingServiceUtil.updateActivitySetting(groupId,
@@ -123,9 +123,9 @@ public class SocialActivitySettingServiceSoap {
 		}
 	}
 
-	public static void updateActivitySettings(long groupId,
-		java.lang.String className, int activityType,
-		java.util.List<com.liferay.portlet.social.model.SocialActivityCounterDefinition> activityCounterDefinitions)
+	public static void updateActivitySettings(long groupId, String className,
+		int activityType,
+		java.util.List<com.liferay.social.kernel.model.SocialActivityCounterDefinition> activityCounterDefinitions)
 		throws RemoteException {
 		try {
 			SocialActivitySettingServiceUtil.updateActivitySettings(groupId,

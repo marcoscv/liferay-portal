@@ -14,9 +14,11 @@
 
 package com.liferay.portal.webdav.methods;
 
+import com.liferay.portal.kernel.flash.FlashMagicBytesUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
+import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.webdav.Resource;
 import com.liferay.portal.kernel.webdav.WebDAVException;
 import com.liferay.portal.kernel.webdav.WebDAVRequest;
@@ -40,9 +42,6 @@ public class GetMethodImpl implements Method {
 
 		try {
 			WebDAVStorage storage = webDAVRequest.getWebDAVStorage();
-			HttpServletRequest request = webDAVRequest.getHttpServletRequest();
-			HttpServletResponse response =
-				webDAVRequest.getHttpServletResponse();
 
 			Resource resource = storage.getResource(webDAVRequest);
 
@@ -54,20 +53,34 @@ public class GetMethodImpl implements Method {
 				is = resource.getContentAsStream();
 			}
 			catch (Exception e) {
-				if (_log.isErrorEnabled()) {
-					_log.error(e.getMessage());
-				}
+				_log.error(e.getMessage());
 			}
 
 			if (is != null) {
+				String fileName = resource.getDisplayName();
+
+				FlashMagicBytesUtil.Result flashMagicBytesUtilResult =
+					FlashMagicBytesUtil.check(is);
+
+				if (flashMagicBytesUtilResult.isFlash()) {
+					fileName = FileUtil.stripExtension(fileName) + ".swf";
+				}
+
+				is = flashMagicBytesUtilResult.getInputStream();
+
 				try {
-					ServletResponseUtil.sendFile(
-						request, response, resource.getDisplayName(), is,
-						resource.getSize(), resource.getContentType());
+					HttpServletRequest request =
+						webDAVRequest.getHttpServletRequest();
+					HttpServletResponse response =
+						webDAVRequest.getHttpServletResponse();
+
+					ServletResponseUtil.sendFileWithRangeHeader(
+						request, response, fileName, is, resource.getSize(),
+						resource.getContentType());
 				}
 				catch (Exception e) {
 					if (_log.isWarnEnabled()) {
-						_log.warn(e);
+						_log.warn(e, e);
 					}
 				}
 
@@ -81,6 +94,6 @@ public class GetMethodImpl implements Method {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(GetMethodImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(GetMethodImpl.class);
 
 }

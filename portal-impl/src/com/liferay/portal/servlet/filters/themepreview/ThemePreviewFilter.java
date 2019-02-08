@@ -16,11 +16,11 @@ package com.liferay.portal.servlet.filters.themepreview;
 
 import com.liferay.portal.kernel.servlet.BufferCacheServletResponse;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.servlet.filters.BasePortalFilter;
 import com.liferay.portal.servlet.filters.strip.StripFilter;
-import com.liferay.portal.theme.ThemeDisplay;
-import com.liferay.portal.util.WebKeys;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,9 +41,8 @@ public class ThemePreviewFilter extends BasePortalFilter {
 		if (isThemePreview(request)) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected String getContent(HttpServletRequest request, String content) {
@@ -70,9 +69,8 @@ public class ThemePreviewFilter extends BasePortalFilter {
 		if (ParamUtil.getBoolean(request, _THEME_PREVIEW)) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override
@@ -87,8 +85,8 @@ public class ThemePreviewFilter extends BasePortalFilter {
 			new BufferCacheServletResponse(response);
 
 		processFilter(
-			ThemePreviewFilter.class, request, bufferCacheServletResponse,
-			filterChain);
+			ThemePreviewFilter.class.getName(), request,
+			bufferCacheServletResponse, filterChain);
 
 		String content = bufferCacheServletResponse.getString();
 

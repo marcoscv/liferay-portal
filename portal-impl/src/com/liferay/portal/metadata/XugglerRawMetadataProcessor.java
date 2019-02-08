@@ -14,18 +14,18 @@
 
 package com.liferay.portal.metadata;
 
-import com.liferay.portal.kernel.lar.PortletDataContext;
+import com.liferay.document.library.kernel.util.AudioProcessorUtil;
+import com.liferay.document.library.kernel.util.VideoProcessorUtil;
+import com.liferay.exportimport.kernel.lar.PortletDataContext;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xuggler.XugglerUtil;
-import com.liferay.portlet.documentlibrary.util.AudioProcessorUtil;
-import com.liferay.portlet.documentlibrary.util.VideoProcessorUtil;
 
 import com.xuggle.xuggler.IContainer;
 
@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.text.DecimalFormat;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.XMPDM;
 
 /**
  * @author Juan González
@@ -44,20 +45,14 @@ public class XugglerRawMetadataProcessor extends BaseRawMetadataProcessor {
 
 	@Override
 	public void exportGeneratedFiles(
-			PortletDataContext portletDataContext, FileEntry fileEntry,
-			Element fileEntryElement)
-		throws Exception {
-
-		return;
+		PortletDataContext portletDataContext, FileEntry fileEntry,
+		Element fileEntryElement) {
 	}
 
 	@Override
 	public void importGeneratedFiles(
-			PortletDataContext portletDataContext, FileEntry fileEntry,
-			FileEntry importedFileEntry, Element fileEntryElement)
-		throws Exception {
-
-		return;
+		PortletDataContext portletDataContext, FileEntry fileEntry,
+		FileEntry importedFileEntry, Element fileEntryElement) {
 	}
 
 	protected String convertTime(long microseconds) {
@@ -112,40 +107,36 @@ public class XugglerRawMetadataProcessor extends BaseRawMetadataProcessor {
 	protected Metadata extractMetadata(
 		String extension, String mimeType, File file) {
 
-		Metadata metadata = null;
-
 		if (!isSupported(mimeType)) {
-			return metadata;
+			return null;
 		}
 
 		try {
-			metadata = extractMetadata(file);
+			return extractMetadata(file);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
 		}
 
-		return metadata;
+		return null;
 	}
 
 	@Override
 	protected Metadata extractMetadata(
 		String extension, String mimeType, InputStream inputStream) {
 
-		Metadata metadata = null;
+		if (!isSupported(mimeType)) {
+			return null;
+		}
 
 		File file = null;
-
-		if (!isSupported(mimeType)) {
-			return metadata;
-		}
 
 		try {
 			file = FileUtil.createTempFile(extension);
 
 			FileUtil.write(file, inputStream);
 
-			metadata = extractMetadata(file);
+			return extractMetadata(file);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -154,7 +145,7 @@ public class XugglerRawMetadataProcessor extends BaseRawMetadataProcessor {
 			FileUtil.delete(file);
 		}
 
-		return metadata;
+		return null;
 	}
 
 	protected boolean isSupported(String mimeType) {
@@ -171,9 +162,10 @@ public class XugglerRawMetadataProcessor extends BaseRawMetadataProcessor {
 		return false;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		XugglerRawMetadataProcessor.class);
 
-	private static DecimalFormat _decimalFormatter = new DecimalFormat("00");
+	private static final DecimalFormat _decimalFormatter = new DecimalFormat(
+		"00");
 
 }

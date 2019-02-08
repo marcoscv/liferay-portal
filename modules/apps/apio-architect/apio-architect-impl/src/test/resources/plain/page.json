@@ -1,0 +1,551 @@
+{
+	"collection": "/root",
+	"elements": [
+		{
+			"applicationRelativeURL1": "/first",
+			"binary1": "/model/1/binary1",
+			"binary2": "/model/1/binary2",
+			"boolean1": true,
+			"boolean2": false,
+			"booleanList1": [
+				true,
+				true,
+				false,
+				false
+			],
+			"booleanList2": [
+				true,
+				false,
+				true,
+				false
+			],
+			"date1": "2016-06-15T09:00Z",
+			"date2": "2017-04-03T18:36Z",
+			"embedded1": {
+				"binary": "/first-inner-model/first/binary",
+				"boolean": true,
+				"booleanList": [
+					true,
+					false
+				],
+				"embedded": {
+					"binary": "/second-inner-model/first/binary",
+					"boolean": false,
+					"booleanList": [
+						true
+					],
+					"embedded": "/third-inner-model/first",
+					"link": "community.liferay.com",
+					"linked": "/third-inner-model/second",
+					"number": 2017,
+					"numberList": [
+						1
+					],
+					"relatedCollection": "/second/first/models",
+					"self": "/second-inner-model/first",
+					"string": "A string",
+					"stringList": [
+						"a"
+					]
+				},
+				"link": "www.liferay.com",
+				"linked": "/second-inner-model/second",
+				"localizedString": "Translated",
+				"nestedList": {
+					"elements": [
+						{
+							"number1": 2018,
+							"string1": "id 1",
+							"string2": "string3"
+						},
+						{
+							"number1": 2018,
+							"string1": "id 2",
+							"string2": "string3"
+						}
+					],
+					"totalNumberOfItems": 2
+				},
+				"number": 42,
+				"numberList": [
+					1,
+					2
+				],
+				"relatedCollection": "/first/first/models",
+				"self": "/first-inner-model/first",
+				"string": "A string",
+				"stringList": [
+					"a",
+					"b"
+				]
+			},
+			"embedded2": "/first-inner-model/second",
+			"link1": "www.liferay.com",
+			"link2": "community.liferay.com",
+			"linked1": "/first-inner-model/third",
+			"linked2": "/first-inner-model/fourth",
+			"localizedString1": "Translated 1",
+			"localizedString2": "Translated 2",
+			"nested1": {
+				"number1": 2017,
+				"string1": "id 1",
+				"string2": "string2"
+			},
+			"nested2": {
+				"linked3": "/third-inner-model/fifth",
+				"nested3": {
+					"string1": "id 3"
+				},
+				"number1": 42,
+				"string1": "1"
+			},
+			"nestedList": {
+				"elements": [
+					{
+						"nested4": {
+							"nestedList": {
+								"elements": [
+									{
+										"number1": 2017
+									},
+									{
+										"number1": 2017
+									}
+								],
+								"totalNumberOfItems": 2
+							},
+							"string1": "id 4"
+						},
+						"number1": 2017,
+						"string1": "id 1",
+						"string2": "string2"
+					},
+					{
+						"nested4": {
+							"nestedList": {
+								"elements": [
+									{
+										"number1": 2017
+									},
+									{
+										"number1": 2017
+									}
+								],
+								"totalNumberOfItems": 2
+							},
+							"string1": "id 4"
+						},
+						"number1": 2017,
+						"string1": "id 2",
+						"string2": "string2"
+					}
+				],
+				"totalNumberOfItems": 2
+			},
+			"number1": 2017,
+			"number2": 42,
+			"numberList1": [
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"numberList2": [
+				6,
+				7,
+				8,
+				9,
+				10
+			],
+			"relatedCollection1": "/root/1/models",
+			"relatedCollection2": "/root/1/models",
+			"relativeURL1": "/first",
+			"relativeURL2": "/second",
+			"self": "/model/1",
+			"string1": "Live long and prosper",
+			"string2": "Hypermedia",
+			"stringList1": [
+				"a",
+				"b",
+				"c",
+				"d",
+				"e"
+			],
+			"stringList2": [
+				"f",
+				"g",
+				"h",
+				"i",
+				"j"
+			]
+		},
+		{
+			"applicationRelativeURL1": "/first",
+			"binary1": "/model/2/binary1",
+			"binary2": "/model/2/binary2",
+			"boolean1": true,
+			"boolean2": false,
+			"booleanList1": [
+				true,
+				true,
+				false,
+				false
+			],
+			"booleanList2": [
+				true,
+				false,
+				true,
+				false
+			],
+			"date1": "2016-06-15T09:00Z",
+			"date2": "2017-04-03T18:36Z",
+			"embedded1": {
+				"binary": "/first-inner-model/first/binary",
+				"boolean": true,
+				"booleanList": [
+					true,
+					false
+				],
+				"embedded": {
+					"binary": "/second-inner-model/first/binary",
+					"boolean": false,
+					"booleanList": [
+						true
+					],
+					"embedded": "/third-inner-model/first",
+					"link": "community.liferay.com",
+					"linked": "/third-inner-model/second",
+					"number": 2017,
+					"numberList": [
+						1
+					],
+					"relatedCollection": "/second/first/models",
+					"self": "/second-inner-model/first",
+					"string": "A string",
+					"stringList": [
+						"a"
+					]
+				},
+				"link": "www.liferay.com",
+				"linked": "/second-inner-model/second",
+				"localizedString": "Translated",
+				"nestedList": {
+					"elements": [
+						{
+							"number1": 2018,
+							"string1": "id 1",
+							"string2": "string3"
+						},
+						{
+							"number1": 2018,
+							"string1": "id 2",
+							"string2": "string3"
+						}
+					],
+					"totalNumberOfItems": 2
+				},
+				"number": 42,
+				"numberList": [
+					1,
+					2
+				],
+				"relatedCollection": "/first/first/models",
+				"self": "/first-inner-model/first",
+				"string": "A string",
+				"stringList": [
+					"a",
+					"b"
+				]
+			},
+			"embedded2": "/first-inner-model/second",
+			"link1": "www.liferay.com",
+			"link2": "community.liferay.com",
+			"linked1": "/first-inner-model/third",
+			"linked2": "/first-inner-model/fourth",
+			"localizedString1": "Translated 1",
+			"localizedString2": "Translated 2",
+			"nested1": {
+				"number1": 2017,
+				"string1": "id 1",
+				"string2": "string2"
+			},
+			"nested2": {
+				"linked3": "/third-inner-model/fifth",
+				"nested3": {
+					"string1": "id 3"
+				},
+				"number1": 42,
+				"string1": "2"
+			},
+			"nestedList": {
+				"elements": [
+					{
+						"nested4": {
+							"nestedList": {
+								"elements": [
+									{
+										"number1": 2017
+									},
+									{
+										"number1": 2017
+									}
+								],
+								"totalNumberOfItems": 2
+							},
+							"string1": "id 4"
+						},
+						"number1": 2017,
+						"string1": "id 1",
+						"string2": "string2"
+					},
+					{
+						"nested4": {
+							"nestedList": {
+								"elements": [
+									{
+										"number1": 2017
+									},
+									{
+										"number1": 2017
+									}
+								],
+								"totalNumberOfItems": 2
+							},
+							"string1": "id 4"
+						},
+						"number1": 2017,
+						"string1": "id 2",
+						"string2": "string2"
+					}
+				],
+				"totalNumberOfItems": 2
+			},
+			"number1": 2017,
+			"number2": 42,
+			"numberList1": [
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"numberList2": [
+				6,
+				7,
+				8,
+				9,
+				10
+			],
+			"relatedCollection1": "/root/2/models",
+			"relatedCollection2": "/root/2/models",
+			"relativeURL1": "/first",
+			"relativeURL2": "/second",
+			"self": "/model/2",
+			"string1": "Live long and prosper",
+			"string2": "Hypermedia",
+			"stringList1": [
+				"a",
+				"b",
+				"c",
+				"d",
+				"e"
+			],
+			"stringList2": [
+				"f",
+				"g",
+				"h",
+				"i",
+				"j"
+			]
+		},
+		{
+			"applicationRelativeURL1": "/first",
+			"binary1": "/model/3/binary1",
+			"binary2": "/model/3/binary2",
+			"boolean1": true,
+			"boolean2": false,
+			"booleanList1": [
+				true,
+				true,
+				false,
+				false
+			],
+			"booleanList2": [
+				true,
+				false,
+				true,
+				false
+			],
+			"date1": "2016-06-15T09:00Z",
+			"date2": "2017-04-03T18:36Z",
+			"embedded1": {
+				"binary": "/first-inner-model/first/binary",
+				"boolean": true,
+				"booleanList": [
+					true,
+					false
+				],
+				"embedded": {
+					"binary": "/second-inner-model/first/binary",
+					"boolean": false,
+					"booleanList": [
+						true
+					],
+					"embedded": "/third-inner-model/first",
+					"link": "community.liferay.com",
+					"linked": "/third-inner-model/second",
+					"number": 2017,
+					"numberList": [
+						1
+					],
+					"relatedCollection": "/second/first/models",
+					"self": "/second-inner-model/first",
+					"string": "A string",
+					"stringList": [
+						"a"
+					]
+				},
+				"link": "www.liferay.com",
+				"linked": "/second-inner-model/second",
+				"localizedString": "Translated",
+				"nestedList": {
+					"elements": [
+						{
+							"number1": 2018,
+							"string1": "id 1",
+							"string2": "string3"
+						},
+						{
+							"number1": 2018,
+							"string1": "id 2",
+							"string2": "string3"
+						}
+					],
+					"totalNumberOfItems": 2
+				},
+				"number": 42,
+				"numberList": [
+					1,
+					2
+				],
+				"relatedCollection": "/first/first/models",
+				"self": "/first-inner-model/first",
+				"string": "A string",
+				"stringList": [
+					"a",
+					"b"
+				]
+			},
+			"embedded2": "/first-inner-model/second",
+			"link1": "www.liferay.com",
+			"link2": "community.liferay.com",
+			"linked1": "/first-inner-model/third",
+			"linked2": "/first-inner-model/fourth",
+			"localizedString1": "Translated 1",
+			"localizedString2": "Translated 2",
+			"nested1": {
+				"number1": 2017,
+				"string1": "id 1",
+				"string2": "string2"
+			},
+			"nested2": {
+				"linked3": "/third-inner-model/fifth",
+				"nested3": {
+					"string1": "id 3"
+				},
+				"number1": 42,
+				"string1": "3"
+			},
+			"nestedList": {
+				"elements": [
+					{
+						"nested4": {
+							"nestedList": {
+								"elements": [
+									{
+										"number1": 2017
+									},
+									{
+										"number1": 2017
+									}
+								],
+								"totalNumberOfItems": 2
+							},
+							"string1": "id 4"
+						},
+						"number1": 2017,
+						"string1": "id 1",
+						"string2": "string2"
+					},
+					{
+						"nested4": {
+							"nestedList": {
+								"elements": [
+									{
+										"number1": 2017
+									},
+									{
+										"number1": 2017
+									}
+								],
+								"totalNumberOfItems": 2
+							},
+							"string1": "id 4"
+						},
+						"number1": 2017,
+						"string1": "id 2",
+						"string2": "string2"
+					}
+				],
+				"totalNumberOfItems": 2
+			},
+			"number1": 2017,
+			"number2": 42,
+			"numberList1": [
+				1,
+				2,
+				3,
+				4,
+				5
+			],
+			"numberList2": [
+				6,
+				7,
+				8,
+				9,
+				10
+			],
+			"relatedCollection1": "/root/3/models",
+			"relatedCollection2": "/root/3/models",
+			"relativeURL1": "/first",
+			"relativeURL2": "/second",
+			"self": "/model/3",
+			"string1": "Live long and prosper",
+			"string2": "Hypermedia",
+			"stringList1": [
+				"a",
+				"b",
+				"c",
+				"d",
+				"e"
+			],
+			"stringList2": [
+				"f",
+				"g",
+				"h",
+				"i",
+				"j"
+			]
+		}
+	],
+	"numberOfItems": 3,
+	"pages": {
+		"first": "/root?page=1&per_page=3",
+		"last": "/root?page=3&per_page=3",
+		"next": "/root?page=3&per_page=3",
+		"prev": "/root?page=1&per_page=3"
+	},
+	"self": "/root?page=2&per_page=3",
+	"totalNumberOfItems": 9
+}

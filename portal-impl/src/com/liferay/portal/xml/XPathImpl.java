@@ -22,6 +22,9 @@ import com.liferay.portal.xml.xpath.LiferayNamespaceContext;
 import java.util.List;
 import java.util.Map;
 
+import org.dom4j.Document;
+import org.dom4j.Element;
+
 import org.jaxen.FunctionContext;
 import org.jaxen.NamespaceContext;
 
@@ -128,12 +131,11 @@ public class XPathImpl implements XPath {
 		if (node == null) {
 			return null;
 		}
-		else if (node instanceof org.dom4j.Element) {
-			return new ElementImpl((org.dom4j.Element)node);
+		else if (node instanceof Element) {
+			return new ElementImpl((Element)node);
 		}
-		else {
-			return new NodeImpl(node);
-		}
+
+		return new NodeImpl(node);
 	}
 
 	@Override
@@ -160,10 +162,15 @@ public class XPathImpl implements XPath {
 		if (context == null) {
 			return null;
 		}
-		else if (context instanceof org.dom4j.Document) {
-			org.dom4j.Document document = (org.dom4j.Document)context;
+		else if (context instanceof Document) {
+			Document document = (Document)context;
 
 			return new DocumentImpl(document);
+		}
+		else if (context instanceof Element) {
+			Element element = (Element)context;
+
+			return new ElementImpl(element);
 		}
 		else if (context instanceof org.dom4j.Node) {
 			org.dom4j.Node node = (org.dom4j.Node)context;
@@ -173,9 +180,8 @@ public class XPathImpl implements XPath {
 		else if (context instanceof List<?>) {
 			return SAXReaderImpl.toNewNodes((List<org.dom4j.Node>)context);
 		}
-		else {
-			return context;
-		}
+
+		return context;
 	}
 
 	protected Object toOldContext(Object context) {
@@ -195,14 +201,13 @@ public class XPathImpl implements XPath {
 		else if (context instanceof List<?>) {
 			return SAXReaderImpl.toOldNodes((List<Node>)context);
 		}
-		else {
-			return context;
-		}
+
+		return context;
 	}
 
-	private static FunctionContext _functionContext =
+	private static final FunctionContext _functionContext =
 		new LiferayFunctionContext();
 
-	private org.dom4j.XPath _xPath;
+	private final org.dom4j.XPath _xPath;
 
 }

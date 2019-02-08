@@ -14,31 +14,38 @@
 
 package com.liferay.portlet;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.portlet.LiferayResourceResponse;
+import com.liferay.portlet.internal.ResourceRequestImpl;
+import com.liferay.portlet.internal.ResourceResponseImpl;
+
+import javax.portlet.ResourceRequest;
+import javax.portlet.filter.ResourceRequestWrapper;
+
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author Brian Wing Shun Chan
+ * @author Neil Griffin
  */
+@ProviderType
 public class ResourceResponseFactory {
 
-	public static ResourceResponseImpl create(
-			ResourceRequestImpl resourceRequestImpl,
-			HttpServletResponse response, String portletName, long companyId)
-		throws Exception {
+	public static LiferayResourceResponse create(
+		ResourceRequest resourceRequest, HttpServletResponse response) {
 
-		return create(resourceRequestImpl, response, portletName, companyId, 0);
-	}
+		while (resourceRequest instanceof ResourceRequestWrapper) {
+			ResourceRequestWrapper resourceRequestWrapper =
+				(ResourceRequestWrapper)resourceRequest;
 
-	public static ResourceResponseImpl create(
-			ResourceRequestImpl resourceRequestImpl,
-			HttpServletResponse response, String portletName, long companyId,
-			long plid)
-		throws Exception {
+			resourceRequest = resourceRequestWrapper.getRequest();
+		}
 
 		ResourceResponseImpl resourceResponseImpl = new ResourceResponseImpl();
 
 		resourceResponseImpl.init(
-			resourceRequestImpl, response, portletName, companyId, plid);
+			(ResourceRequestImpl)resourceRequest, response);
 
 		return resourceResponseImpl;
 	}

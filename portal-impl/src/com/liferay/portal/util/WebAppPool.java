@@ -40,7 +40,7 @@ public class WebAppPool {
 	}
 
 	private WebAppPool() {
-		_webAppPool = new ConcurrentHashMap<Long, Map<String, Object>>();
+		_webAppPool = new ConcurrentHashMap<>();
 	}
 
 	private Object _get(Long webAppId, String key) {
@@ -49,16 +49,15 @@ public class WebAppPool {
 		if (map == null) {
 			return null;
 		}
-		else {
-			return map.get(key);
-		}
+
+		return map.get(key);
 	}
 
 	private void _put(Long webAppId, String key, Object obj) {
 		Map<String, Object> map = _webAppPool.get(webAppId);
 
 		if (map == null) {
-			map = new ConcurrentHashMap<String, Object>();
+			map = new ConcurrentHashMap<>();
 
 			Map<String, Object> previousMap = _webAppPool.putIfAbsent(
 				webAppId, map);
@@ -77,13 +76,12 @@ public class WebAppPool {
 		if (map == null) {
 			return null;
 		}
-		else {
-			return map.remove(key);
-		}
+
+		return map.remove(key);
 	}
 
-	private static WebAppPool _instance = new WebAppPool();
+	private static final WebAppPool _instance = new WebAppPool();
 
-	private ConcurrentMap<Long, Map<String, Object>> _webAppPool;
+	private final ConcurrentMap<Long, Map<String, Object>> _webAppPool;
 
 }

@@ -14,17 +14,14 @@
 
 package com.liferay.portal.model.impl;
 
-import com.liferay.portal.kernel.lar.StagedModelType;
+import com.liferay.exportimport.kernel.lar.StagedModelType;
+import com.liferay.portal.kernel.model.Repository;
 import com.liferay.portal.kernel.util.UnicodeProperties;
-import com.liferay.portal.model.Repository;
 
 /**
  * @author Alexander Chow
  */
 public class RepositoryImpl extends RepositoryBaseImpl {
-
-	public RepositoryImpl() {
-	}
 
 	@Override
 	public StagedModelType getStagedModelType() {
@@ -36,9 +33,8 @@ public class RepositoryImpl extends RepositoryBaseImpl {
 		if (_typeSettingsProperties == null) {
 			return super.getTypeSettings();
 		}
-		else {
-			return _typeSettingsProperties.toString();
-		}
+
+		return _typeSettingsProperties.toString();
 	}
 
 	@Override

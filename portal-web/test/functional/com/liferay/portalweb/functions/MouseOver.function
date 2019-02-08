@@ -1,0 +1,47 @@
+@default = "mouseOver"
+@summary = "Mouse over '${locator1}'"
+definition {
+	function mouseOver {
+		WaitForSPARefresh();
+
+		selenium.waitForVisible();
+
+		selenium.mouseOver();
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+
+	function mouseOverClickNavigation {
+		WaitForSPARefresh();
+
+		selenium.clickAt("//div[@id='navigationCollapse']", "");
+
+		selenium.waitForElementPresent(
+			"//script[contains(@src,'/frontend-js-web/liferay/sign_in_modal.js')]"
+		);
+
+		MouseOver.mouseOver();
+
+		selenium.pause("1000");
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+
+	function mouseOverNotVisible {
+		WaitForSPARefresh();
+
+		selenium.waitForElementPresent();
+
+		selenium.mouseOver();
+
+		selenium.waitForVisible();
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+}

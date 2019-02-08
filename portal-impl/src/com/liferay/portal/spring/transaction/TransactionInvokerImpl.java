@@ -14,7 +14,7 @@
 
 package com.liferay.portal.spring.transaction;
 
-import com.liferay.portal.kernel.transaction.TransactionAttribute;
+import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.transaction.TransactionInvoker;
 
 import java.util.concurrent.Callable;
@@ -26,20 +26,36 @@ public class TransactionInvokerImpl implements TransactionInvoker {
 
 	@Override
 	public <T> T invoke(
-			TransactionAttribute transactionAttribute, Callable<T> callable)
+			TransactionConfig transactionConfig, Callable<T> callable)
 		throws Throwable {
 
-		return TransactionalCallableUtil.call(
-			TransactionAttributeBuilder.build(
-				true, transactionAttribute.getIsolation(),
-				transactionAttribute.getPropagation(),
-				transactionAttribute.isReadOnly(),
-				transactionAttribute.getTimeout(),
-				transactionAttribute.getRollbackForClasses(),
-				transactionAttribute.getRollbackForClassNames(),
-				transactionAttribute.getNoRollbackForClasses(),
-				transactionAttribute.getNoRollbackForClassNames()),
-			callable);
+		TransactionExecutor transactionExecutor =
+			TransactionExecutorThreadLocal.getCurrentTransactionExecutor();
+
+		if (transactionExecutor == null) {
+			transactionExecutor = _transactionExecutor;
+		}
+
+		return transactionExecutor.execute(
+			new TransactionAttributeAdapter(
+				TransactionAttributeBuilder.build(
+					true, transactionConfig.getIsolation(),
+					transactionConfig.getPropagation(),
+					transactionConfig.isReadOnly(),
+					transactionConfig.getTimeout(),
+					transactionConfig.getRollbackForClasses(),
+					transactionConfig.getRollbackForClassNames(),
+					transactionConfig.getNoRollbackForClasses(),
+					transactionConfig.getNoRollbackForClassNames())),
+			callable::call);
 	}
+
+	public void setTransactionExecutor(
+		TransactionExecutor transactionExecutor) {
+
+		_transactionExecutor = transactionExecutor;
+	}
+
+	private static TransactionExecutor _transactionExecutor;
 
 }

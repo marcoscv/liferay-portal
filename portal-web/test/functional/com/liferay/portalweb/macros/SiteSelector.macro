@@ -1,0 +1,35 @@
+definition {
+	macro _searchSite {
+		if (contains("${site}", "Liferay")) {
+			var searchTerm = "guest";
+		}
+		else {
+			var searchTerm = "${site}";
+		}
+
+		Search.searchCP(searchTerm = "${searchTerm}");
+	}
+
+	macro selectSite {
+		LexiconEntry.changeDisplayStyle(displayStyle = "table");
+
+		SiteSelector._searchSite(site = "${site}");
+
+		LexiconEntry.gotoEntry(rowEntry = "${site}");
+
+		SelectFrameTop();
+	}
+
+	macro viewSite {
+		LexiconEntry.changeDisplayStyle(displayStyle = "table");
+
+		SiteSelector._searchSite(site = "${site}");
+
+		AssertElementPresent(
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME_LINK",
+			key_rowEntry = "${site}"
+		);
+
+		SelectFrameTop();
+	}
+}

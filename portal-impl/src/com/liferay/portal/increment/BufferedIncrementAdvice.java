@@ -14,14 +14,20 @@
 
 package com.liferay.portal.increment;
 
+import com.liferay.portal.internal.increment.BufferedIncreasableEntry;
+import com.liferay.portal.internal.increment.BufferedIncrementProcessor;
+import com.liferay.portal.internal.increment.BufferedIncrementProcessorUtil;
 import com.liferay.portal.kernel.cache.key.CacheKeyGenerator;
 import com.liferay.portal.kernel.cache.key.CacheKeyGeneratorUtil;
 import com.liferay.portal.kernel.increment.BufferedIncrement;
 import com.liferay.portal.kernel.increment.Increment;
 import com.liferay.portal.kernel.increment.IncrementFactory;
-import com.liferay.portal.kernel.transaction.TransactionCommitCallbackRegistryUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.transaction.TransactionCommitCallbackUtil;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.spring.aop.AnnotationChainableMethodAdvice;
+import com.liferay.portal.spring.aop.AopMethodInvocation;
+import com.liferay.portal.spring.aop.ChainableMethodAdvice;
 
 import java.io.Serializable;
 
@@ -29,64 +35,25 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import org.aopalliance.intercept.MethodInvocation;
 
 /**
- * @author Zsolt Berentey
- * @author Shuyang Zhou
+ * @author     Zsolt Berentey
+ * @author     Shuyang Zhou
  */
-public class BufferedIncrementAdvice
-	extends AnnotationChainableMethodAdvice<BufferedIncrement> {
+public class BufferedIncrementAdvice extends ChainableMethodAdvice {
 
 	@Override
 	@SuppressWarnings("rawtypes")
-	public Object before(MethodInvocation methodInvocation) throws Throwable {
-		BufferedIncrement bufferedIncrement = findAnnotation(methodInvocation);
+	public Object before(
+		AopMethodInvocation aopMethodInvocation, Object[] arguments) {
 
-		if (bufferedIncrement == _nullBufferedIncrement) {
-			return null;
-		}
-
-		String configuration = bufferedIncrement.configuration();
-
-		BufferedIncrementConfiguration bufferedIncrementConfiguration =
-			_bufferedIncrementConfigurations.get(configuration);
-
-		if (bufferedIncrementConfiguration == null) {
-			bufferedIncrementConfiguration = new BufferedIncrementConfiguration(
-				configuration);
-
-			_bufferedIncrementConfigurations.put(
-				configuration, bufferedIncrementConfiguration);
-		}
-
-		if (!bufferedIncrementConfiguration.isEnabled()) {
-			return nullResult;
-		}
-
-		Method method = methodInvocation.getMethod();
+		BufferedIncrementContext bufferedIncrementContext =
+			aopMethodInvocation.getAdviceMethodContext();
 
 		BufferedIncrementProcessor bufferedIncrementProcessor =
-			_bufferedIncrementProcessors.get(method);
-
-		if (bufferedIncrementProcessor == null) {
-			bufferedIncrementProcessor = new BufferedIncrementProcessor(
-				bufferedIncrementConfiguration, method);
-
-			BufferedIncrementProcessor previousBufferedIncrementProcessor =
-				_bufferedIncrementProcessors.putIfAbsent(
-					method, bufferedIncrementProcessor);
-
-			if (previousBufferedIncrementProcessor != null) {
-				bufferedIncrementProcessor = previousBufferedIncrementProcessor;
-			}
-		}
-
-		Object[] arguments = methodInvocation.getArguments();
+			bufferedIncrementContext._bufferedIncrementProcessor;
+		Class<? extends Increment<?>> incrementClass =
+			bufferedIncrementContext._incrementClass;
 
 		Object value = arguments[arguments.length - 1];
 
@@ -100,69 +67,71 @@ public class BufferedIncrementAdvice
 
 		Serializable batchKey = cacheKeyGenerator.finish();
 
-		Increment<?> increment = IncrementFactory.createIncrement(
-			bufferedIncrement.incrementClass(), value);
+		try {
+			Increment<?> increment = IncrementFactory.createIncrement(
+				incrementClass, value);
 
-		final BufferedIncrementProcessor callbackBufferedIncrementProcessor =
-			bufferedIncrementProcessor;
+			BufferedIncreasableEntry bufferedIncreasableEntry =
+				new BufferedIncreasableEntry(
+					aopMethodInvocation, arguments, batchKey, increment);
 
-		final BufferedIncreasableEntry bufferedIncreasableEntry =
-			new BufferedIncreasableEntry(methodInvocation, batchKey, increment);
-
-		TransactionCommitCallbackRegistryUtil.registerCallback(
-			new Callable<Void>() {
-
-				@Override
-				public Void call() throws Exception {
-					callbackBufferedIncrementProcessor.process(
+			TransactionCommitCallbackUtil.registerCallback(
+				() -> {
+					bufferedIncrementProcessor.process(
 						bufferedIncreasableEntry);
 
 					return null;
-				}
-
-			});
+				});
+		}
+		catch (Exception e) {
+			if (_log.isWarnEnabled()) {
+				_log.warn("Unable to increment", e);
+			}
+		}
 
 		return nullResult;
 	}
 
-	public void destroy() {
-		for (BufferedIncrementProcessor bufferedIncrementProcessor :
-				_bufferedIncrementProcessors.values()) {
-
-			bufferedIncrementProcessor.destroy();
-		}
-	}
-
 	@Override
-	public BufferedIncrement getNullAnnotation() {
-		return _nullBufferedIncrement;
+	public Object createMethodContext(
+		Class<?> targetClass, Method method,
+		Map<Class<? extends Annotation>, Annotation> annotations) {
+
+		BufferedIncrement bufferedIncrement =
+			(BufferedIncrement)annotations.get(BufferedIncrement.class);
+
+		if (bufferedIncrement == null) {
+			return null;
+		}
+
+		BufferedIncrementProcessor bufferedIncrementProcessor =
+			BufferedIncrementProcessorUtil.getBufferedIncrementProcessor(
+				bufferedIncrement.configuration());
+
+		if (bufferedIncrementProcessor == null) {
+			return null;
+		}
+
+		return new BufferedIncrementContext(
+			bufferedIncrementProcessor, bufferedIncrement.incrementClass());
 	}
 
-	private static BufferedIncrement _nullBufferedIncrement =
-		new BufferedIncrement() {
+	private static final Log _log = LogFactoryUtil.getLog(
+		BufferedIncrementAdvice.class);
 
-			@Override
-			public Class<? extends Annotation> annotationType() {
-				return BufferedIncrement.class;
-			}
+	private static class BufferedIncrementContext {
 
-			@Override
-			public String configuration() {
-				return "default";
-			}
+		private BufferedIncrementContext(
+			BufferedIncrementProcessor bufferedIncrementProcessor,
+			Class<? extends Increment<?>> incrementClass) {
 
-			@Override
-			public Class<? extends Increment<?>> incrementClass() {
-				return null;
-			}
+			_bufferedIncrementProcessor = bufferedIncrementProcessor;
+			_incrementClass = incrementClass;
+		}
 
-		};
+		private final BufferedIncrementProcessor _bufferedIncrementProcessor;
+		private final Class<? extends Increment<?>> _incrementClass;
 
-	private Map<String, BufferedIncrementConfiguration>
-		_bufferedIncrementConfigurations =
-			new ConcurrentHashMap<String, BufferedIncrementConfiguration>();
-	private ConcurrentMap<Method, BufferedIncrementProcessor>
-		_bufferedIncrementProcessors =
-			new ConcurrentHashMap<Method, BufferedIncrementProcessor>();
+	}
 
 }

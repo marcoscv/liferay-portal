@@ -1,0 +1,378 @@
+@component-name = "portal-wcm"
+definition {
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Display Pages";
+
+	setUp {
+		task ("Set up instance and sign in") {
+			TestCase.setUpPortalInstance();
+
+			User.firstLoginPG();
+		}
+
+		task ("Add a site via JSON") {
+			JSONGroup.addGroup(groupName = "Test Site Name");
+		}
+
+		task ("Import test fragments from dependencies folder") {
+			FragmentsAdmin.openFragmentsAdmin(siteURLKey = "test-site-name");
+
+			FragmentsAdmin.importCollectionFromDependenciesFolder(
+				collectionZipFile = "fragment-collection.zip"
+			);
+		}
+
+		task ("Navigate to Build > Pages > Display Pages") {
+			DisplayPagesAdmin.openDisplayPagesAdmin(siteURLKey = "test-site-name");
+		}
+	}
+
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
+
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			User.logoutAndLoginPG(
+				userLoginEmailAddress = "test@liferay.com",
+				userLoginFullName = "Test Test"
+			);
+
+			JSONGroup.deleteGroupByName(groupName = "Test Site Name");
+
+			MyAccount.openMyAccountAdmin();
+
+			User.deleteProfileImage();
+
+			Button.click(button = "Save");
+
+			User.tearDownCP();
+		}
+	}
+
+	@description = "This is a test for LPS-86550. Users should be able to map author name and author profile image to a fragment editable field in a display page."
+	@priority = "5"
+	test MapWebContentAuthor {
+		task ("Add a display page with author name and profile fields mapped") {
+			DisplayPagesAdmin.addDisplayPage(displayPageName = "Display Page Name");
+
+			PageEditor.addFragment(
+				collectionName = "Collection Name",
+				fragmentName = "Rich Text"
+			);
+
+			PageEditor.addFragment(
+				collectionName = "Collection Name",
+				fragmentName = "Image"
+			);
+
+			PageEditorMapping.selectAssetType(
+				assetType = "Web Content Article",
+				subType = "Basic Web Content"
+			);
+
+			PageEditorMapping.mapEditableTextToAsset(
+				fragmentName = "Rich Text",
+				id = "rich-text",
+				itemName = "Author Name"
+			);
+
+			PageEditorMapping.mapEditableTextToAsset(
+				fragmentName = "Image",
+				id = "image",
+				itemName = "Author Profile Image"
+			);
+
+			Button.clickPublish();
+		}
+
+		task ("Add a profile image for the super admin user") {
+			MyAccount.openMyAccountAdmin();
+
+			User.changeProfileImage(imageName = "marketplace_icon.png");
+
+			Button.click(button = "Save");
+		}
+
+		task ("Add a web content article that uses the display page") {
+			WebContent.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoAddCP();
+
+			WebContent.addCP(
+				webContentContent = "Webcontent Content",
+				webContentTitle = "Webcontent Title"
+			);
+
+			WebContent.editDisplayPage(
+				pageName = "Display Page Name",
+				pageType = "Display Pages"
+			);
+		}
+
+		task ("Assert the super admin's name and profile image appear in the display page") {
+			Navigator.openWithAppendToBaseURL(
+				urlAppend = "web/test-site-name/-/webcontent-title"
+			);
+
+			AssertVisible(
+				locator1 = "Fragment#FRAGMENT",
+				key_content = "Test Test",
+				key_fragmentClass = "rich-text",
+				key_position = "1"
+			);
+
+			AssertVisible(
+				locator1 = "Fragment#FRAGMENT",
+				key_content = "",
+				key_fragmentClass = "image",
+				key_position = "2"
+			);
+
+			SikuliAssertElementPresent(locator1 = "Fragment#MARKETPLACE_ICON_PNG");
+		}
+	}
+
+	@description = "This is a test for LPS-86550. Users should be able to map last editor name and author profile image to a fragment editable field in a display page."
+	@priority = "5"
+	test MapWebContentLastEditor {
+		task ("Add a display page with last editor name and profile fields mapped") {
+			DisplayPagesAdmin.addDisplayPage(displayPageName = "Display Page Name");
+
+			PageEditor.addFragment(
+				collectionName = "Collection Name",
+				fragmentName = "Rich Text"
+			);
+
+			PageEditor.addFragment(
+				collectionName = "Collection Name",
+				fragmentName = "Image"
+			);
+
+			PageEditorMapping.selectAssetType(
+				assetType = "Web Content Article",
+				subType = "Basic Web Content"
+			);
+
+			PageEditorMapping.mapEditableTextToAsset(
+				fragmentName = "Rich Text",
+				id = "rich-text",
+				itemName = "Last Editor Name"
+			);
+
+			PageEditorMapping.mapEditableTextToAsset(
+				fragmentName = "Image",
+				id = "image",
+				itemName = "Last Editor Profile Image"
+			);
+
+			Button.clickPublish();
+		}
+
+		task ("Add a profile image for the super admin user") {
+			MyAccount.openMyAccountAdmin();
+
+			User.changeProfileImage(imageName = "marketplace_icon.png");
+
+			Button.click(button = "Save");
+		}
+
+		task ("Add as econd user with permission to edit web content articles") {
+			JSONUser.addUser(
+				userEmailAddress = "userea@liferay.com",
+				userFirstName = "Userfn",
+				userLastName = "Userln",
+				userScreenName = "usersn"
+			);
+
+			User.openUsersAdmin();
+
+			User.editPasswordCP(
+				userEmailAddress = "userea@liferay.com",
+				userScreenName = "usersn"
+			);
+
+			User.openUsersAdmin();
+
+			User.assignRegularRoleCP(roleTitle = "Administrator", userScreenName = "usersn");
+		}
+
+		task ("Add a profile image for the second user") {
+			User.openUsersAdmin();
+
+			UserNavigator.gotoUser(userScreenName = "usersn");
+
+			User.changeProfileImage(imageName = "Document_4.jpg");
+
+			Button.click(button = "Save");
+		}
+
+		task ("As the super admin user, add a web content article that uses the display page") {
+			WebContent.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoAddCP();
+
+			WebContent.addCP(
+				webContentContent = "Webcontent Content",
+				webContentTitle = "Webcontent Title"
+			);
+
+			WebContent.editDisplayPage(
+				pageName = "Display Page Name",
+				pageType = "Display Pages"
+			);
+		}
+
+		task ("Assert the super admin name and profile image appear in the display page") {
+			Navigator.openWithAppendToBaseURL(
+				urlAppend = "web/test-site-name/-/webcontent-title"
+			);
+
+			AssertVisible(
+				locator1 = "Fragment#FRAGMENT",
+				key_content = "Test Test",
+				key_fragmentClass = "rich-text",
+				key_position = "1"
+			);
+
+			AssertVisible(
+				locator1 = "Fragment#FRAGMENT",
+				key_content = "",
+				key_fragmentClass = "image",
+				key_position = "2"
+			);
+		}
+
+		task ("Sign in as the second user") {
+			User.logoutAndLoginPG(
+				userLoginEmailAddress = "userea@liferay.com",
+				userLoginFullName = "Userfn Userln"
+			);
+		}
+
+		task ("As the second user, edit the web content article") {
+			WebContent.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "Webcontent Title");
+
+			WebContent.editCP(
+				webContentContentEdit = "Webcontent Content Edit",
+				webContentTitleEdit = "Webcontent Title Edit"
+			);
+		}
+
+		task ("Assert the second user's name and profile image appear in the display page") {
+			Navigator.openWithAppendToBaseURL(
+				urlAppend = "web/test-site-name/-/webcontent-title"
+			);
+
+			AssertVisible(
+				locator1 = "Fragment#FRAGMENT",
+				key_content = "Userfn Userln",
+				key_fragmentClass = "rich-text",
+				key_position = "1"
+			);
+
+			AssertVisible(
+				locator1 = "Fragment#FRAGMENT",
+				key_content = "",
+				key_fragmentClass = "image",
+				key_position = "2"
+			);
+
+			SikuliAssertElementPresent(locator1 = "Fragment#DOCUMENT_4_PNG");
+		}
+	}
+
+	@description = "Add a fragment with multiple editable fields in it."
+	@priority = "4"
+	test ViewDisplayPageWithComplexRichTextFragments {
+		property testray.component.names = "Training";
+
+		task ("Add a display page") {
+			DisplayPagesAdmin.addDisplayPage(displayPageName = "Display Page Name");
+		}
+
+		task ("Add a fragment with multiple editable fields in it and map it to Basic Web Content") {
+			PageEditor.addFragment(
+				collectionName = "Collection Name",
+				fragmentName = "Multiple Editables"
+			);
+
+			PageEditorMapping.selectAssetType(
+				assetType = "Web Content Article",
+				subType = "Basic Web Content"
+			);
+
+			PageEditorMapping.mapEditableTextToAsset(
+				fragmentName = "Multiple Editables",
+				id = "test1",
+				itemName = "Title"
+			);
+
+			PageEditorMapping.mapEditableTextToAsset(
+				fragmentName = "Multiple Editables",
+				id = "test2",
+				itemName = "Content"
+			);
+
+			PageEditorMapping.mapEditableTextToAsset(
+				fragmentName = "Multiple Editables",
+				id = "test3",
+				itemName = "Tags"
+			);
+
+			PageEditorMapping.mapEditableTextToAsset(
+				fragmentName = "Multiple Editables",
+				id = "test4",
+				itemName = "Publish Date"
+			);
+		}
+
+		task ("Publish the display page") {
+			Button.clickPublish();
+		}
+
+		task ("Add a web content article with tags that uses the display page") {
+			WebContent.openWebContentAdmin(siteURLKey = "test-site-name");
+
+			WebContent.addArticleCP(
+				webContentContent = "Webcontent Content",
+				webContentTitle = "Webcontent Title"
+			);
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "Webcontent Title");
+
+			WebContent.addWithTagCP(tagNameList = "tag1,tag2,tag3");
+
+			WebContentNavigator.gotoEditCP(webContentTitle = "Webcontent Title");
+
+			WebContent.editDisplayPage(
+				pageName = "Display Page Name",
+				pageType = "Display Pages"
+			);
+		}
+
+		task ("Add a page to the site") {
+			SitePages.openPagesAdmin(siteURLKey = "test-site-name");
+
+			SitePages.addPublicPage(pageName = "Site Page Name");
+		}
+
+		task ("Add an Asset Publisher widget to the page") {
+			Navigator.gotoSitePage(pageName = "Site Page Name", siteName = "Test Site Name");
+
+			Portlet.addPG(portletName = "Asset Publisher");
+		}
+
+		task ("Assert the display page displays correctly along with its tags") {
+			DisplayPagesAdmin.viewPGViaAP(
+				contentList = "Webcontent Title,Webcontent Content,tag1,tag2,tag3",
+				webContentContent = "Webcontent Content",
+				webContentTitle = "Webcontent Title"
+			);
+		}
+	}
+}

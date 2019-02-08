@@ -14,16 +14,11 @@
 
 package com.liferay.portal.spring.transaction;
 
-import com.liferay.portal.cache.transactional.TransactionalPortalCacheHelper;
-import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
-import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
-import com.liferay.portal.spring.hibernate.LastSessionRecorderUtil;
-
-import org.aopalliance.intercept.MethodInvocation;
+import com.liferay.petra.function.UnsafeSupplier;
+import com.liferay.portal.kernel.transaction.TransactionLifecycleManager;
 
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.interceptor.TransactionAttribute;
 import org.springframework.transaction.support.CallbackPreferringPlatformTransactionManager;
 import org.springframework.transaction.support.TransactionCallback;
 
@@ -32,46 +27,36 @@ import org.springframework.transaction.support.TransactionCallback;
  * @author Shuyang Zhou
  */
 public class CallbackPreferringTransactionExecutor
-	extends BaseTransactionExecutor {
+	implements TransactionExecutor {
+
+	public CallbackPreferringTransactionExecutor(
+		PlatformTransactionManager platformTransactionManager) {
+
+		_platformTransactionManager = platformTransactionManager;
+	}
 
 	@Override
-	public Object execute(
-			PlatformTransactionManager platformTransactionManager,
-			TransactionAttribute transactionAttribute,
-			MethodInvocation methodInvocation)
+	public <T> T execute(
+			TransactionAttributeAdapter transactionAttributeAdapter,
+			UnsafeSupplier<T, Throwable> unsafeSupplier)
 		throws Throwable {
 
-		CallbackPreferringPlatformTransactionManager
-			callbackPreferringPlatformTransactionManager =
-				(CallbackPreferringPlatformTransactionManager)
-					platformTransactionManager;
+		return _execute(
+			_platformTransactionManager, transactionAttributeAdapter,
+			unsafeSupplier);
+	}
 
-		try {
-			Object result =
-				callbackPreferringPlatformTransactionManager.execute(
-					transactionAttribute,
-					createTransactionCallback(
-						transactionAttribute, methodInvocation));
-
-			if (result instanceof ThrowableHolder) {
-				ThrowableHolder throwableHolder = (ThrowableHolder)result;
-
-				throw throwableHolder.getThrowable();
-			}
-
-			return result;
-		}
-		catch (ThrowableHolderException the) {
-			throw the.getCause();
-		}
+	@Override
+	public PlatformTransactionManager getPlatformTransactionManager() {
+		return _platformTransactionManager;
 	}
 
 	protected TransactionCallback<Object> createTransactionCallback(
-		TransactionAttribute transactionAttribute,
-		MethodInvocation methodInvocation) {
+		TransactionAttributeAdapter transactionAttributeAdapter,
+		UnsafeSupplier<Object, Throwable> unsafeSupplier) {
 
 		return new CallbackPreferringTransactionCallback(
-			transactionAttribute, methodInvocation);
+			transactionAttributeAdapter, unsafeSupplier);
 	}
 
 	protected static class ThrowableHolder {
@@ -84,7 +69,7 @@ public class CallbackPreferringTransactionExecutor
 			return _throwable;
 		}
 
-		private Throwable _throwable;
+		private final Throwable _throwable;
 
 	}
 
@@ -96,71 +81,98 @@ public class CallbackPreferringTransactionExecutor
 
 	}
 
+	private <T> T _execute(
+			PlatformTransactionManager platformTransactionManager,
+			TransactionAttributeAdapter transactionAttributeAdapter,
+			UnsafeSupplier<T, Throwable> unsafeSupplier)
+		throws Throwable {
+
+		CallbackPreferringPlatformTransactionManager
+			callbackPreferringPlatformTransactionManager =
+				(CallbackPreferringPlatformTransactionManager)
+					platformTransactionManager;
+
+		try {
+			Object result =
+				callbackPreferringPlatformTransactionManager.execute(
+					transactionAttributeAdapter,
+					createTransactionCallback(
+						transactionAttributeAdapter,
+						(UnsafeSupplier<Object, Throwable>)unsafeSupplier));
+
+			if (result instanceof ThrowableHolder) {
+				ThrowableHolder throwableHolder = (ThrowableHolder)result;
+
+				throw throwableHolder.getThrowable();
+			}
+
+			return (T)result;
+		}
+		catch (ThrowableHolderException the) {
+			throw the.getCause();
+		}
+	}
+
+	private final PlatformTransactionManager _platformTransactionManager;
+
 	private class CallbackPreferringTransactionCallback
 		implements TransactionCallback<Object> {
 
-		private CallbackPreferringTransactionCallback(
-			TransactionAttribute transactionAttribute,
-			MethodInvocation methodInvocation) {
-
-			_transactionAttribute = transactionAttribute;
-			_methodInvocation = methodInvocation;
-		}
-
 		@Override
 		public Object doInTransaction(TransactionStatus transactionStatus) {
-			boolean newTransaction = transactionStatus.isNewTransaction();
+			TransactionStatusAdapter transactionStatusAdapter =
+				new TransactionStatusAdapter(transactionStatus);
 
-			if (newTransaction) {
-				TransactionalPortalCacheHelper.begin();
+			TransactionExecutorThreadLocal.pushTransactionExecutor(
+				CallbackPreferringTransactionExecutor.this);
 
-				TransactionCommitCallbackUtil.pushCallbackList();
-			}
+			TransactionLifecycleManager.fireTransactionCreatedEvent(
+				_transactionAttributeAdapter, transactionStatusAdapter);
 
 			boolean rollback = false;
 
 			try {
-				if (newTransaction) {
-					LastSessionRecorderUtil.syncLastSessionState();
-				}
-
-				return _methodInvocation.proceed();
+				return _unsafeSupplier.get();
 			}
 			catch (Throwable throwable) {
-				if (_transactionAttribute.rollbackOn(throwable)) {
-					if (newTransaction) {
-						TransactionalPortalCacheHelper.rollback();
+				if (_transactionAttributeAdapter.rollbackOn(throwable)) {
+					TransactionLifecycleManager.fireTransactionRollbackedEvent(
+						_transactionAttributeAdapter, transactionStatusAdapter,
+						throwable);
 
-						TransactionCommitCallbackUtil.popCallbackList();
-
-						EntityCacheUtil.clearLocalCache();
-						FinderCacheUtil.clearLocalCache();
-
+					if (transactionStatus.isNewTransaction()) {
 						rollback = true;
 					}
 
 					if (throwable instanceof RuntimeException) {
 						throw (RuntimeException)throwable;
 					}
-					else {
-						throw new ThrowableHolderException(throwable);
-					}
+
+					throw new ThrowableHolderException(throwable);
 				}
-				else {
-					return new ThrowableHolder(throwable);
-				}
+
+				return new ThrowableHolder(throwable);
 			}
 			finally {
-				if (newTransaction && !rollback) {
-					TransactionalPortalCacheHelper.commit();
-
-					invokeCallbacks();
+				if (!rollback) {
+					TransactionLifecycleManager.fireTransactionCommittedEvent(
+						_transactionAttributeAdapter, transactionStatusAdapter);
 				}
+
+				TransactionExecutorThreadLocal.popTransactionExecutor();
 			}
 		}
 
-		private MethodInvocation _methodInvocation;
-		private TransactionAttribute _transactionAttribute;
+		private CallbackPreferringTransactionCallback(
+			TransactionAttributeAdapter transactionAttributeAdapter,
+			UnsafeSupplier<Object, Throwable> unsafeSupplier) {
+
+			_transactionAttributeAdapter = transactionAttributeAdapter;
+			_unsafeSupplier = unsafeSupplier;
+		}
+
+		private final TransactionAttributeAdapter _transactionAttributeAdapter;
+		private final UnsafeSupplier<Object, Throwable> _unsafeSupplier;
 
 	}
 

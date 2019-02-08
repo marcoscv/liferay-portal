@@ -14,10 +14,10 @@
 
 package com.liferay.portal.servlet.filters.threadlocal;
 
-import com.liferay.portal.kernel.cache.Lifecycle;
-import com.liferay.portal.kernel.cache.ThreadLocalCacheManager;
+import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.portal.kernel.cache.thread.local.Lifecycle;
+import com.liferay.portal.kernel.cache.thread.local.ThreadLocalCacheManager;
 import com.liferay.portal.kernel.servlet.TryFinallyFilter;
-import com.liferay.portal.kernel.util.CentralizedThreadLocal;
 import com.liferay.portal.servlet.filters.BasePortalFilter;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,7 +32,7 @@ public class ThreadLocalFilter
 	@Override
 	public void doFilterFinally(
 		HttpServletRequest request, HttpServletResponse response,
-		Object ojbect) {
+		Object object) {
 
 		ThreadLocalCacheManager.clearAll(Lifecycle.REQUEST);
 
@@ -42,6 +42,8 @@ public class ThreadLocalFilter
 	@Override
 	public Object doFilterTry(
 		HttpServletRequest request, HttpServletResponse response) {
+
+		ThreadLocalFilterThreadLocal.setFilterInvoked();
 
 		return null;
 	}

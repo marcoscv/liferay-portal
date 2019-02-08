@@ -14,9 +14,9 @@
 
 package com.liferay.portal.sharepoint.methods;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.InstancePool;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.sharepoint.SharepointException;
 import com.liferay.portal.sharepoint.SharepointRequest;
 import com.liferay.portal.util.PropsUtil;
@@ -36,7 +36,7 @@ public class MethodFactory {
 	}
 
 	private MethodFactory() {
-		_methods = new HashMap<String, Object>();
+		_methods = new HashMap<>();
 
 		Method method = (Method)InstancePool.get(_CHECKOUT_METHOD_IMPL);
 
@@ -166,8 +166,8 @@ public class MethodFactory {
 			PropsUtil.get(MethodFactory.class.getName() + ".URL_TO_WEB_URL"),
 			UrlToWebUrlMethodImpl.class.getName());
 
-	private static MethodFactory _instance = new MethodFactory();
+	private static final MethodFactory _instance = new MethodFactory();
 
-	private Map<String, Object> _methods;
+	private final Map<String, Object> _methods;
 
 }

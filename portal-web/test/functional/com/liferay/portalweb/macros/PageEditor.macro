@@ -1,0 +1,168 @@
+definition {
+	macro addFragment {
+		PageEditor.expandFragmentCollection(collectionName = "${collectionName}");
+
+		Click.clickNoMouseOverNoWaitForVisible(
+			locator1 = "PageEditor#FRAGMENT_SIDEBAR_ADD_FRAGMENT_BUTTON",
+			key_fragmentName = "${fragmentName}"
+		);
+
+		AssertElementPresent(
+			locator1 = "Fragment#FRAGMENT_HEADER",
+			key_fragmentName = "${fragmentName}"
+		);
+	}
+
+	macro editFragmentImage {
+		MouseOver.mouseOverNotVisible(
+			locator1 = "Fragment#FRAGMENT_HEADER",
+			key_fragmentName = "${fragmentName}"
+		);
+
+		Click(
+			locator1 = "Fragment#EDITABLE_FIELD",
+			key_fragmentName = "${fragmentName}",
+			key_id = "${id}"
+		);
+
+		SelectFrame(locator1 = "IFrame#DIALOG");
+
+		AssertClick(locator1 = "Button#SELECT_FILE", value1 = "Select File");
+
+		SikuliClick(locator1 = "OS#FILE_DIALOG_BOX_TYPE_FILE_NAME_ICON_PNG");
+
+		SikuliUploadCommonFile(
+			locator1 = "OS#FILE_DIALOG_BOX_FILE_NAME_FIELD_PNG",
+			value1 = "${fileName}"
+		);
+
+		SelectFrameTop();
+
+		Click(locator1 = "Button#ADD");
+	}
+
+	macro editFragmentText {
+		MouseOver.mouseOverNotVisible(
+			locator1 = "Fragment#EDITABLE_FIELD",
+			key_fragmentName = "${fragmentName}",
+			key_id = "${id}"
+		);
+
+		Click(
+			locator1 = "Fragment#EDITABLE_FIELD",
+			key_fragmentName = "${fragmentName}",
+			key_id = "${id}"
+		);
+
+		if (IsElementPresent(locator1 = "Button#EDIT")) {
+			Button.clickEdit();
+		}
+
+		Type(
+			locator1 = "Fragment#EDITABLE_FIELD_CK_EDITOR",
+			value1 = "${text}",
+			key_fragmentName = "${fragmentName}",
+			key_id = "${id}"
+		);
+
+		Pause(locator1 = "3000");
+	}
+
+	macro expandFragmentCollection {
+		AssertVisible(
+			locator1 = "PageEditor#FRAGMENT_SIDEBAR_COLLECTION_PANEL",
+			key_collectionName = "${collectionName}"
+		);
+
+		if (IsElementPresent(locator1 = "PageEditor#FRAGMENT_SIDEBAR_COLLECTION_PANEL_COLLAPSED", key_collectionName = "${collectionName}")) {
+			AssertClick.assertTextClickCaseInsensitive(
+				locator1 = "PageEditor#FRAGMENT_SIDEBAR_COLLECTION_PANEL_COLLAPSED",
+				value1 = "${collectionName}",
+				key_collectionName = "${collectionName}"
+			);
+		}
+
+		AssertElementPresent(
+			locator1 = "PageEditor#FRAGMENT_SIDEBAR_COLLECTION_PANEL_EXPANDED",
+			key_collectionName = "${collectionName}"
+		);
+	}
+
+	macro gotoTab {
+		Click(
+			locator1 = "PageEditor#FRAGMENT_SIDEBAR_TAB_BUTTON",
+			key_tabName = "${tabName}"
+		);
+	}
+
+	macro removeFragment {
+		MouseOver.mouseOverNotVisible(
+			locator1 = "Fragment#FRAGMENT_HEADER",
+			key_fragmentName = "${fragmentName}"
+		);
+
+		Click(
+			locator1 = "Fragment#FRAGMENT_HEADER_DELETE_BUTTON",
+			key_fragmentName = "${fragmentName}"
+		);
+
+		AssertElementNotPresent(
+			locator1 = "Fragment#FRAGMENT_HEADER",
+			key_fragmentName = "${fragmentName}"
+		);
+	}
+
+	macro removeSection {
+		MouseOver.mouseOverNotVisible(
+			locator1 = "PageEditor#SECTION",
+			key_position = "${position}"
+		);
+
+		Click(
+			locator1 = "PageEditor#SECTION_HEADER_DELETE_BUTTON",
+			key_position = "${position}"
+		);
+	}
+
+	macro viewAutoSaveMessage {
+		AssertTextEquals.assertPartialText(
+			locator1 = "PageEditor#AUTOSAVE_MESSAGE",
+			value1 = "Changes saved at"
+		);
+	}
+
+	macro viewCollectionNotPresent {
+		AssertElementNotPresent(
+			locator1 = "PageEditor#FRAGMENT_SIDEBAR_COLLECTION_PANEL",
+			key_collectionName = "${collectionName}"
+		);
+	}
+
+	macro viewEditorEmpty {
+		AssertElementPresent(locator1 = "PageEditor#EMPTY_MESSAGE");
+	}
+
+	macro viewFragment {
+		AssertElementPresent(
+			locator1 = "Fragment#FRAGMENT_HEADER",
+			key_fragmentName = "${fragmentName}"
+		);
+	}
+
+	macro viewFragmentEditableText {
+		AssertTextEquals(
+			locator1 = "Fragment#EDITABLE_FIELD",
+			value1 = "${editableText}",
+			key_fragmentName = "${fragmentName}",
+			key_id = "${id}"
+		);
+	}
+
+	macro viewFragmentOrder {
+		AssertElementPresent(
+			locator1 = "Fragment#FRAGMENT_HEADER_POSITION",
+			key_fragmentName = "${fragmentName}",
+			key_position = "${position}"
+		);
+	}
+}

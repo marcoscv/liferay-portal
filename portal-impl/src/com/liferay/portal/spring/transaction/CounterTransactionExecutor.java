@@ -14,112 +14,139 @@
 
 package com.liferay.portal.spring.transaction;
 
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-
-import org.aopalliance.intercept.MethodInvocation;
+import com.liferay.petra.function.UnsafeSupplier;
 
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.TransactionSystemException;
-import org.springframework.transaction.interceptor.TransactionAttribute;
 
 /**
  * @author Shuyang Zhou
  */
-public class CounterTransactionExecutor extends BaseTransactionExecutor {
+public class CounterTransactionExecutor
+	implements TransactionExecutor, TransactionHandler {
+
+	public CounterTransactionExecutor(
+		PlatformTransactionManager platformTransactionManager) {
+
+		_platformTransactionManager = platformTransactionManager;
+	}
 
 	@Override
-	public Object execute(
-			PlatformTransactionManager platformTransactionManager,
-			TransactionAttribute transactionAttribute,
-			MethodInvocation methodInvocation)
+	public void commit(
+		TransactionAttributeAdapter transactionAttributeAdapter,
+		TransactionStatusAdapter transactionStatusAdapter) {
+
+		_commit(_platformTransactionManager, transactionStatusAdapter);
+	}
+
+	@Override
+	public <T> T execute(
+			TransactionAttributeAdapter transactionAttributeAdapter,
+			UnsafeSupplier<T, Throwable> unsafeSupplier)
 		throws Throwable {
 
-		TransactionStatus transactionStatus =
-			platformTransactionManager.getTransaction(transactionAttribute);
+		return _execute(
+			_platformTransactionManager, transactionAttributeAdapter,
+			unsafeSupplier);
+	}
 
-		Object returnValue = null;
+	@Override
+	public PlatformTransactionManager getPlatformTransactionManager() {
+		return _platformTransactionManager;
+	}
+
+	@Override
+	public void rollback(
+			Throwable throwable,
+			TransactionAttributeAdapter transactionAttributeAdapter,
+			TransactionStatusAdapter transactionStatusAdapter)
+		throws Throwable {
+
+		throw _rollback(
+			_platformTransactionManager, throwable, transactionAttributeAdapter,
+			transactionStatusAdapter);
+	}
+
+	@Override
+	public TransactionStatusAdapter start(
+		TransactionAttributeAdapter transactionAttributeAdapter) {
+
+		return _start(_platformTransactionManager, transactionAttributeAdapter);
+	}
+
+	private void _commit(
+		PlatformTransactionManager platformTransactionManager,
+		TransactionStatusAdapter transactionStatusAdapter) {
+
+		platformTransactionManager.commit(
+			transactionStatusAdapter.getTransactionStatus());
+	}
+
+	private <T> T _execute(
+			PlatformTransactionManager platformTransactionManager,
+			TransactionAttributeAdapter transactionAttributeAdapter,
+			UnsafeSupplier<T, Throwable> unsafeSupplier)
+		throws Throwable {
+
+		TransactionStatusAdapter transactionStatusAdapter = _start(
+			platformTransactionManager, transactionAttributeAdapter);
+
+		T returnValue = null;
 
 		try {
-			returnValue = methodInvocation.proceed();
+			returnValue = unsafeSupplier.get();
 		}
 		catch (Throwable throwable) {
-			processThrowable(
-				platformTransactionManager, throwable, transactionAttribute,
-				transactionStatus);
+			throw _rollback(
+				platformTransactionManager, throwable,
+				transactionAttributeAdapter, transactionStatusAdapter);
 		}
 
-		processCommit(platformTransactionManager, transactionStatus);
+		_commit(platformTransactionManager, transactionStatusAdapter);
 
 		return returnValue;
 	}
 
-	protected void processCommit(
+	private Throwable _rollback(
 		PlatformTransactionManager platformTransactionManager,
-		TransactionStatus transactionStatus) {
+		Throwable throwable,
+		TransactionAttributeAdapter transactionAttributeAdapter,
+		TransactionStatusAdapter transactionStatusAdapter) {
 
-		try {
-			platformTransactionManager.commit(transactionStatus);
-		}
-		catch (TransactionSystemException tse) {
-			_log.error(
-				"Application exception overridden by commit exception", tse);
-
-			throw tse;
-		}
-		catch (RuntimeException re) {
-			_log.error(
-				"Application exception overridden by commit exception", re);
-
-			throw re;
-		}
-		catch (Error e) {
-			_log.error("Application exception overridden by commit error", e);
-
-			throw e;
-		}
-	}
-
-	protected void processThrowable(
-			PlatformTransactionManager platformTransactionManager,
-			Throwable throwable, TransactionAttribute transactionAttribute,
-			TransactionStatus transactionStatus)
-		throws Throwable {
-
-		if (transactionAttribute.rollbackOn(throwable)) {
+		if (transactionAttributeAdapter.rollbackOn(throwable)) {
 			try {
-				platformTransactionManager.rollback(transactionStatus);
+				platformTransactionManager.rollback(
+					transactionStatusAdapter.getTransactionStatus());
 			}
-			catch (TransactionSystemException tse) {
-				_log.error(
-					"Application exception overridden by rollback exception",
-					tse);
+			catch (Throwable t) {
+				t.addSuppressed(throwable);
 
-				throw tse;
-			}
-			catch (RuntimeException re) {
-				_log.error(
-					"Application exception overridden by rollback exception",
-					re);
-
-				throw re;
-			}
-			catch (Error e) {
-				_log.error(
-					"Application exception overridden by rollback error", e);
-
-				throw e;
+				throw t;
 			}
 		}
 		else {
-			processCommit(platformTransactionManager, transactionStatus);
+			try {
+				platformTransactionManager.commit(
+					transactionStatusAdapter.getTransactionStatus());
+			}
+			catch (Throwable t) {
+				t.addSuppressed(throwable);
+
+				throw t;
+			}
 		}
 
-		throw throwable;
+		return throwable;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
-		CounterTransactionExecutor.class);
+	private TransactionStatusAdapter _start(
+		PlatformTransactionManager platformTransactionManager,
+		TransactionAttributeAdapter transactionAttributeAdapter) {
+
+		return new TransactionStatusAdapter(
+			platformTransactionManager.getTransaction(
+				transactionAttributeAdapter));
+	}
+
+	private final PlatformTransactionManager _platformTransactionManager;
 
 }

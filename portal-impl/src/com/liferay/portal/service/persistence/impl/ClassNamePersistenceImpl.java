@@ -14,8 +14,11 @@
 
 package com.liferay.portal.service.persistence.impl;
 
-import com.liferay.portal.NoSuchClassNameException;
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.petra.string.StringBundler;
+
+import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -23,33 +26,25 @@ import com.liferay.portal.kernel.dao.orm.Query;
 import com.liferay.portal.kernel.dao.orm.QueryPos;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.Session;
+import com.liferay.portal.kernel.exception.NoSuchClassNameException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.InstanceFactory;
+import com.liferay.portal.kernel.model.ClassName;
+import com.liferay.portal.kernel.service.persistence.ClassNamePersistence;
+import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.OrderByComparator;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.ClassName;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.ModelListener;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.model.impl.ClassNameImpl;
 import com.liferay.portal.model.impl.ClassNameModelImpl;
-import com.liferay.portal.service.persistence.ClassNamePersistence;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
+import java.lang.reflect.InvocationHandler;
+
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 
 /**
  * The persistence implementation for the class name service.
@@ -60,9 +55,10 @@ import java.util.Set;
  *
  * @author Brian Wing Shun Chan
  * @see ClassNamePersistence
- * @see ClassNameUtil
+ * @see com.liferay.portal.kernel.service.persistence.ClassNameUtil
  * @generated
  */
+@ProviderType
 public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	implements ClassNamePersistence {
 	/*
@@ -75,31 +71,18 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 		".List1";
 	public static final String FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION = FINDER_CLASS_NAME_ENTITY +
 		".List2";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_ALL = new FinderPath(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
-			ClassNameModelImpl.FINDER_CACHE_ENABLED, ClassNameImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL = new FinderPath(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
-			ClassNameModelImpl.FINDER_CACHE_ENABLED, ClassNameImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0]);
-	public static final FinderPath FINDER_PATH_COUNT_ALL = new FinderPath(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
-			ClassNameModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll", new String[0]);
-	public static final FinderPath FINDER_PATH_FETCH_BY_VALUE = new FinderPath(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
-			ClassNameModelImpl.FINDER_CACHE_ENABLED, ClassNameImpl.class,
-			FINDER_CLASS_NAME_ENTITY, "fetchByValue",
-			new String[] { String.class.getName() },
-			ClassNameModelImpl.VALUE_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_VALUE = new FinderPath(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
-			ClassNameModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByValue",
-			new String[] { String.class.getName() });
+	private FinderPath _finderPathWithPaginationFindAll;
+	private FinderPath _finderPathWithoutPaginationFindAll;
+	private FinderPath _finderPathCountAll;
+	private FinderPath _finderPathFetchByValue;
+	private FinderPath _finderPathCountByValue;
 
 	/**
-	 * Returns the class name where value = &#63; or throws a {@link com.liferay.portal.NoSuchClassNameException} if it could not be found.
+	 * Returns the class name where value = &#63; or throws a {@link NoSuchClassNameException} if it could not be found.
 	 *
 	 * @param value the value
 	 * @return the matching class name
-	 * @throws com.liferay.portal.NoSuchClassNameException if a matching class name could not be found
+	 * @throws NoSuchClassNameException if a matching class name could not be found
 	 */
 	@Override
 	public ClassName findByValue(String value) throws NoSuchClassNameException {
@@ -113,10 +96,10 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 			msg.append("value=");
 			msg.append(value);
 
-			msg.append(StringPool.CLOSE_CURLY_BRACE);
+			msg.append("}");
 
-			if (_log.isWarnEnabled()) {
-				_log.warn(msg.toString());
+			if (_log.isDebugEnabled()) {
+				_log.debug(msg.toString());
 			}
 
 			throw new NoSuchClassNameException(msg.toString());
@@ -140,24 +123,26 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	 * Returns the class name where value = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
 	 *
 	 * @param value the value
-	 * @param retrieveFromCache whether to use the finder cache
+	 * @param retrieveFromCache whether to retrieve from the finder cache
 	 * @return the matching class name, or <code>null</code> if a matching class name could not be found
 	 */
 	@Override
 	public ClassName fetchByValue(String value, boolean retrieveFromCache) {
+		value = Objects.toString(value, "");
+
 		Object[] finderArgs = new Object[] { value };
 
 		Object result = null;
 
 		if (retrieveFromCache) {
-			result = FinderCacheUtil.getResult(FINDER_PATH_FETCH_BY_VALUE,
+			result = FinderCacheUtil.getResult(_finderPathFetchByValue,
 					finderArgs, this);
 		}
 
 		if (result instanceof ClassName) {
 			ClassName className = (ClassName)result;
 
-			if (!Validator.equals(value, className.getValue())) {
+			if (!Objects.equals(value, className.getValue())) {
 				result = null;
 			}
 		}
@@ -169,10 +154,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 
 			boolean bindValue = false;
 
-			if (value == null) {
-				query.append(_FINDER_COLUMN_VALUE_VALUE_1);
-			}
-			else if (value.equals(StringPool.BLANK)) {
+			if (value.isEmpty()) {
 				query.append(_FINDER_COLUMN_VALUE_VALUE_3);
 			}
 			else {
@@ -199,7 +181,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 				List<ClassName> list = q.list();
 
 				if (list.isEmpty()) {
-					FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_VALUE,
+					FinderCacheUtil.putResult(_finderPathFetchByValue,
 						finderArgs, list);
 				}
 				else {
@@ -208,17 +190,10 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 					result = className;
 
 					cacheResult(className);
-
-					if ((className.getValue() == null) ||
-							!className.getValue().equals(value)) {
-						FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_VALUE,
-							finderArgs, className);
-					}
 				}
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_VALUE,
-					finderArgs);
+				FinderCacheUtil.removeResult(_finderPathFetchByValue, finderArgs);
 
 				throw processException(e);
 			}
@@ -257,7 +232,9 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	 */
 	@Override
 	public int countByValue(String value) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_VALUE;
+		value = Objects.toString(value, "");
+
+		FinderPath finderPath = _finderPathCountByValue;
 
 		Object[] finderArgs = new Object[] { value };
 
@@ -271,10 +248,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 
 			boolean bindValue = false;
 
-			if (value == null) {
-				query.append(_FINDER_COLUMN_VALUE_VALUE_1);
-			}
-			else if (value.equals(StringPool.BLANK)) {
+			if (value.isEmpty()) {
 				query.append(_FINDER_COLUMN_VALUE_VALUE_3);
 			}
 			else {
@@ -315,12 +289,15 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 		return count.intValue();
 	}
 
-	private static final String _FINDER_COLUMN_VALUE_VALUE_1 = "className.value IS NULL";
 	private static final String _FINDER_COLUMN_VALUE_VALUE_2 = "className.value = ?";
 	private static final String _FINDER_COLUMN_VALUE_VALUE_3 = "(className.value IS NULL OR className.value = '')";
 
 	public ClassNamePersistenceImpl() {
 		setModelClass(ClassName.class);
+
+		setModelImplClass(ClassNameImpl.class);
+		setModelPKClass(long.class);
+		setEntityCacheEnabled(ClassNameModelImpl.ENTITY_CACHE_ENABLED);
 	}
 
 	/**
@@ -333,7 +310,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 		EntityCacheUtil.putResult(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
 			ClassNameImpl.class, className.getPrimaryKey(), className);
 
-		FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_VALUE,
+		FinderCacheUtil.putResult(_finderPathFetchByValue,
 			new Object[] { className.getValue() }, className);
 
 		className.resetOriginalValues();
@@ -362,15 +339,11 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	 * Clears the cache for all class names.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
-		if (_HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE) {
-			CacheRegistryUtil.clear(ClassNameImpl.class.getName());
-		}
-
 		EntityCacheUtil.clearCache(ClassNameImpl.class);
 
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
@@ -382,7 +355,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	 * Clears the cache for the class name.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
@@ -393,7 +366,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
-		clearUniqueFindersCache(className);
+		clearUniqueFindersCache((ClassNameModelImpl)className, true);
 	}
 
 	@Override
@@ -405,48 +378,35 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 			EntityCacheUtil.removeResult(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
 				ClassNameImpl.class, className.getPrimaryKey());
 
-			clearUniqueFindersCache(className);
+			clearUniqueFindersCache((ClassNameModelImpl)className, true);
 		}
 	}
 
-	protected void cacheUniqueFindersCache(ClassName className) {
-		if (className.isNew()) {
-			Object[] args = new Object[] { className.getValue() };
+	protected void cacheUniqueFindersCache(
+		ClassNameModelImpl classNameModelImpl) {
+		Object[] args = new Object[] { classNameModelImpl.getValue() };
 
-			FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_VALUE, args,
-				Long.valueOf(1));
-			FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_VALUE, args,
-				className);
-		}
-		else {
-			ClassNameModelImpl classNameModelImpl = (ClassNameModelImpl)className;
-
-			if ((classNameModelImpl.getColumnBitmask() &
-					FINDER_PATH_FETCH_BY_VALUE.getColumnBitmask()) != 0) {
-				Object[] args = new Object[] { className.getValue() };
-
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_VALUE, args,
-					Long.valueOf(1));
-				FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_VALUE, args,
-					className);
-			}
-		}
+		FinderCacheUtil.putResult(_finderPathCountByValue, args,
+			Long.valueOf(1), false);
+		FinderCacheUtil.putResult(_finderPathFetchByValue, args,
+			classNameModelImpl, false);
 	}
 
-	protected void clearUniqueFindersCache(ClassName className) {
-		ClassNameModelImpl classNameModelImpl = (ClassNameModelImpl)className;
+	protected void clearUniqueFindersCache(
+		ClassNameModelImpl classNameModelImpl, boolean clearCurrent) {
+		if (clearCurrent) {
+			Object[] args = new Object[] { classNameModelImpl.getValue() };
 
-		Object[] args = new Object[] { className.getValue() };
-
-		FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_VALUE, args);
-		FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_VALUE, args);
+			FinderCacheUtil.removeResult(_finderPathCountByValue, args);
+			FinderCacheUtil.removeResult(_finderPathFetchByValue, args);
+		}
 
 		if ((classNameModelImpl.getColumnBitmask() &
-				FINDER_PATH_FETCH_BY_VALUE.getColumnBitmask()) != 0) {
-			args = new Object[] { classNameModelImpl.getOriginalValue() };
+				_finderPathFetchByValue.getColumnBitmask()) != 0) {
+			Object[] args = new Object[] { classNameModelImpl.getOriginalValue() };
 
-			FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_VALUE, args);
-			FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_VALUE, args);
+			FinderCacheUtil.removeResult(_finderPathCountByValue, args);
+			FinderCacheUtil.removeResult(_finderPathFetchByValue, args);
 		}
 	}
 
@@ -471,7 +431,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	 *
 	 * @param classNameId the primary key of the class name
 	 * @return the class name that was removed
-	 * @throws com.liferay.portal.NoSuchClassNameException if a class name with the primary key could not be found
+	 * @throws NoSuchClassNameException if a class name with the primary key could not be found
 	 */
 	@Override
 	public ClassName remove(long classNameId) throws NoSuchClassNameException {
@@ -483,7 +443,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	 *
 	 * @param primaryKey the primary key of the class name
 	 * @return the class name that was removed
-	 * @throws com.liferay.portal.NoSuchClassNameException if a class name with the primary key could not be found
+	 * @throws NoSuchClassNameException if a class name with the primary key could not be found
 	 */
 	@Override
 	public ClassName remove(Serializable primaryKey)
@@ -497,8 +457,8 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 					primaryKey);
 
 			if (className == null) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+				if (_log.isDebugEnabled()) {
+					_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 				}
 
 				throw new NoSuchClassNameException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -520,8 +480,6 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 
 	@Override
 	protected ClassName removeImpl(ClassName className) {
-		className = toUnwrappedModel(className);
-
 		Session session = null;
 
 		try {
@@ -551,10 +509,26 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	}
 
 	@Override
-	public ClassName updateImpl(com.liferay.portal.model.ClassName className) {
-		className = toUnwrappedModel(className);
-
+	public ClassName updateImpl(ClassName className) {
 		boolean isNew = className.isNew();
+
+		if (!(className instanceof ClassNameModelImpl)) {
+			InvocationHandler invocationHandler = null;
+
+			if (ProxyUtil.isProxyClass(className.getClass())) {
+				invocationHandler = ProxyUtil.getInvocationHandler(className);
+
+				throw new IllegalArgumentException(
+					"Implement ModelWrapper in className proxy " +
+					invocationHandler.getClass());
+			}
+
+			throw new IllegalArgumentException(
+				"Implement ModelWrapper in custom ClassName implementation " +
+				className.getClass());
+		}
+
+		ClassNameModelImpl classNameModelImpl = (ClassNameModelImpl)className;
 
 		Session session = null;
 
@@ -567,7 +541,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 				className.setNew(false);
 			}
 			else {
-				session.merge(className);
+				className = (ClassName)session.merge(className);
 			}
 		}
 		catch (Exception e) {
@@ -579,44 +553,33 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 
-		if (isNew || !ClassNameModelImpl.COLUMN_BITMASK_ENABLED) {
+		if (!ClassNameModelImpl.COLUMN_BITMASK_ENABLED) {
 			FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		}
+		else
+		 if (isNew) {
+			FinderCacheUtil.removeResult(_finderPathCountAll, FINDER_ARGS_EMPTY);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindAll,
+				FINDER_ARGS_EMPTY);
 		}
 
 		EntityCacheUtil.putResult(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
 			ClassNameImpl.class, className.getPrimaryKey(), className, false);
 
-		clearUniqueFindersCache(className);
-		cacheUniqueFindersCache(className);
+		clearUniqueFindersCache(classNameModelImpl, false);
+		cacheUniqueFindersCache(classNameModelImpl);
 
 		className.resetOriginalValues();
 
 		return className;
 	}
 
-	protected ClassName toUnwrappedModel(ClassName className) {
-		if (className instanceof ClassNameImpl) {
-			return className;
-		}
-
-		ClassNameImpl classNameImpl = new ClassNameImpl();
-
-		classNameImpl.setNew(className.isNew());
-		classNameImpl.setPrimaryKey(className.getPrimaryKey());
-
-		classNameImpl.setMvccVersion(className.getMvccVersion());
-		classNameImpl.setClassNameId(className.getClassNameId());
-		classNameImpl.setValue(className.getValue());
-
-		return classNameImpl;
-	}
-
 	/**
-	 * Returns the class name with the primary key or throws a {@link com.liferay.portal.NoSuchModelException} if it could not be found.
+	 * Returns the class name with the primary key or throws a {@link com.liferay.portal.kernel.exception.NoSuchModelException} if it could not be found.
 	 *
 	 * @param primaryKey the primary key of the class name
 	 * @return the class name
-	 * @throws com.liferay.portal.NoSuchClassNameException if a class name with the primary key could not be found
+	 * @throws NoSuchClassNameException if a class name with the primary key could not be found
 	 */
 	@Override
 	public ClassName findByPrimaryKey(Serializable primaryKey)
@@ -624,8 +587,8 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 		ClassName className = fetchByPrimaryKey(primaryKey);
 
 		if (className == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+			if (_log.isDebugEnabled()) {
+				_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 			}
 
 			throw new NoSuchClassNameException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -636,62 +599,16 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	}
 
 	/**
-	 * Returns the class name with the primary key or throws a {@link com.liferay.portal.NoSuchClassNameException} if it could not be found.
+	 * Returns the class name with the primary key or throws a {@link NoSuchClassNameException} if it could not be found.
 	 *
 	 * @param classNameId the primary key of the class name
 	 * @return the class name
-	 * @throws com.liferay.portal.NoSuchClassNameException if a class name with the primary key could not be found
+	 * @throws NoSuchClassNameException if a class name with the primary key could not be found
 	 */
 	@Override
 	public ClassName findByPrimaryKey(long classNameId)
 		throws NoSuchClassNameException {
 		return findByPrimaryKey((Serializable)classNameId);
-	}
-
-	/**
-	 * Returns the class name with the primary key or returns <code>null</code> if it could not be found.
-	 *
-	 * @param primaryKey the primary key of the class name
-	 * @return the class name, or <code>null</code> if a class name with the primary key could not be found
-	 */
-	@Override
-	public ClassName fetchByPrimaryKey(Serializable primaryKey) {
-		ClassName className = (ClassName)EntityCacheUtil.getResult(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
-				ClassNameImpl.class, primaryKey);
-
-		if (className == _nullClassName) {
-			return null;
-		}
-
-		if (className == null) {
-			Session session = null;
-
-			try {
-				session = openSession();
-
-				className = (ClassName)session.get(ClassNameImpl.class,
-						primaryKey);
-
-				if (className != null) {
-					cacheResult(className);
-				}
-				else {
-					EntityCacheUtil.putResult(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
-						ClassNameImpl.class, primaryKey, _nullClassName);
-				}
-			}
-			catch (Exception e) {
-				EntityCacheUtil.removeResult(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
-					ClassNameImpl.class, primaryKey);
-
-				throw processException(e);
-			}
-			finally {
-				closeSession(session);
-			}
-		}
-
-		return className;
 	}
 
 	/**
@@ -703,98 +620,6 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	@Override
 	public ClassName fetchByPrimaryKey(long classNameId) {
 		return fetchByPrimaryKey((Serializable)classNameId);
-	}
-
-	@Override
-	public Map<Serializable, ClassName> fetchByPrimaryKeys(
-		Set<Serializable> primaryKeys) {
-		if (primaryKeys.isEmpty()) {
-			return Collections.emptyMap();
-		}
-
-		Map<Serializable, ClassName> map = new HashMap<Serializable, ClassName>();
-
-		if (primaryKeys.size() == 1) {
-			Iterator<Serializable> iterator = primaryKeys.iterator();
-
-			Serializable primaryKey = iterator.next();
-
-			ClassName className = fetchByPrimaryKey(primaryKey);
-
-			if (className != null) {
-				map.put(primaryKey, className);
-			}
-
-			return map;
-		}
-
-		Set<Serializable> uncachedPrimaryKeys = null;
-
-		for (Serializable primaryKey : primaryKeys) {
-			ClassName className = (ClassName)EntityCacheUtil.getResult(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
-					ClassNameImpl.class, primaryKey);
-
-			if (className == null) {
-				if (uncachedPrimaryKeys == null) {
-					uncachedPrimaryKeys = new HashSet<Serializable>();
-				}
-
-				uncachedPrimaryKeys.add(primaryKey);
-			}
-			else {
-				map.put(primaryKey, className);
-			}
-		}
-
-		if (uncachedPrimaryKeys == null) {
-			return map;
-		}
-
-		StringBundler query = new StringBundler((uncachedPrimaryKeys.size() * 2) +
-				1);
-
-		query.append(_SQL_SELECT_CLASSNAME_WHERE_PKS_IN);
-
-		for (Serializable primaryKey : uncachedPrimaryKeys) {
-			query.append(String.valueOf(primaryKey));
-
-			query.append(StringPool.COMMA);
-		}
-
-		query.setIndex(query.index() - 1);
-
-		query.append(StringPool.CLOSE_PARENTHESIS);
-
-		String sql = query.toString();
-
-		Session session = null;
-
-		try {
-			session = openSession();
-
-			Query q = session.createQuery(sql);
-
-			for (ClassName className : (List<ClassName>)q.list()) {
-				map.put(className.getPrimaryKeyObj(), className);
-
-				cacheResult(className);
-
-				uncachedPrimaryKeys.remove(className.getPrimaryKeyObj());
-			}
-
-			for (Serializable primaryKey : uncachedPrimaryKeys) {
-				EntityCacheUtil.putResult(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
-					ClassNameImpl.class, primaryKey, _nullClassName);
-			}
-		}
-		catch (Exception e) {
-			throw processException(e);
-		}
-		finally {
-			closeSession(session);
-		}
-
-		return map;
 	}
 
 	/**
@@ -811,7 +636,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	 * Returns a range of all the class names.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ClassNameModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ClassNameModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of class names
@@ -827,7 +652,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	 * Returns an ordered range of all the class names.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ClassNameModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ClassNameModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of class names
@@ -837,7 +662,27 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	 */
 	@Override
 	public List<ClassName> findAll(int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<ClassName> orderByComparator) {
+		return findAll(start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the class names.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ClassNameModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param start the lower bound of the range of class names
+	 * @param end the upper bound of the range of class names (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of class names
+	 */
+	@Override
+	public List<ClassName> findAll(int start, int end,
+		OrderByComparator<ClassName> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -845,16 +690,20 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL;
+			finderPath = _finderPathWithoutPaginationFindAll;
 			finderArgs = FINDER_ARGS_EMPTY;
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_ALL;
+			finderPath = _finderPathWithPaginationFindAll;
 			finderArgs = new Object[] { start, end, orderByComparator };
 		}
 
-		List<ClassName> list = (List<ClassName>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<ClassName> list = null;
+
+		if (retrieveFromCache) {
+			list = (List<ClassName>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
+		}
 
 		if (list == null) {
 			StringBundler query = null;
@@ -862,7 +711,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 
 			if (orderByComparator != null) {
 				query = new StringBundler(2 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 
 				query.append(_SQL_SELECT_CLASSNAME);
 
@@ -934,7 +783,7 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)FinderCacheUtil.getResult(FINDER_PATH_COUNT_ALL,
+		Long count = (Long)FinderCacheUtil.getResult(_finderPathCountAll,
 				FINDER_ARGS_EMPTY, this);
 
 		if (count == null) {
@@ -947,11 +796,11 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_ALL,
+				FinderCacheUtil.putResult(_finderPathCountAll,
 					FINDER_ARGS_EMPTY, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_ALL,
+				FinderCacheUtil.removeResult(_finderPathCountAll,
 					FINDER_ARGS_EMPTY);
 
 				throw processException(e);
@@ -964,29 +813,54 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 		return count.intValue();
 	}
 
+	@Override
+	protected EntityCache getEntityCache() {
+		return EntityCacheUtil.getEntityCache();
+	}
+
+	@Override
+	protected String getPKDBName() {
+		return "classNameId";
+	}
+
+	@Override
+	protected String getSelectSQL() {
+		return _SQL_SELECT_CLASSNAME;
+	}
+
+	@Override
+	protected Map<String, Integer> getTableColumnsMap() {
+		return ClassNameModelImpl.TABLE_COLUMNS_MAP;
+	}
+
 	/**
 	 * Initializes the class name persistence.
 	 */
 	public void afterPropertiesSet() {
-		String[] listenerClassNames = StringUtil.split(GetterUtil.getString(
-					com.liferay.portal.util.PropsUtil.get(
-						"value.object.listener.com.liferay.portal.model.ClassName")));
+		_finderPathWithPaginationFindAll = new FinderPath(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
+				ClassNameModelImpl.FINDER_CACHE_ENABLED, ClassNameImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
 
-		if (listenerClassNames.length > 0) {
-			try {
-				List<ModelListener<ClassName>> listenersList = new ArrayList<ModelListener<ClassName>>();
+		_finderPathWithoutPaginationFindAll = new FinderPath(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
+				ClassNameModelImpl.FINDER_CACHE_ENABLED, ClassNameImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
+				new String[0]);
 
-				for (String listenerClassName : listenerClassNames) {
-					listenersList.add((ModelListener<ClassName>)InstanceFactory.newInstance(
-							getClassLoader(), listenerClassName));
-				}
+		_finderPathCountAll = new FinderPath(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
+				ClassNameModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
+				new String[0]);
 
-				listeners = listenersList.toArray(new ModelListener[listenersList.size()]);
-			}
-			catch (Exception e) {
-				_log.error(e);
-			}
-		}
+		_finderPathFetchByValue = new FinderPath(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
+				ClassNameModelImpl.FINDER_CACHE_ENABLED, ClassNameImpl.class,
+				FINDER_CLASS_NAME_ENTITY, "fetchByValue",
+				new String[] { String.class.getName() },
+				ClassNameModelImpl.VALUE_COLUMN_BITMASK);
+
+		_finderPathCountByValue = new FinderPath(ClassNameModelImpl.ENTITY_CACHE_ENABLED,
+				ClassNameModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByValue",
+				new String[] { String.class.getName() });
 	}
 
 	public void destroy() {
@@ -997,43 +871,11 @@ public class ClassNamePersistenceImpl extends BasePersistenceImpl<ClassName>
 	}
 
 	private static final String _SQL_SELECT_CLASSNAME = "SELECT className FROM ClassName className";
-	private static final String _SQL_SELECT_CLASSNAME_WHERE_PKS_IN = "SELECT className FROM ClassName className WHERE classNameId IN (";
 	private static final String _SQL_SELECT_CLASSNAME_WHERE = "SELECT className FROM ClassName className WHERE ";
 	private static final String _SQL_COUNT_CLASSNAME = "SELECT COUNT(className) FROM ClassName className";
 	private static final String _SQL_COUNT_CLASSNAME_WHERE = "SELECT COUNT(className) FROM ClassName className WHERE ";
 	private static final String _ORDER_BY_ENTITY_ALIAS = "className.";
 	private static final String _NO_SUCH_ENTITY_WITH_PRIMARY_KEY = "No ClassName exists with the primary key ";
 	private static final String _NO_SUCH_ENTITY_WITH_KEY = "No ClassName exists with the key {";
-	private static final boolean _HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE = com.liferay.portal.util.PropsValues.HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE;
-	private static Log _log = LogFactoryUtil.getLog(ClassNamePersistenceImpl.class);
-	private static ClassName _nullClassName = new ClassNameImpl() {
-			@Override
-			public Object clone() {
-				return this;
-			}
-
-			@Override
-			public CacheModel<ClassName> toCacheModel() {
-				return _nullClassNameCacheModel;
-			}
-		};
-
-	private static CacheModel<ClassName> _nullClassNameCacheModel = new NullCacheModel();
-
-	private static class NullCacheModel implements CacheModel<ClassName>,
-		MVCCModel {
-		@Override
-		public long getMvccVersion() {
-			return 0;
-		}
-
-		@Override
-		public void setMvccVersion(long mvccVersion) {
-		}
-
-		@Override
-		public ClassName toEntityModel() {
-			return _nullClassName;
-		}
-	}
+	private static final Log _log = LogFactoryUtil.getLog(ClassNamePersistenceImpl.class);
 }

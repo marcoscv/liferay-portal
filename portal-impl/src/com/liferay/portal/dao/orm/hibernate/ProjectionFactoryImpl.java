@@ -18,7 +18,6 @@ import com.liferay.portal.kernel.dao.orm.Projection;
 import com.liferay.portal.kernel.dao.orm.ProjectionFactory;
 import com.liferay.portal.kernel.dao.orm.ProjectionList;
 import com.liferay.portal.kernel.dao.orm.Type;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.util.ArrayUtil;
 
 import org.hibernate.criterion.Projections;
@@ -26,7 +25,6 @@ import org.hibernate.criterion.Projections;
 /**
  * @author Brian Wing Shun Chan
  */
-@DoPrivileged
 public class ProjectionFactoryImpl implements ProjectionFactory {
 
 	@Override
@@ -88,6 +86,28 @@ public class ProjectionFactoryImpl implements ProjectionFactory {
 	@Override
 	public Projection rowCount() {
 		return new ProjectionImpl(Projections.rowCount());
+	}
+
+	@Override
+	public Projection sqlGroupProjection(
+		String sql, String groupBy, String[] columnAliases, Type[] types) {
+
+		if (ArrayUtil.isEmpty(types)) {
+			return new ProjectionImpl(
+				Projections.sqlGroupProjection(
+					sql, groupBy, columnAliases, null));
+		}
+
+		org.hibernate.type.Type[] hibernateTypes =
+			new org.hibernate.type.Type[types.length];
+
+		for (int i = 0; i < types.length; i++) {
+			hibernateTypes[i] = TypeTranslator.translate(types[i]);
+		}
+
+		return new ProjectionImpl(
+			Projections.sqlGroupProjection(
+				sql, groupBy, columnAliases, hibernateTypes));
 	}
 
 	@Override

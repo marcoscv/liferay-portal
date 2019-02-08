@@ -14,16 +14,16 @@
 
 package com.liferay.portal.json;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONIncludesManagerUtil;
 import com.liferay.portal.kernel.json.JSONSerializer;
+import com.liferay.portal.kernel.model.RoleConstants;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.HitsImpl;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.permission.ModelPermissions;
 import com.liferay.portal.kernel.util.LocalizationUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.util.LocalizationImpl;
-import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
-import com.liferay.portlet.dynamicdatamapping.model.impl.DDMStructureImpl;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -40,12 +40,6 @@ public class JSONSerializerTest {
 
 		jsonFactoryUtil.setJSONFactory(new JSONFactoryImpl());
 
-		JSONIncludesManagerUtil jsonIncludesManagerUtil =
-			new JSONIncludesManagerUtil();
-
-		jsonIncludesManagerUtil.setJSONIncludesManager(
-			new JSONIncludesManagerImpl());
-
 		LocalizationUtil localizationUtil = new LocalizationUtil();
 
 		localizationUtil.setLocalization(new LocalizationImpl());
@@ -53,17 +47,17 @@ public class JSONSerializerTest {
 
 	@Test
 	public void testSerializeDDMStructure() {
-		DDMStructure ddmStructure = new DDMStructureImpl();
-
-		ddmStructure.setXsd("value");
-
 		JSONSerializer jsonSerializer = JSONFactoryUtil.createJSONSerializer();
 
 		jsonSerializer.exclude("*.class");
 
-		String json = jsonSerializer.serialize(ddmStructure);
+		TestClass testClass = new TestClass();
 
-		Assert.assertTrue(json.contains("\"xsd\":\"value\""));
+		testClass.setName("test name");
+
+		String json = jsonSerializer.serialize(testClass);
+
+		Assert.assertTrue(json, json.contains("\"name\":\"test name\""));
 	}
 
 	@Test
@@ -76,13 +70,78 @@ public class JSONSerializerTest {
 
 		json = json.replace(StringPool.SPACE, StringPool.BLANK);
 
-		Assert.assertTrue(json.contains("\"docs\":null"));
-		Assert.assertFalse(json.contains("\"query\""));
-		Assert.assertTrue(json.contains("\"queryTerms\":null"));
-		Assert.assertTrue(json.contains("\"scores\":"));
-		Assert.assertTrue(json.contains("\"snippets\":["));
-		Assert.assertTrue(json.contains("\"start\":0"));
-		Assert.assertTrue(json.contains("\"length\":0"));
+		Assert.assertTrue(json, json.contains("\"docs\":[]"));
+		Assert.assertFalse(json, json.contains("\"query\""));
+		Assert.assertTrue(json, json.contains("\"queryTerms\":null"));
+		Assert.assertTrue(json, json.contains("\"scores\":"));
+		Assert.assertTrue(json, json.contains("\"snippets\":["));
+		Assert.assertTrue(json, json.contains("\"start\":\"0\""));
+		Assert.assertTrue(json, json.contains("\"length\":0"));
+	}
+
+	@Test
+	public void testSerializeServiceContext() {
+		ServiceContext serviceContext = new ServiceContext();
+
+		String[] groupPermissions = {"VIEW"};
+
+		serviceContext.setAttribute("groupPermissions", groupPermissions);
+		serviceContext.setGroupPermissions(groupPermissions);
+
+		String json = JSONFactoryUtil.serialize(serviceContext);
+
+		ServiceContext deserializedServiceContext =
+			(ServiceContext)JSONFactoryUtil.deserialize(json);
+
+		ModelPermissions modelPermissions =
+			deserializedServiceContext.getModelPermissions();
+
+		Assert.assertArrayEquals(
+			groupPermissions,
+			modelPermissions.getActionIds(
+				RoleConstants.PLACEHOLDER_DEFAULT_GROUP_ROLE));
+	}
+
+	@Test
+	public void testSerializeTwice() {
+		ServiceContext serviceContext = new ServiceContext();
+
+		String[] groupPermissions = {"VIEW"};
+
+		serviceContext.setAttribute("groupPermissions", groupPermissions);
+		serviceContext.setGroupPermissions(groupPermissions);
+
+		String json1 = JSONFactoryUtil.serialize(serviceContext);
+
+		ServiceContext deserializedServiceContext =
+			(ServiceContext)JSONFactoryUtil.deserialize(json1);
+
+		String json2 = JSONFactoryUtil.serialize(deserializedServiceContext);
+
+		Assert.assertEquals(json1, json2);
+	}
+
+	private class BaseTestClass {
+
+		public String getName() {
+			return _name;
+		}
+
+		public void setName(String name) {
+			_name = name;
+		}
+
+		private String _name;
+
+	}
+
+	private class TestClass extends BaseTestClass {
+
+		@Override
+		public void setName(String name) {
+			super.setName(name);
+		}
+
 	}
 
 }

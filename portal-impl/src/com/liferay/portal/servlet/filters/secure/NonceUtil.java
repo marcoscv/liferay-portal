@@ -14,12 +14,18 @@
 
 package com.liferay.portal.servlet.filters.secure;
 
+import com.liferay.portal.kernel.cluster.ClusterExecutorUtil;
+import com.liferay.portal.kernel.cluster.ClusterRequest;
+import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.util.Digester;
 import com.liferay.portal.kernel.util.DigesterUtil;
+import com.liferay.portal.kernel.util.MethodHandler;
+import com.liferay.portal.kernel.util.MethodKey;
 import com.liferay.portal.kernel.util.Time;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.service.CompanyLocalServiceUtil;
 import com.liferay.portal.util.PropsValues;
+
+import java.io.Serializable;
 
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -27,6 +33,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author Alexander Chow
+ * @author Cristina Rodríguez
+ * @author Mariano Álvaro Sáiz
  */
 public class NonceUtil {
 
@@ -47,7 +55,7 @@ public class NonceUtil {
 		String nonce = DigesterUtil.digestHex(
 			Digester.MD5, remoteAddress, String.valueOf(timestamp), companyKey);
 
-		_nonceDelayQueue.put(new NonceDelayed(nonce));
+		_addNonceAndNotify(new NonceDelayed(nonce));
 
 		return nonce;
 	}
@@ -55,20 +63,65 @@ public class NonceUtil {
 	public static boolean verify(String nonce) {
 		_cleanUp();
 
-		return _nonceDelayQueue.contains(new NonceDelayed(nonce));
+		return _removeNonceAndNotify(new NonceDelayed(nonce));
+	}
+
+	@SuppressWarnings("unused")
+	private static void _addNonce(NonceDelayed nonceDelayed) {
+		_nonceDelayQueue.put(nonceDelayed);
+	}
+
+	private static void _addNonceAndNotify(NonceDelayed nonceDelayed) {
+		_nonceDelayQueue.put(nonceDelayed);
+
+		_notifyNodes(_addNonceMethodKey, nonceDelayed);
 	}
 
 	private static void _cleanUp() {
 		while (_nonceDelayQueue.poll() != null);
 	}
 
+	private static void _notifyNodes(MethodKey methodKey, Object... arguments) {
+		if (!ClusterExecutorUtil.isEnabled()) {
+			return;
+		}
+
+		MethodHandler methodHandler = new MethodHandler(methodKey, arguments);
+
+		ClusterRequest clusterRequest = ClusterRequest.createMulticastRequest(
+			methodHandler, true);
+
+		clusterRequest.setFireAndForget(true);
+
+		ClusterExecutorUtil.execute(clusterRequest);
+	}
+
+	@SuppressWarnings("unused")
+	private static boolean _removeNonce(NonceDelayed nonceDelayed) {
+		_cleanUp();
+
+		return _nonceDelayQueue.remove(nonceDelayed);
+	}
+
+	private static boolean _removeNonceAndNotify(NonceDelayed nonceDelayed) {
+		boolean removed = _nonceDelayQueue.remove(nonceDelayed);
+
+		_notifyNodes(_removeNonceMethodKey, nonceDelayed);
+
+		return removed;
+	}
+
 	private static final long _NONCE_EXPIRATION =
 		PropsValues.WEBDAV_NONCE_EXPIRATION * Time.MINUTE;
 
-	private static DelayQueue<NonceDelayed> _nonceDelayQueue =
-		new DelayQueue<NonceDelayed>();
+	private static final MethodKey _addNonceMethodKey = new MethodKey(
+		NonceUtil.class, "_addNonce", NonceDelayed.class);
+	private static final DelayQueue<NonceDelayed> _nonceDelayQueue =
+		new DelayQueue<>();
+	private static final MethodKey _removeNonceMethodKey = new MethodKey(
+		NonceUtil.class, "_removeNonce", NonceDelayed.class);
 
-	private static class NonceDelayed implements Delayed {
+	private static class NonceDelayed implements Delayed, Serializable {
 
 		public NonceDelayed(String nonce) {
 			if (nonce == null) {
@@ -77,14 +130,6 @@ public class NonceUtil {
 
 			_nonce = nonce;
 			_createTime = System.currentTimeMillis();
-		}
-
-		@Override
-		public long getDelay(TimeUnit timeUnit) {
-			long leftDelayTime =
-				_NONCE_EXPIRATION + _createTime - System.currentTimeMillis();
-
-			return timeUnit.convert(leftDelayTime, TimeUnit.MILLISECONDS);
 		}
 
 		@Override
@@ -99,9 +144,8 @@ public class NonceUtil {
 			else if (result > 0) {
 				return 1;
 			}
-			else {
-				return -1;
-			}
+
+			return -1;
 		}
 
 		@Override
@@ -113,6 +157,14 @@ public class NonceUtil {
 			}
 
 			return false;
+		}
+
+		@Override
+		public long getDelay(TimeUnit timeUnit) {
+			long leftDelayTime =
+				_NONCE_EXPIRATION + _createTime - System.currentTimeMillis();
+
+			return timeUnit.convert(leftDelayTime, TimeUnit.MILLISECONDS);
 		}
 
 		@Override

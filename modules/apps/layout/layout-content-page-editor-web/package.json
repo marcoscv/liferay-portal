@@ -1,0 +1,42 @@
+{
+	"csfConfig": {
+		"path:**/*.js": {
+			"js": {
+				"lint": {
+					"globals": {
+						"$": true,
+						"AlloyEditor": true,
+						"CKEDITOR": true,
+						"MODULE_PATH": true,
+						"_": true
+					}
+				}
+			}
+		}
+	},
+	"dependencies": {
+		"clay-checkbox": "^2.6.0",
+		"clay-dropdown": "^2.5.1",
+		"metal": "^2.16.5",
+		"metal-component": "^2.16.3",
+		"metal-debounce": "^2.0.0",
+		"metal-dom": "^2.5.18",
+		"metal-drag-drop": "^3.1.0",
+		"metal-events": "^2.16.5",
+		"metal-position": "^2.1.1",
+		"metal-soy": "^2.13.2",
+		"metal-state": "^2.13.2",
+		"metal-throttle": "^3.0.0",
+		"metal-uri": "^3.1.0"
+	},
+	"devDependencies": {
+		"liferay-npm-scripts": "^1.2.0"
+	},
+	"name": "layout-content-page-editor-web",
+	"scripts": {
+		"build": "liferay-npm-scripts build --soy --bridge --bundler",
+		"csf": "liferay-npm-scripts lint",
+		"format": "liferay-npm-scripts format"
+	},
+	"version": "1.0.0"
+}

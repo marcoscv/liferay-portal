@@ -1,0 +1,35 @@
+@default = "selectFrame"
+definition {
+	function selectFrame {
+		if (contains("${locator1}", "/iframe")) {
+			selenium.waitForVisible();
+
+			selenium.mouseOver();
+
+			selenium.selectFrame();
+
+			selenium.waitForElementNotPresent(
+				"//div[contains(@class,'overlaymask') and not(contains(@class,'hidden'))]//div[contains(@class,'loadingmask-message')]"
+			);
+
+			selenium.assertJavaScriptErrors();
+
+			selenium.assertLiferayErrors();
+		}
+		else {
+			SelectFrame.selectFrameTop();
+		}
+
+		WaitForSPARefresh();
+	}
+
+	function selectFrameTop {
+		selenium.selectFrame("relative=top");
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+
+		WaitForSPARefresh();
+	}
+}

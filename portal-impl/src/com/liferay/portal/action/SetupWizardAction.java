@@ -16,40 +16,38 @@ package com.liferay.portal.action;
 
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.security.auth.PrincipalException;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.setup.SetupWizardUtil;
-import com.liferay.portal.theme.ThemeDisplay;
-import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.struts.Action;
+import com.liferay.portal.struts.model.ActionForward;
+import com.liferay.portal.struts.model.ActionMapping;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.portal.util.WebKeys;
 
 import java.sql.SQLException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.struts.action.Action;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-
 /**
  * @author Manuel de la Peña
  * @author Brian Wing Shun Chan
  */
-public class SetupWizardAction extends Action {
+public class SetupWizardAction implements Action {
 
 	@Override
 	public ActionForward execute(
-			ActionMapping actionMapping, ActionForm actionForm,
-			HttpServletRequest request, HttpServletResponse response)
+			ActionMapping actionMapping, HttpServletRequest request,
+			HttpServletResponse response)
 		throws Exception {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
@@ -63,12 +61,12 @@ public class SetupWizardAction extends Action {
 
 		try {
 			if (Validator.isNull(cmd)) {
-				return actionMapping.findForward("portal.setup_wizard");
+				return actionMapping.getActionForward("portal.setup_wizard");
 			}
 			else if (cmd.equals(Constants.TRANSLATE)) {
 				SetupWizardUtil.updateLanguage(request, response);
 
-				return actionMapping.findForward("portal.setup_wizard");
+				return actionMapping.getActionForward("portal.setup_wizard");
 			}
 			else if (cmd.equals(Constants.TEST)) {
 				testDatabase(request, response);
@@ -77,6 +75,10 @@ public class SetupWizardAction extends Action {
 			}
 			else if (cmd.equals(Constants.UPDATE)) {
 				SetupWizardUtil.updateSetup(request, response);
+
+				if (ParamUtil.getBoolean(request, "defaultDatabase")) {
+					PropsValues.SETUP_WIZARD_ENABLED = false;
+				}
 			}
 
 			response.sendRedirect(
@@ -88,7 +90,7 @@ public class SetupWizardAction extends Action {
 			if (e instanceof PrincipalException) {
 				SessionErrors.add(request, e.getClass());
 
-				return actionMapping.findForward("portal.setup_wizard");
+				return actionMapping.getActionForward("portal.setup_wizard");
 			}
 
 			PortalUtil.sendError(e, request, response);
@@ -122,7 +124,7 @@ public class SetupWizardAction extends Action {
 
 			putMessage(
 				request, jsonObject,
-				"database-connection-was-established-sucessfully");
+				"database-connection-was-established-successfully");
 		}
 		catch (ClassNotFoundException cnfe) {
 			putMessage(

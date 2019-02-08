@@ -1,0 +1,120 @@
+{namespace com.liferay.layout.content.page.editor.web.FragmentEntryLinkList}
+
+/**
+ * FragmentEntryLinkList
+ */
+{template .render}
+	{@param defaultEditorConfigurations: ?}
+	{@param defaultLanguageId: string}
+	{@param fragmentEntryLinks: ?}
+	{@param languageId: string}
+	{@param layoutData: [
+		nextColumnId: number,
+		nextRowId: number,
+		structure: list<[
+			columns: list<[
+				columnId: string,
+				fragmentEntryLinkIds: list<string>,
+				size: string
+			]>,
+			empty: bool,
+			rowId: string
+		]>
+	]}
+	{@param? _handleFragmentEntryLinkListHoverEnd: any}
+	{@param? _handleFragmentMove: any}
+	{@param? _handleSectionFocusOut: any}
+	{@param? _handleSectionClick: any}
+	{@param? _handleSectionHoverStart: any}
+	{@param? _handleSectionKeyUp: any}
+	{@param? _handleSectionRemoveButtonClick: any}
+	{@param? dropTargetItemTypes: ?}
+	{@param? fragmentsEditorSidebarVisible: bool}
+	{@param? highlightMapping: bool}
+	{@param? mappingFieldsURL: string}
+	{@param? store: ?}
+
+	{let $entryLinksClasses kind="text"}
+		fragment-entry-link-list
+		{sp}fragments-editor__drop-target
+		{sp}fragments-editor__drop-target--fragment
+		{sp}fragments-editor__drop-target--layout
+		{sp}fragments-editor__drop-target--sidebar-fragment
+		{sp}fragments-editor__drop-target--sidebar-layout
+		{sp}fragments-editor__drop-target--sidebar-widget
+
+		{if $fragmentsEditorSidebarVisible}
+			{sp}fragment-entry-link-list--padded
+		{/if}
+
+		{if $highlightMapping}
+			{sp}mapping
+		{/if}
+
+		{if $languageId != $defaultLanguageId}
+			{sp}translating
+		{/if}
+	{/let}
+
+	{if $layoutData.structure and (length($layoutData.structure) > 0)}
+		<div
+			class="{$entryLinksClasses}"
+			data-onmouseleave="{$_handleFragmentEntryLinkListHoverEnd}"
+			ref="fragmentEntryLinks"
+		>
+			{foreach $row in $layoutData.structure}
+				{call com.liferay.layout.content.page.editor.web.FragmentEntryLinkListSection.render}
+					{param _handleFragmentMove: $_handleFragmentMove /}
+					{param _handleSectionClick: $_handleSectionClick /}
+					{param _handleSectionFocusOut: $_handleSectionFocusOut /}
+					{param _handleSectionHoverStart: $_handleSectionHoverStart /}
+					{param _handleSectionKeyUp: $_handleSectionKeyUp /}
+					{param _handleSectionRemoveButtonClick: $_handleSectionRemoveButtonClick /}
+					{param columns: $row.columns /}
+					{param defaultEditorConfigurations: $defaultEditorConfigurations /}
+					{param dropTargetItemTypes: $dropTargetItemTypes /}
+					{param empty: $row.empty /}
+					{param fragmentEntryLinks: $fragmentEntryLinks /}
+					{param key: $row.rowId /}
+					{param mappingFieldsURL: $mappingFieldsURL /}
+					{param row: $row /}
+					{param rowId: $row.rowId /}
+					{param store: $store /}
+				{/call}
+			{/foreach}
+		</div>
+	{else}
+		{call .noFragmentsMessage}
+			{param fragmentsEditorSidebarVisible: $fragmentsEditorSidebarVisible ?: true /}
+		{/call}
+	{/if}
+{/template}
+
+/**
+ * No fragments message
+ */
+{template .noFragmentsMessage}
+	{@param? fragmentsEditorSidebarVisible: bool}
+
+	{let $emptyListClasses kind="text"}
+		fragments-editor__drop-target--fragment
+		{sp}fragments-editor__drop-target--layout
+		{sp}fragments-editor__drop-target--sidebar-fragment
+		{sp}fragments-editor__drop-target--sidebar-layout
+		{sp}fragments-editor__drop-target--sidebar-widget
+		{sp}no-fragments-message
+		{sp}taglib-empty-result-message
+
+		{if $fragmentsEditorSidebarVisible}
+			{sp}fragment-entry-link-list--padded
+		{/if}
+	{/let}
+
+	<div class="{$emptyListClasses}" data-fragment-empty-list>
+		<div class="taglib-empty-result-message-header"></div>
+
+		<div class="text-center text-muted">
+			{msg desc=""}the-fragment-editor-is-empty{/msg}
+		</div>
+	</div>
+{/template}

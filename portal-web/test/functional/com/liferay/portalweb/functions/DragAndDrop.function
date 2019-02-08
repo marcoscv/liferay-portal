@@ -1,0 +1,64 @@
+@default = "dragAndDropToObject"
+definition {
+	function dragAndDrop {
+		WaitForSPARefresh();
+
+		selenium.dragAndDrop();
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+
+	function dragAndDropPortletToObject {
+		WaitForSPARefresh();
+
+		selenium.waitForElementPresent("${locator1}");
+
+		selenium.mouseOver("${locator1}");
+
+		selenium.waitForVisible("${locator1}");
+
+		selenium.waitForText("${locator1}", "${value1}");
+
+		selenium.waitForVisible("${locator2}");
+
+		selenium.mouseOver("${locator2}");
+
+		selenium.mouseDown("${locator1}");
+
+		selenium.mouseMoveAt("${locator2}", "0,50");
+
+		selenium.mouseMoveAt("${locator2}", "0,-50");
+
+		selenium.mouseMoveAt("${locator2}", "0,50");
+
+		selenium.mouseMove("${locator2}");
+
+		selenium.mouseRelease("${locator2}");
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+
+	function dragAndDropToObject {
+		WaitForSPARefresh();
+
+		selenium.waitForVisible("${locator1}");
+
+		selenium.mouseOver("${locator1}");
+
+		selenium.waitForPartialText("${locator1}", "${value1}");
+
+		selenium.waitForVisible("${locator2}");
+
+		selenium.mouseOver("${locator2}");
+
+		selenium.dragAndDropToObject("${locator1}", "${locator2}");
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+}

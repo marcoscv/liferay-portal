@@ -14,7 +14,16 @@
 
 package com.liferay.portlet.asset.service.persistence.impl;
 
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.asset.kernel.exception.NoSuchLinkException;
+import com.liferay.asset.kernel.model.AssetLink;
+import com.liferay.asset.kernel.service.persistence.AssetLinkPersistence;
+
+import com.liferay.petra.string.StringBundler;
+
+import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -24,30 +33,21 @@ import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.InstanceFactory;
+import com.liferay.portal.kernel.service.persistence.CompanyProvider;
+import com.liferay.portal.kernel.service.persistence.CompanyProviderWrapper;
+import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.ModelListener;
-import com.liferay.portal.service.persistence.impl.BasePersistenceImpl;
 
-import com.liferay.portlet.asset.NoSuchLinkException;
-import com.liferay.portlet.asset.model.AssetLink;
 import com.liferay.portlet.asset.model.impl.AssetLinkImpl;
 import com.liferay.portlet.asset.model.impl.AssetLinkModelImpl;
-import com.liferay.portlet.asset.service.persistence.AssetLinkPersistence;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
+import java.lang.reflect.InvocationHandler;
+
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,9 +61,10 @@ import java.util.Set;
  *
  * @author Brian Wing Shun Chan
  * @see AssetLinkPersistence
- * @see AssetLinkUtil
+ * @see com.liferay.asset.kernel.service.persistence.AssetLinkUtil
  * @generated
  */
+@ProviderType
 public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	implements AssetLinkPersistence {
 	/*
@@ -76,34 +77,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		".List1";
 	public static final String FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION = FINDER_CLASS_NAME_ENTITY +
 		".List2";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_ALL = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0]);
-	public static final FinderPath FINDER_PATH_COUNT_ALL = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll", new String[0]);
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_E1 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByE1",
-			new String[] {
-				Long.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E1 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByE1",
-			new String[] { Long.class.getName() },
-			AssetLinkModelImpl.ENTRYID1_COLUMN_BITMASK |
-			AssetLinkModelImpl.WEIGHT_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_E1 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE1",
-			new String[] { Long.class.getName() });
+	private FinderPath _finderPathWithPaginationFindAll;
+	private FinderPath _finderPathWithoutPaginationFindAll;
+	private FinderPath _finderPathCountAll;
+	private FinderPath _finderPathWithPaginationFindByE1;
+	private FinderPath _finderPathWithoutPaginationFindByE1;
+	private FinderPath _finderPathCountByE1;
 
 	/**
 	 * Returns all the asset links where entryId1 = &#63;.
@@ -120,7 +99,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns a range of all the asset links where entryId1 = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param entryId1 the entry id1
@@ -137,7 +116,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns an ordered range of all the asset links where entryId1 = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param entryId1 the entry id1
@@ -148,7 +127,28 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public List<AssetLink> findByE1(long entryId1, int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
+		return findByE1(entryId1, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the asset links where entryId1 = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param entryId1 the entry id1
+	 * @param start the lower bound of the range of asset links
+	 * @param end the upper bound of the range of asset links (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching asset links
+	 */
+	@Override
+	public List<AssetLink> findByE1(long entryId1, int start, int end,
+		OrderByComparator<AssetLink> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -156,23 +156,27 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E1;
+			finderPath = _finderPathWithoutPaginationFindByE1;
 			finderArgs = new Object[] { entryId1 };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_E1;
+			finderPath = _finderPathWithPaginationFindByE1;
 			finderArgs = new Object[] { entryId1, start, end, orderByComparator };
 		}
 
-		List<AssetLink> list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<AssetLink> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (AssetLink assetLink : list) {
-				if ((entryId1 != assetLink.getEntryId1())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (AssetLink assetLink : list) {
+					if ((entryId1 != assetLink.getEntryId1())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -182,7 +186,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -250,11 +254,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param entryId1 the entry id1
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a matching asset link could not be found
+	 * @throws NoSuchLinkException if a matching asset link could not be found
 	 */
 	@Override
 	public AssetLink findByE1_First(long entryId1,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = fetchByE1_First(entryId1, orderByComparator);
 
 		if (assetLink != null) {
@@ -268,7 +273,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		msg.append("entryId1=");
 		msg.append(entryId1);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLinkException(msg.toString());
 	}
@@ -282,7 +287,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public AssetLink fetchByE1_First(long entryId1,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
 		List<AssetLink> list = findByE1(entryId1, 0, 1, orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -298,11 +303,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param entryId1 the entry id1
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a matching asset link could not be found
+	 * @throws NoSuchLinkException if a matching asset link could not be found
 	 */
 	@Override
 	public AssetLink findByE1_Last(long entryId1,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = fetchByE1_Last(entryId1, orderByComparator);
 
 		if (assetLink != null) {
@@ -316,7 +322,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		msg.append("entryId1=");
 		msg.append(entryId1);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLinkException(msg.toString());
 	}
@@ -330,7 +336,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public AssetLink fetchByE1_Last(long entryId1,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
 		int count = countByE1(entryId1);
 
 		if (count == 0) {
@@ -354,11 +360,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param entryId1 the entry id1
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a asset link with the primary key could not be found
+	 * @throws NoSuchLinkException if a asset link with the primary key could not be found
 	 */
 	@Override
 	public AssetLink[] findByE1_PrevAndNext(long linkId, long entryId1,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = findByPrimaryKey(linkId);
 
 		Session session = null;
@@ -388,12 +395,13 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 	protected AssetLink getByE1_PrevAndNext(Session session,
 		AssetLink assetLink, long entryId1,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<AssetLink> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -474,10 +482,9 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		qPos.add(entryId1);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(assetLink);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					assetLink)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -512,7 +519,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public int countByE1(long entryId1) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_E1;
+		FinderPath finderPath = _finderPathCountByE1;
 
 		Object[] finderArgs = new Object[] { entryId1 };
 
@@ -557,25 +564,9 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	}
 
 	private static final String _FINDER_COLUMN_E1_ENTRYID1_2 = "assetLink.entryId1 = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_E2 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByE2",
-			new String[] {
-				Long.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E2 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByE2",
-			new String[] { Long.class.getName() },
-			AssetLinkModelImpl.ENTRYID2_COLUMN_BITMASK |
-			AssetLinkModelImpl.WEIGHT_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_E2 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE2",
-			new String[] { Long.class.getName() });
+	private FinderPath _finderPathWithPaginationFindByE2;
+	private FinderPath _finderPathWithoutPaginationFindByE2;
+	private FinderPath _finderPathCountByE2;
 
 	/**
 	 * Returns all the asset links where entryId2 = &#63;.
@@ -592,7 +583,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns a range of all the asset links where entryId2 = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param entryId2 the entry id2
@@ -609,7 +600,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns an ordered range of all the asset links where entryId2 = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param entryId2 the entry id2
@@ -620,7 +611,28 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public List<AssetLink> findByE2(long entryId2, int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
+		return findByE2(entryId2, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the asset links where entryId2 = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param entryId2 the entry id2
+	 * @param start the lower bound of the range of asset links
+	 * @param end the upper bound of the range of asset links (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching asset links
+	 */
+	@Override
+	public List<AssetLink> findByE2(long entryId2, int start, int end,
+		OrderByComparator<AssetLink> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -628,23 +640,27 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E2;
+			finderPath = _finderPathWithoutPaginationFindByE2;
 			finderArgs = new Object[] { entryId2 };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_E2;
+			finderPath = _finderPathWithPaginationFindByE2;
 			finderArgs = new Object[] { entryId2, start, end, orderByComparator };
 		}
 
-		List<AssetLink> list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<AssetLink> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (AssetLink assetLink : list) {
-				if ((entryId2 != assetLink.getEntryId2())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (AssetLink assetLink : list) {
+					if ((entryId2 != assetLink.getEntryId2())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -654,7 +670,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -722,11 +738,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param entryId2 the entry id2
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a matching asset link could not be found
+	 * @throws NoSuchLinkException if a matching asset link could not be found
 	 */
 	@Override
 	public AssetLink findByE2_First(long entryId2,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = fetchByE2_First(entryId2, orderByComparator);
 
 		if (assetLink != null) {
@@ -740,7 +757,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		msg.append("entryId2=");
 		msg.append(entryId2);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLinkException(msg.toString());
 	}
@@ -754,7 +771,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public AssetLink fetchByE2_First(long entryId2,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
 		List<AssetLink> list = findByE2(entryId2, 0, 1, orderByComparator);
 
 		if (!list.isEmpty()) {
@@ -770,11 +787,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param entryId2 the entry id2
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a matching asset link could not be found
+	 * @throws NoSuchLinkException if a matching asset link could not be found
 	 */
 	@Override
 	public AssetLink findByE2_Last(long entryId2,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = fetchByE2_Last(entryId2, orderByComparator);
 
 		if (assetLink != null) {
@@ -788,7 +806,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		msg.append("entryId2=");
 		msg.append(entryId2);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLinkException(msg.toString());
 	}
@@ -802,7 +820,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public AssetLink fetchByE2_Last(long entryId2,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
 		int count = countByE2(entryId2);
 
 		if (count == 0) {
@@ -826,11 +844,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param entryId2 the entry id2
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a asset link with the primary key could not be found
+	 * @throws NoSuchLinkException if a asset link with the primary key could not be found
 	 */
 	@Override
 	public AssetLink[] findByE2_PrevAndNext(long linkId, long entryId2,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = findByPrimaryKey(linkId);
 
 		Session session = null;
@@ -860,12 +879,13 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 	protected AssetLink getByE2_PrevAndNext(Session session,
 		AssetLink assetLink, long entryId2,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<AssetLink> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -946,10 +966,9 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		qPos.add(entryId2);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(assetLink);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					assetLink)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -984,7 +1003,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public int countByE2(long entryId2) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_E2;
+		FinderPath finderPath = _finderPathCountByE2;
 
 		Object[] finderArgs = new Object[] { entryId2 };
 
@@ -1029,26 +1048,9 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	}
 
 	private static final String _FINDER_COLUMN_E2_ENTRYID2_2 = "assetLink.entryId2 = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_E_E = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByE_E",
-			new String[] {
-				Long.class.getName(), Long.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E_E = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByE_E",
-			new String[] { Long.class.getName(), Long.class.getName() },
-			AssetLinkModelImpl.ENTRYID1_COLUMN_BITMASK |
-			AssetLinkModelImpl.ENTRYID2_COLUMN_BITMASK |
-			AssetLinkModelImpl.WEIGHT_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_E_E = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE_E",
-			new String[] { Long.class.getName(), Long.class.getName() });
+	private FinderPath _finderPathWithPaginationFindByE_E;
+	private FinderPath _finderPathWithoutPaginationFindByE_E;
+	private FinderPath _finderPathCountByE_E;
 
 	/**
 	 * Returns all the asset links where entryId1 = &#63; and entryId2 = &#63;.
@@ -1067,7 +1069,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns a range of all the asset links where entryId1 = &#63; and entryId2 = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param entryId1 the entry id1
@@ -1086,7 +1088,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns an ordered range of all the asset links where entryId1 = &#63; and entryId2 = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param entryId1 the entry id1
@@ -1098,7 +1100,29 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public List<AssetLink> findByE_E(long entryId1, long entryId2, int start,
-		int end, OrderByComparator orderByComparator) {
+		int end, OrderByComparator<AssetLink> orderByComparator) {
+		return findByE_E(entryId1, entryId2, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the asset links where entryId1 = &#63; and entryId2 = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param entryId1 the entry id1
+	 * @param entryId2 the entry id2
+	 * @param start the lower bound of the range of asset links
+	 * @param end the upper bound of the range of asset links (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching asset links
+	 */
+	@Override
+	public List<AssetLink> findByE_E(long entryId1, long entryId2, int start,
+		int end, OrderByComparator<AssetLink> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1106,11 +1130,11 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E_E;
+			finderPath = _finderPathWithoutPaginationFindByE_E;
 			finderArgs = new Object[] { entryId1, entryId2 };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_E_E;
+			finderPath = _finderPathWithPaginationFindByE_E;
 			finderArgs = new Object[] {
 					entryId1, entryId2,
 					
@@ -1118,16 +1142,20 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 				};
 		}
 
-		List<AssetLink> list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<AssetLink> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (AssetLink assetLink : list) {
-				if ((entryId1 != assetLink.getEntryId1()) ||
-						(entryId2 != assetLink.getEntryId2())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (AssetLink assetLink : list) {
+					if ((entryId1 != assetLink.getEntryId1()) ||
+							(entryId2 != assetLink.getEntryId2())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -1137,7 +1165,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 			if (orderByComparator != null) {
 				query = new StringBundler(4 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(4);
@@ -1210,11 +1238,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param entryId2 the entry id2
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a matching asset link could not be found
+	 * @throws NoSuchLinkException if a matching asset link could not be found
 	 */
 	@Override
 	public AssetLink findByE_E_First(long entryId1, long entryId2,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = fetchByE_E_First(entryId1, entryId2,
 				orderByComparator);
 
@@ -1232,7 +1261,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		msg.append(", entryId2=");
 		msg.append(entryId2);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLinkException(msg.toString());
 	}
@@ -1247,7 +1276,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public AssetLink fetchByE_E_First(long entryId1, long entryId2,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
 		List<AssetLink> list = findByE_E(entryId1, entryId2, 0, 1,
 				orderByComparator);
 
@@ -1265,11 +1294,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param entryId2 the entry id2
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a matching asset link could not be found
+	 * @throws NoSuchLinkException if a matching asset link could not be found
 	 */
 	@Override
 	public AssetLink findByE_E_Last(long entryId1, long entryId2,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = fetchByE_E_Last(entryId1, entryId2,
 				orderByComparator);
 
@@ -1287,7 +1317,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		msg.append(", entryId2=");
 		msg.append(entryId2);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLinkException(msg.toString());
 	}
@@ -1302,7 +1332,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public AssetLink fetchByE_E_Last(long entryId1, long entryId2,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
 		int count = countByE_E(entryId1, entryId2);
 
 		if (count == 0) {
@@ -1327,11 +1357,11 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param entryId2 the entry id2
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a asset link with the primary key could not be found
+	 * @throws NoSuchLinkException if a asset link with the primary key could not be found
 	 */
 	@Override
 	public AssetLink[] findByE_E_PrevAndNext(long linkId, long entryId1,
-		long entryId2, OrderByComparator orderByComparator)
+		long entryId2, OrderByComparator<AssetLink> orderByComparator)
 		throws NoSuchLinkException {
 		AssetLink assetLink = findByPrimaryKey(linkId);
 
@@ -1362,15 +1392,16 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 	protected AssetLink getByE_E_PrevAndNext(Session session,
 		AssetLink assetLink, long entryId1, long entryId2,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<AssetLink> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(5 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(4);
 		}
 
 		query.append(_SQL_SELECT_ASSETLINK_WHERE);
@@ -1452,10 +1483,9 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		qPos.add(entryId2);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(assetLink);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					assetLink)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -1492,7 +1522,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public int countByE_E(long entryId1, long entryId2) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_E_E;
+		FinderPath finderPath = _finderPathCountByE_E;
 
 		Object[] finderArgs = new Object[] { entryId1, entryId2 };
 
@@ -1542,26 +1572,9 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 	private static final String _FINDER_COLUMN_E_E_ENTRYID1_2 = "assetLink.entryId1 = ? AND ";
 	private static final String _FINDER_COLUMN_E_E_ENTRYID2_2 = "assetLink.entryId2 = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_E1_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByE1_T",
-			new String[] {
-				Long.class.getName(), Integer.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E1_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByE1_T",
-			new String[] { Long.class.getName(), Integer.class.getName() },
-			AssetLinkModelImpl.ENTRYID1_COLUMN_BITMASK |
-			AssetLinkModelImpl.TYPE_COLUMN_BITMASK |
-			AssetLinkModelImpl.WEIGHT_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_E1_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE1_T",
-			new String[] { Long.class.getName(), Integer.class.getName() });
+	private FinderPath _finderPathWithPaginationFindByE1_T;
+	private FinderPath _finderPathWithoutPaginationFindByE1_T;
+	private FinderPath _finderPathCountByE1_T;
 
 	/**
 	 * Returns all the asset links where entryId1 = &#63; and type = &#63;.
@@ -1580,7 +1593,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns a range of all the asset links where entryId1 = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param entryId1 the entry id1
@@ -1599,7 +1612,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns an ordered range of all the asset links where entryId1 = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param entryId1 the entry id1
@@ -1611,7 +1624,29 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public List<AssetLink> findByE1_T(long entryId1, int type, int start,
-		int end, OrderByComparator orderByComparator) {
+		int end, OrderByComparator<AssetLink> orderByComparator) {
+		return findByE1_T(entryId1, type, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the asset links where entryId1 = &#63; and type = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param entryId1 the entry id1
+	 * @param type the type
+	 * @param start the lower bound of the range of asset links
+	 * @param end the upper bound of the range of asset links (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching asset links
+	 */
+	@Override
+	public List<AssetLink> findByE1_T(long entryId1, int type, int start,
+		int end, OrderByComparator<AssetLink> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1619,11 +1654,11 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E1_T;
+			finderPath = _finderPathWithoutPaginationFindByE1_T;
 			finderArgs = new Object[] { entryId1, type };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_E1_T;
+			finderPath = _finderPathWithPaginationFindByE1_T;
 			finderArgs = new Object[] {
 					entryId1, type,
 					
@@ -1631,16 +1666,20 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 				};
 		}
 
-		List<AssetLink> list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<AssetLink> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (AssetLink assetLink : list) {
-				if ((entryId1 != assetLink.getEntryId1()) ||
-						(type != assetLink.getType())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (AssetLink assetLink : list) {
+					if ((entryId1 != assetLink.getEntryId1()) ||
+							(type != assetLink.getType())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -1650,7 +1689,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 			if (orderByComparator != null) {
 				query = new StringBundler(4 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(4);
@@ -1723,11 +1762,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a matching asset link could not be found
+	 * @throws NoSuchLinkException if a matching asset link could not be found
 	 */
 	@Override
 	public AssetLink findByE1_T_First(long entryId1, int type,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = fetchByE1_T_First(entryId1, type,
 				orderByComparator);
 
@@ -1745,7 +1785,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLinkException(msg.toString());
 	}
@@ -1760,7 +1800,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public AssetLink fetchByE1_T_First(long entryId1, int type,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
 		List<AssetLink> list = findByE1_T(entryId1, type, 0, 1,
 				orderByComparator);
 
@@ -1778,11 +1818,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a matching asset link could not be found
+	 * @throws NoSuchLinkException if a matching asset link could not be found
 	 */
 	@Override
 	public AssetLink findByE1_T_Last(long entryId1, int type,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = fetchByE1_T_Last(entryId1, type, orderByComparator);
 
 		if (assetLink != null) {
@@ -1799,7 +1840,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLinkException(msg.toString());
 	}
@@ -1814,7 +1855,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public AssetLink fetchByE1_T_Last(long entryId1, int type,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
 		int count = countByE1_T(entryId1, type);
 
 		if (count == 0) {
@@ -1839,11 +1880,11 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a asset link with the primary key could not be found
+	 * @throws NoSuchLinkException if a asset link with the primary key could not be found
 	 */
 	@Override
 	public AssetLink[] findByE1_T_PrevAndNext(long linkId, long entryId1,
-		int type, OrderByComparator orderByComparator)
+		int type, OrderByComparator<AssetLink> orderByComparator)
 		throws NoSuchLinkException {
 		AssetLink assetLink = findByPrimaryKey(linkId);
 
@@ -1874,15 +1915,16 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 	protected AssetLink getByE1_T_PrevAndNext(Session session,
 		AssetLink assetLink, long entryId1, int type,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<AssetLink> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(5 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(4);
 		}
 
 		query.append(_SQL_SELECT_ASSETLINK_WHERE);
@@ -1964,10 +2006,9 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		qPos.add(type);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(assetLink);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					assetLink)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -2004,7 +2045,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public int countByE1_T(long entryId1, int type) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_E1_T;
+		FinderPath finderPath = _finderPathCountByE1_T;
 
 		Object[] finderArgs = new Object[] { entryId1, type };
 
@@ -2054,26 +2095,9 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 	private static final String _FINDER_COLUMN_E1_T_ENTRYID1_2 = "assetLink.entryId1 = ? AND ";
 	private static final String _FINDER_COLUMN_E1_T_TYPE_2 = "assetLink.type = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_E2_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByE2_T",
-			new String[] {
-				Long.class.getName(), Integer.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E2_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByE2_T",
-			new String[] { Long.class.getName(), Integer.class.getName() },
-			AssetLinkModelImpl.ENTRYID2_COLUMN_BITMASK |
-			AssetLinkModelImpl.TYPE_COLUMN_BITMASK |
-			AssetLinkModelImpl.WEIGHT_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_E2_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE2_T",
-			new String[] { Long.class.getName(), Integer.class.getName() });
+	private FinderPath _finderPathWithPaginationFindByE2_T;
+	private FinderPath _finderPathWithoutPaginationFindByE2_T;
+	private FinderPath _finderPathCountByE2_T;
 
 	/**
 	 * Returns all the asset links where entryId2 = &#63; and type = &#63;.
@@ -2092,7 +2116,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns a range of all the asset links where entryId2 = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param entryId2 the entry id2
@@ -2111,7 +2135,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns an ordered range of all the asset links where entryId2 = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param entryId2 the entry id2
@@ -2123,7 +2147,29 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public List<AssetLink> findByE2_T(long entryId2, int type, int start,
-		int end, OrderByComparator orderByComparator) {
+		int end, OrderByComparator<AssetLink> orderByComparator) {
+		return findByE2_T(entryId2, type, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the asset links where entryId2 = &#63; and type = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param entryId2 the entry id2
+	 * @param type the type
+	 * @param start the lower bound of the range of asset links
+	 * @param end the upper bound of the range of asset links (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching asset links
+	 */
+	@Override
+	public List<AssetLink> findByE2_T(long entryId2, int type, int start,
+		int end, OrderByComparator<AssetLink> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -2131,11 +2177,11 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E2_T;
+			finderPath = _finderPathWithoutPaginationFindByE2_T;
 			finderArgs = new Object[] { entryId2, type };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_E2_T;
+			finderPath = _finderPathWithPaginationFindByE2_T;
 			finderArgs = new Object[] {
 					entryId2, type,
 					
@@ -2143,16 +2189,20 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 				};
 		}
 
-		List<AssetLink> list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<AssetLink> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (AssetLink assetLink : list) {
-				if ((entryId2 != assetLink.getEntryId2()) ||
-						(type != assetLink.getType())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (AssetLink assetLink : list) {
+					if ((entryId2 != assetLink.getEntryId2()) ||
+							(type != assetLink.getType())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -2162,7 +2212,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 			if (orderByComparator != null) {
 				query = new StringBundler(4 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(4);
@@ -2235,11 +2285,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a matching asset link could not be found
+	 * @throws NoSuchLinkException if a matching asset link could not be found
 	 */
 	@Override
 	public AssetLink findByE2_T_First(long entryId2, int type,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = fetchByE2_T_First(entryId2, type,
 				orderByComparator);
 
@@ -2257,7 +2308,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLinkException(msg.toString());
 	}
@@ -2272,7 +2323,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public AssetLink fetchByE2_T_First(long entryId2, int type,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
 		List<AssetLink> list = findByE2_T(entryId2, type, 0, 1,
 				orderByComparator);
 
@@ -2290,11 +2341,12 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a matching asset link could not be found
+	 * @throws NoSuchLinkException if a matching asset link could not be found
 	 */
 	@Override
 	public AssetLink findByE2_T_Last(long entryId2, int type,
-		OrderByComparator orderByComparator) throws NoSuchLinkException {
+		OrderByComparator<AssetLink> orderByComparator)
+		throws NoSuchLinkException {
 		AssetLink assetLink = fetchByE2_T_Last(entryId2, type, orderByComparator);
 
 		if (assetLink != null) {
@@ -2311,7 +2363,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchLinkException(msg.toString());
 	}
@@ -2326,7 +2378,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public AssetLink fetchByE2_T_Last(long entryId2, int type,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
 		int count = countByE2_T(entryId2, type);
 
 		if (count == 0) {
@@ -2351,11 +2403,11 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a asset link with the primary key could not be found
+	 * @throws NoSuchLinkException if a asset link with the primary key could not be found
 	 */
 	@Override
 	public AssetLink[] findByE2_T_PrevAndNext(long linkId, long entryId2,
-		int type, OrderByComparator orderByComparator)
+		int type, OrderByComparator<AssetLink> orderByComparator)
 		throws NoSuchLinkException {
 		AssetLink assetLink = findByPrimaryKey(linkId);
 
@@ -2386,15 +2438,16 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 	protected AssetLink getByE2_T_PrevAndNext(Session session,
 		AssetLink assetLink, long entryId2, int type,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<AssetLink> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(5 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(4);
 		}
 
 		query.append(_SQL_SELECT_ASSETLINK_WHERE);
@@ -2476,10 +2529,9 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		qPos.add(type);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(assetLink);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					assetLink)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -2516,7 +2568,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public int countByE2_T(long entryId2, int type) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_E2_T;
+		FinderPath finderPath = _finderPathCountByE2_T;
 
 		Object[] finderArgs = new Object[] { entryId2, type };
 
@@ -2566,32 +2618,17 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 	private static final String _FINDER_COLUMN_E2_T_ENTRYID2_2 = "assetLink.entryId2 = ? AND ";
 	private static final String _FINDER_COLUMN_E2_T_TYPE_2 = "assetLink.type = ?";
-	public static final FinderPath FINDER_PATH_FETCH_BY_E_E_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
-			FINDER_CLASS_NAME_ENTITY, "fetchByE_E_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(),
-				Integer.class.getName()
-			},
-			AssetLinkModelImpl.ENTRYID1_COLUMN_BITMASK |
-			AssetLinkModelImpl.ENTRYID2_COLUMN_BITMASK |
-			AssetLinkModelImpl.TYPE_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_E_E_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-			AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE_E_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(),
-				Integer.class.getName()
-			});
+	private FinderPath _finderPathFetchByE_E_T;
+	private FinderPath _finderPathCountByE_E_T;
 
 	/**
-	 * Returns the asset link where entryId1 = &#63; and entryId2 = &#63; and type = &#63; or throws a {@link com.liferay.portlet.asset.NoSuchLinkException} if it could not be found.
+	 * Returns the asset link where entryId1 = &#63; and entryId2 = &#63; and type = &#63; or throws a {@link NoSuchLinkException} if it could not be found.
 	 *
 	 * @param entryId1 the entry id1
 	 * @param entryId2 the entry id2
 	 * @param type the type
 	 * @return the matching asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a matching asset link could not be found
+	 * @throws NoSuchLinkException if a matching asset link could not be found
 	 */
 	@Override
 	public AssetLink findByE_E_T(long entryId1, long entryId2, int type)
@@ -2612,10 +2649,10 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 			msg.append(", type=");
 			msg.append(type);
 
-			msg.append(StringPool.CLOSE_CURLY_BRACE);
+			msg.append("}");
 
-			if (_log.isWarnEnabled()) {
-				_log.warn(msg.toString());
+			if (_log.isDebugEnabled()) {
+				_log.debug(msg.toString());
 			}
 
 			throw new NoSuchLinkException(msg.toString());
@@ -2643,7 +2680,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * @param entryId1 the entry id1
 	 * @param entryId2 the entry id2
 	 * @param type the type
-	 * @param retrieveFromCache whether to use the finder cache
+	 * @param retrieveFromCache whether to retrieve from the finder cache
 	 * @return the matching asset link, or <code>null</code> if a matching asset link could not be found
 	 */
 	@Override
@@ -2654,7 +2691,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		Object result = null;
 
 		if (retrieveFromCache) {
-			result = FinderCacheUtil.getResult(FINDER_PATH_FETCH_BY_E_E_T,
+			result = FinderCacheUtil.getResult(_finderPathFetchByE_E_T,
 					finderArgs, this);
 		}
 
@@ -2699,7 +2736,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 				List<AssetLink> list = q.list();
 
 				if (list.isEmpty()) {
-					FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_E_E_T,
+					FinderCacheUtil.putResult(_finderPathFetchByE_E_T,
 						finderArgs, list);
 				}
 				else {
@@ -2708,18 +2745,10 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 					result = assetLink;
 
 					cacheResult(assetLink);
-
-					if ((assetLink.getEntryId1() != entryId1) ||
-							(assetLink.getEntryId2() != entryId2) ||
-							(assetLink.getType() != type)) {
-						FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_E_E_T,
-							finderArgs, assetLink);
-					}
 				}
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_E_E_T,
-					finderArgs);
+				FinderCacheUtil.removeResult(_finderPathFetchByE_E_T, finderArgs);
 
 				throw processException(e);
 			}
@@ -2762,7 +2791,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public int countByE_E_T(long entryId1, long entryId2, int type) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_E_E_T;
+		FinderPath finderPath = _finderPathCountByE_E_T;
 
 		Object[] finderArgs = new Object[] { entryId1, entryId2, type };
 
@@ -2820,6 +2849,10 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 	public AssetLinkPersistenceImpl() {
 		setModelClass(AssetLink.class);
+
+		setModelImplClass(AssetLinkImpl.class);
+		setModelPKClass(long.class);
+		setEntityCacheEnabled(AssetLinkModelImpl.ENTITY_CACHE_ENABLED);
 	}
 
 	/**
@@ -2832,7 +2865,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		EntityCacheUtil.putResult(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
 			AssetLinkImpl.class, assetLink.getPrimaryKey(), assetLink);
 
-		FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_E_E_T,
+		FinderCacheUtil.putResult(_finderPathFetchByE_E_T,
 			new Object[] {
 				assetLink.getEntryId1(), assetLink.getEntryId2(),
 				assetLink.getType()
@@ -2864,15 +2897,11 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Clears the cache for all asset links.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
-		if (_HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE) {
-			CacheRegistryUtil.clear(AssetLinkImpl.class.getName());
-		}
-
 		EntityCacheUtil.clearCache(AssetLinkImpl.class);
 
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
@@ -2884,7 +2913,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Clears the cache for the asset link.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
@@ -2895,7 +2924,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
-		clearUniqueFindersCache(assetLink);
+		clearUniqueFindersCache((AssetLinkModelImpl)assetLink, true);
 	}
 
 	@Override
@@ -2907,61 +2936,46 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 			EntityCacheUtil.removeResult(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
 				AssetLinkImpl.class, assetLink.getPrimaryKey());
 
-			clearUniqueFindersCache(assetLink);
+			clearUniqueFindersCache((AssetLinkModelImpl)assetLink, true);
 		}
 	}
 
-	protected void cacheUniqueFindersCache(AssetLink assetLink) {
-		if (assetLink.isNew()) {
-			Object[] args = new Object[] {
-					assetLink.getEntryId1(), assetLink.getEntryId2(),
-					assetLink.getType()
-				};
-
-			FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_E_E_T, args,
-				Long.valueOf(1));
-			FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_E_E_T, args,
-				assetLink);
-		}
-		else {
-			AssetLinkModelImpl assetLinkModelImpl = (AssetLinkModelImpl)assetLink;
-
-			if ((assetLinkModelImpl.getColumnBitmask() &
-					FINDER_PATH_FETCH_BY_E_E_T.getColumnBitmask()) != 0) {
-				Object[] args = new Object[] {
-						assetLink.getEntryId1(), assetLink.getEntryId2(),
-						assetLink.getType()
-					};
-
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_E_E_T, args,
-					Long.valueOf(1));
-				FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_E_E_T, args,
-					assetLink);
-			}
-		}
-	}
-
-	protected void clearUniqueFindersCache(AssetLink assetLink) {
-		AssetLinkModelImpl assetLinkModelImpl = (AssetLinkModelImpl)assetLink;
-
+	protected void cacheUniqueFindersCache(
+		AssetLinkModelImpl assetLinkModelImpl) {
 		Object[] args = new Object[] {
-				assetLink.getEntryId1(), assetLink.getEntryId2(),
-				assetLink.getType()
+				assetLinkModelImpl.getEntryId1(),
+				assetLinkModelImpl.getEntryId2(), assetLinkModelImpl.getType()
 			};
 
-		FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E_E_T, args);
-		FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_E_E_T, args);
+		FinderCacheUtil.putResult(_finderPathCountByE_E_T, args,
+			Long.valueOf(1), false);
+		FinderCacheUtil.putResult(_finderPathFetchByE_E_T, args,
+			assetLinkModelImpl, false);
+	}
+
+	protected void clearUniqueFindersCache(
+		AssetLinkModelImpl assetLinkModelImpl, boolean clearCurrent) {
+		if (clearCurrent) {
+			Object[] args = new Object[] {
+					assetLinkModelImpl.getEntryId1(),
+					assetLinkModelImpl.getEntryId2(),
+					assetLinkModelImpl.getType()
+				};
+
+			FinderCacheUtil.removeResult(_finderPathCountByE_E_T, args);
+			FinderCacheUtil.removeResult(_finderPathFetchByE_E_T, args);
+		}
 
 		if ((assetLinkModelImpl.getColumnBitmask() &
-				FINDER_PATH_FETCH_BY_E_E_T.getColumnBitmask()) != 0) {
-			args = new Object[] {
+				_finderPathFetchByE_E_T.getColumnBitmask()) != 0) {
+			Object[] args = new Object[] {
 					assetLinkModelImpl.getOriginalEntryId1(),
 					assetLinkModelImpl.getOriginalEntryId2(),
 					assetLinkModelImpl.getOriginalType()
 				};
 
-			FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E_E_T, args);
-			FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_E_E_T, args);
+			FinderCacheUtil.removeResult(_finderPathCountByE_E_T, args);
+			FinderCacheUtil.removeResult(_finderPathFetchByE_E_T, args);
 		}
 	}
 
@@ -2978,6 +2992,8 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		assetLink.setNew(true);
 		assetLink.setPrimaryKey(linkId);
 
+		assetLink.setCompanyId(companyProvider.getCompanyId());
+
 		return assetLink;
 	}
 
@@ -2986,7 +3002,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 *
 	 * @param linkId the primary key of the asset link
 	 * @return the asset link that was removed
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a asset link with the primary key could not be found
+	 * @throws NoSuchLinkException if a asset link with the primary key could not be found
 	 */
 	@Override
 	public AssetLink remove(long linkId) throws NoSuchLinkException {
@@ -2998,7 +3014,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 *
 	 * @param primaryKey the primary key of the asset link
 	 * @return the asset link that was removed
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a asset link with the primary key could not be found
+	 * @throws NoSuchLinkException if a asset link with the primary key could not be found
 	 */
 	@Override
 	public AssetLink remove(Serializable primaryKey) throws NoSuchLinkException {
@@ -3011,8 +3027,8 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 					primaryKey);
 
 			if (assetLink == null) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+				if (_log.isDebugEnabled()) {
+					_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 				}
 
 				throw new NoSuchLinkException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -3034,8 +3050,6 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 	@Override
 	protected AssetLink removeImpl(AssetLink assetLink) {
-		assetLink = toUnwrappedModel(assetLink);
-
 		Session session = null;
 
 		try {
@@ -3065,11 +3079,24 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	}
 
 	@Override
-	public AssetLink updateImpl(
-		com.liferay.portlet.asset.model.AssetLink assetLink) {
-		assetLink = toUnwrappedModel(assetLink);
-
+	public AssetLink updateImpl(AssetLink assetLink) {
 		boolean isNew = assetLink.isNew();
+
+		if (!(assetLink instanceof AssetLinkModelImpl)) {
+			InvocationHandler invocationHandler = null;
+
+			if (ProxyUtil.isProxyClass(assetLink.getClass())) {
+				invocationHandler = ProxyUtil.getInvocationHandler(assetLink);
+
+				throw new IllegalArgumentException(
+					"Implement ModelWrapper in assetLink proxy " +
+					invocationHandler.getClass());
+			}
+
+			throw new IllegalArgumentException(
+				"Implement ModelWrapper in custom AssetLink implementation " +
+				assetLink.getClass());
+		}
 
 		AssetLinkModelImpl assetLinkModelImpl = (AssetLinkModelImpl)assetLink;
 
@@ -3084,7 +3111,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 				assetLink.setNew(false);
 			}
 			else {
-				session.merge(assetLink);
+				assetLink = (AssetLink)session.merge(assetLink);
 			}
 		}
 		catch (Exception e) {
@@ -3096,54 +3123,99 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 
-		if (isNew || !AssetLinkModelImpl.COLUMN_BITMASK_ENABLED) {
+		if (!AssetLinkModelImpl.COLUMN_BITMASK_ENABLED) {
 			FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		}
+		else
+		 if (isNew) {
+			Object[] args = new Object[] { assetLinkModelImpl.getEntryId1() };
+
+			FinderCacheUtil.removeResult(_finderPathCountByE1, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE1,
+				args);
+
+			args = new Object[] { assetLinkModelImpl.getEntryId2() };
+
+			FinderCacheUtil.removeResult(_finderPathCountByE2, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE2,
+				args);
+
+			args = new Object[] {
+					assetLinkModelImpl.getEntryId1(),
+					assetLinkModelImpl.getEntryId2()
+				};
+
+			FinderCacheUtil.removeResult(_finderPathCountByE_E, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE_E,
+				args);
+
+			args = new Object[] {
+					assetLinkModelImpl.getEntryId1(),
+					assetLinkModelImpl.getType()
+				};
+
+			FinderCacheUtil.removeResult(_finderPathCountByE1_T, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE1_T,
+				args);
+
+			args = new Object[] {
+					assetLinkModelImpl.getEntryId2(),
+					assetLinkModelImpl.getType()
+				};
+
+			FinderCacheUtil.removeResult(_finderPathCountByE2_T, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE2_T,
+				args);
+
+			FinderCacheUtil.removeResult(_finderPathCountAll, FINDER_ARGS_EMPTY);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindAll,
+				FINDER_ARGS_EMPTY);
 		}
 
 		else {
 			if ((assetLinkModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E1.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByE1.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						assetLinkModelImpl.getOriginalEntryId1()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E1, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E1,
+				FinderCacheUtil.removeResult(_finderPathCountByE1, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE1,
 					args);
 
 				args = new Object[] { assetLinkModelImpl.getEntryId1() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E1, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E1,
+				FinderCacheUtil.removeResult(_finderPathCountByE1, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE1,
 					args);
 			}
 
 			if ((assetLinkModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E2.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByE2.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						assetLinkModelImpl.getOriginalEntryId2()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E2, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E2,
+				FinderCacheUtil.removeResult(_finderPathCountByE2, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE2,
 					args);
 
 				args = new Object[] { assetLinkModelImpl.getEntryId2() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E2, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E2,
+				FinderCacheUtil.removeResult(_finderPathCountByE2, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE2,
 					args);
 			}
 
 			if ((assetLinkModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E_E.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByE_E.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						assetLinkModelImpl.getOriginalEntryId1(),
 						assetLinkModelImpl.getOriginalEntryId2()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E_E, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E_E,
+				FinderCacheUtil.removeResult(_finderPathCountByE_E, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE_E,
 					args);
 
 				args = new Object[] {
@@ -3151,20 +3223,20 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 						assetLinkModelImpl.getEntryId2()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E_E, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E_E,
+				FinderCacheUtil.removeResult(_finderPathCountByE_E, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE_E,
 					args);
 			}
 
 			if ((assetLinkModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E1_T.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByE1_T.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						assetLinkModelImpl.getOriginalEntryId1(),
 						assetLinkModelImpl.getOriginalType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E1_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E1_T,
+				FinderCacheUtil.removeResult(_finderPathCountByE1_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE1_T,
 					args);
 
 				args = new Object[] {
@@ -3172,20 +3244,20 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 						assetLinkModelImpl.getType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E1_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E1_T,
+				FinderCacheUtil.removeResult(_finderPathCountByE1_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE1_T,
 					args);
 			}
 
 			if ((assetLinkModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E2_T.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByE2_T.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						assetLinkModelImpl.getOriginalEntryId2(),
 						assetLinkModelImpl.getOriginalType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E2_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E2_T,
+				FinderCacheUtil.removeResult(_finderPathCountByE2_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE2_T,
 					args);
 
 				args = new Object[] {
@@ -3193,8 +3265,8 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 						assetLinkModelImpl.getType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_E2_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_E2_T,
+				FinderCacheUtil.removeResult(_finderPathCountByE2_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByE2_T,
 					args);
 			}
 		}
@@ -3202,43 +3274,20 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		EntityCacheUtil.putResult(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
 			AssetLinkImpl.class, assetLink.getPrimaryKey(), assetLink, false);
 
-		clearUniqueFindersCache(assetLink);
-		cacheUniqueFindersCache(assetLink);
+		clearUniqueFindersCache(assetLinkModelImpl, false);
+		cacheUniqueFindersCache(assetLinkModelImpl);
 
 		assetLink.resetOriginalValues();
 
 		return assetLink;
 	}
 
-	protected AssetLink toUnwrappedModel(AssetLink assetLink) {
-		if (assetLink instanceof AssetLinkImpl) {
-			return assetLink;
-		}
-
-		AssetLinkImpl assetLinkImpl = new AssetLinkImpl();
-
-		assetLinkImpl.setNew(assetLink.isNew());
-		assetLinkImpl.setPrimaryKey(assetLink.getPrimaryKey());
-
-		assetLinkImpl.setLinkId(assetLink.getLinkId());
-		assetLinkImpl.setCompanyId(assetLink.getCompanyId());
-		assetLinkImpl.setUserId(assetLink.getUserId());
-		assetLinkImpl.setUserName(assetLink.getUserName());
-		assetLinkImpl.setCreateDate(assetLink.getCreateDate());
-		assetLinkImpl.setEntryId1(assetLink.getEntryId1());
-		assetLinkImpl.setEntryId2(assetLink.getEntryId2());
-		assetLinkImpl.setType(assetLink.getType());
-		assetLinkImpl.setWeight(assetLink.getWeight());
-
-		return assetLinkImpl;
-	}
-
 	/**
-	 * Returns the asset link with the primary key or throws a {@link com.liferay.portal.NoSuchModelException} if it could not be found.
+	 * Returns the asset link with the primary key or throws a {@link com.liferay.portal.kernel.exception.NoSuchModelException} if it could not be found.
 	 *
 	 * @param primaryKey the primary key of the asset link
 	 * @return the asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a asset link with the primary key could not be found
+	 * @throws NoSuchLinkException if a asset link with the primary key could not be found
 	 */
 	@Override
 	public AssetLink findByPrimaryKey(Serializable primaryKey)
@@ -3246,8 +3295,8 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		AssetLink assetLink = fetchByPrimaryKey(primaryKey);
 
 		if (assetLink == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+			if (_log.isDebugEnabled()) {
+				_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 			}
 
 			throw new NoSuchLinkException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -3258,61 +3307,15 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	}
 
 	/**
-	 * Returns the asset link with the primary key or throws a {@link com.liferay.portlet.asset.NoSuchLinkException} if it could not be found.
+	 * Returns the asset link with the primary key or throws a {@link NoSuchLinkException} if it could not be found.
 	 *
 	 * @param linkId the primary key of the asset link
 	 * @return the asset link
-	 * @throws com.liferay.portlet.asset.NoSuchLinkException if a asset link with the primary key could not be found
+	 * @throws NoSuchLinkException if a asset link with the primary key could not be found
 	 */
 	@Override
 	public AssetLink findByPrimaryKey(long linkId) throws NoSuchLinkException {
 		return findByPrimaryKey((Serializable)linkId);
-	}
-
-	/**
-	 * Returns the asset link with the primary key or returns <code>null</code> if it could not be found.
-	 *
-	 * @param primaryKey the primary key of the asset link
-	 * @return the asset link, or <code>null</code> if a asset link with the primary key could not be found
-	 */
-	@Override
-	public AssetLink fetchByPrimaryKey(Serializable primaryKey) {
-		AssetLink assetLink = (AssetLink)EntityCacheUtil.getResult(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-				AssetLinkImpl.class, primaryKey);
-
-		if (assetLink == _nullAssetLink) {
-			return null;
-		}
-
-		if (assetLink == null) {
-			Session session = null;
-
-			try {
-				session = openSession();
-
-				assetLink = (AssetLink)session.get(AssetLinkImpl.class,
-						primaryKey);
-
-				if (assetLink != null) {
-					cacheResult(assetLink);
-				}
-				else {
-					EntityCacheUtil.putResult(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-						AssetLinkImpl.class, primaryKey, _nullAssetLink);
-				}
-			}
-			catch (Exception e) {
-				EntityCacheUtil.removeResult(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-					AssetLinkImpl.class, primaryKey);
-
-				throw processException(e);
-			}
-			finally {
-				closeSession(session);
-			}
-		}
-
-		return assetLink;
 	}
 
 	/**
@@ -3324,98 +3327,6 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	@Override
 	public AssetLink fetchByPrimaryKey(long linkId) {
 		return fetchByPrimaryKey((Serializable)linkId);
-	}
-
-	@Override
-	public Map<Serializable, AssetLink> fetchByPrimaryKeys(
-		Set<Serializable> primaryKeys) {
-		if (primaryKeys.isEmpty()) {
-			return Collections.emptyMap();
-		}
-
-		Map<Serializable, AssetLink> map = new HashMap<Serializable, AssetLink>();
-
-		if (primaryKeys.size() == 1) {
-			Iterator<Serializable> iterator = primaryKeys.iterator();
-
-			Serializable primaryKey = iterator.next();
-
-			AssetLink assetLink = fetchByPrimaryKey(primaryKey);
-
-			if (assetLink != null) {
-				map.put(primaryKey, assetLink);
-			}
-
-			return map;
-		}
-
-		Set<Serializable> uncachedPrimaryKeys = null;
-
-		for (Serializable primaryKey : primaryKeys) {
-			AssetLink assetLink = (AssetLink)EntityCacheUtil.getResult(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-					AssetLinkImpl.class, primaryKey);
-
-			if (assetLink == null) {
-				if (uncachedPrimaryKeys == null) {
-					uncachedPrimaryKeys = new HashSet<Serializable>();
-				}
-
-				uncachedPrimaryKeys.add(primaryKey);
-			}
-			else {
-				map.put(primaryKey, assetLink);
-			}
-		}
-
-		if (uncachedPrimaryKeys == null) {
-			return map;
-		}
-
-		StringBundler query = new StringBundler((uncachedPrimaryKeys.size() * 2) +
-				1);
-
-		query.append(_SQL_SELECT_ASSETLINK_WHERE_PKS_IN);
-
-		for (Serializable primaryKey : uncachedPrimaryKeys) {
-			query.append(String.valueOf(primaryKey));
-
-			query.append(StringPool.COMMA);
-		}
-
-		query.setIndex(query.index() - 1);
-
-		query.append(StringPool.CLOSE_PARENTHESIS);
-
-		String sql = query.toString();
-
-		Session session = null;
-
-		try {
-			session = openSession();
-
-			Query q = session.createQuery(sql);
-
-			for (AssetLink assetLink : (List<AssetLink>)q.list()) {
-				map.put(assetLink.getPrimaryKeyObj(), assetLink);
-
-				cacheResult(assetLink);
-
-				uncachedPrimaryKeys.remove(assetLink.getPrimaryKeyObj());
-			}
-
-			for (Serializable primaryKey : uncachedPrimaryKeys) {
-				EntityCacheUtil.putResult(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
-					AssetLinkImpl.class, primaryKey, _nullAssetLink);
-			}
-		}
-		catch (Exception e) {
-			throw processException(e);
-		}
-		finally {
-			closeSession(session);
-		}
-
-		return map;
 	}
 
 	/**
@@ -3432,7 +3343,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns a range of all the asset links.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of asset links
@@ -3448,7 +3359,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 * Returns an ordered range of all the asset links.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.asset.model.impl.AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of asset links
@@ -3458,7 +3369,27 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public List<AssetLink> findAll(int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<AssetLink> orderByComparator) {
+		return findAll(start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the asset links.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link AssetLinkModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param start the lower bound of the range of asset links
+	 * @param end the upper bound of the range of asset links (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of asset links
+	 */
+	@Override
+	public List<AssetLink> findAll(int start, int end,
+		OrderByComparator<AssetLink> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -3466,16 +3397,20 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL;
+			finderPath = _finderPathWithoutPaginationFindAll;
 			finderArgs = FINDER_ARGS_EMPTY;
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_ALL;
+			finderPath = _finderPathWithPaginationFindAll;
 			finderArgs = new Object[] { start, end, orderByComparator };
 		}
 
-		List<AssetLink> list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<AssetLink> list = null;
+
+		if (retrieveFromCache) {
+			list = (List<AssetLink>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
+		}
 
 		if (list == null) {
 			StringBundler query = null;
@@ -3483,7 +3418,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 			if (orderByComparator != null) {
 				query = new StringBundler(2 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 
 				query.append(_SQL_SELECT_ASSETLINK);
 
@@ -3555,7 +3490,7 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)FinderCacheUtil.getResult(FINDER_PATH_COUNT_ALL,
+		Long count = (Long)FinderCacheUtil.getResult(_finderPathCountAll,
 				FINDER_ARGS_EMPTY, this);
 
 		if (count == null) {
@@ -3568,11 +3503,11 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_ALL,
+				FinderCacheUtil.putResult(_finderPathCountAll,
 					FINDER_ARGS_EMPTY, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_ALL,
+				FinderCacheUtil.removeResult(_finderPathCountAll,
 					FINDER_ARGS_EMPTY);
 
 				throw processException(e);
@@ -3586,33 +3521,179 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 	}
 
 	@Override
-	protected Set<String> getBadColumnNames() {
+	public Set<String> getBadColumnNames() {
 		return _badColumnNames;
+	}
+
+	@Override
+	protected EntityCache getEntityCache() {
+		return EntityCacheUtil.getEntityCache();
+	}
+
+	@Override
+	protected String getPKDBName() {
+		return "linkId";
+	}
+
+	@Override
+	protected String getSelectSQL() {
+		return _SQL_SELECT_ASSETLINK;
+	}
+
+	@Override
+	protected Map<String, Integer> getTableColumnsMap() {
+		return AssetLinkModelImpl.TABLE_COLUMNS_MAP;
 	}
 
 	/**
 	 * Initializes the asset link persistence.
 	 */
 	public void afterPropertiesSet() {
-		String[] listenerClassNames = StringUtil.split(GetterUtil.getString(
-					com.liferay.portal.util.PropsUtil.get(
-						"value.object.listener.com.liferay.portlet.asset.model.AssetLink")));
+		_finderPathWithPaginationFindAll = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
 
-		if (listenerClassNames.length > 0) {
-			try {
-				List<ModelListener<AssetLink>> listenersList = new ArrayList<ModelListener<AssetLink>>();
+		_finderPathWithoutPaginationFindAll = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
+				new String[0]);
 
-				for (String listenerClassName : listenerClassNames) {
-					listenersList.add((ModelListener<AssetLink>)InstanceFactory.newInstance(
-							getClassLoader(), listenerClassName));
-				}
+		_finderPathCountAll = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
+				new String[0]);
 
-				listeners = listenersList.toArray(new ModelListener[listenersList.size()]);
-			}
-			catch (Exception e) {
-				_log.error(e);
-			}
-		}
+		_finderPathWithPaginationFindByE1 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByE1",
+				new String[] {
+					Long.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByE1 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByE1",
+				new String[] { Long.class.getName() },
+				AssetLinkModelImpl.ENTRYID1_COLUMN_BITMASK |
+				AssetLinkModelImpl.WEIGHT_COLUMN_BITMASK);
+
+		_finderPathCountByE1 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE1",
+				new String[] { Long.class.getName() });
+
+		_finderPathWithPaginationFindByE2 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByE2",
+				new String[] {
+					Long.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByE2 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByE2",
+				new String[] { Long.class.getName() },
+				AssetLinkModelImpl.ENTRYID2_COLUMN_BITMASK |
+				AssetLinkModelImpl.WEIGHT_COLUMN_BITMASK);
+
+		_finderPathCountByE2 = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE2",
+				new String[] { Long.class.getName() });
+
+		_finderPathWithPaginationFindByE_E = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByE_E",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByE_E = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByE_E",
+				new String[] { Long.class.getName(), Long.class.getName() },
+				AssetLinkModelImpl.ENTRYID1_COLUMN_BITMASK |
+				AssetLinkModelImpl.ENTRYID2_COLUMN_BITMASK |
+				AssetLinkModelImpl.WEIGHT_COLUMN_BITMASK);
+
+		_finderPathCountByE_E = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE_E",
+				new String[] { Long.class.getName(), Long.class.getName() });
+
+		_finderPathWithPaginationFindByE1_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByE1_T",
+				new String[] {
+					Long.class.getName(), Integer.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByE1_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByE1_T",
+				new String[] { Long.class.getName(), Integer.class.getName() },
+				AssetLinkModelImpl.ENTRYID1_COLUMN_BITMASK |
+				AssetLinkModelImpl.TYPE_COLUMN_BITMASK |
+				AssetLinkModelImpl.WEIGHT_COLUMN_BITMASK);
+
+		_finderPathCountByE1_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE1_T",
+				new String[] { Long.class.getName(), Integer.class.getName() });
+
+		_finderPathWithPaginationFindByE2_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByE2_T",
+				new String[] {
+					Long.class.getName(), Integer.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByE2_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByE2_T",
+				new String[] { Long.class.getName(), Integer.class.getName() },
+				AssetLinkModelImpl.ENTRYID2_COLUMN_BITMASK |
+				AssetLinkModelImpl.TYPE_COLUMN_BITMASK |
+				AssetLinkModelImpl.WEIGHT_COLUMN_BITMASK);
+
+		_finderPathCountByE2_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE2_T",
+				new String[] { Long.class.getName(), Integer.class.getName() });
+
+		_finderPathFetchByE_E_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, AssetLinkImpl.class,
+				FINDER_CLASS_NAME_ENTITY, "fetchByE_E_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Integer.class.getName()
+				},
+				AssetLinkModelImpl.ENTRYID1_COLUMN_BITMASK |
+				AssetLinkModelImpl.ENTRYID2_COLUMN_BITMASK |
+				AssetLinkModelImpl.TYPE_COLUMN_BITMASK);
+
+		_finderPathCountByE_E_T = new FinderPath(AssetLinkModelImpl.ENTITY_CACHE_ENABLED,
+				AssetLinkModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByE_E_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Integer.class.getName()
+				});
 	}
 
 	public void destroy() {
@@ -3622,35 +3703,17 @@ public class AssetLinkPersistenceImpl extends BasePersistenceImpl<AssetLink>
 		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
+	@BeanReference(type = CompanyProviderWrapper.class)
+	protected CompanyProvider companyProvider;
 	private static final String _SQL_SELECT_ASSETLINK = "SELECT assetLink FROM AssetLink assetLink";
-	private static final String _SQL_SELECT_ASSETLINK_WHERE_PKS_IN = "SELECT assetLink FROM AssetLink assetLink WHERE linkId IN (";
 	private static final String _SQL_SELECT_ASSETLINK_WHERE = "SELECT assetLink FROM AssetLink assetLink WHERE ";
 	private static final String _SQL_COUNT_ASSETLINK = "SELECT COUNT(assetLink) FROM AssetLink assetLink";
 	private static final String _SQL_COUNT_ASSETLINK_WHERE = "SELECT COUNT(assetLink) FROM AssetLink assetLink WHERE ";
 	private static final String _ORDER_BY_ENTITY_ALIAS = "assetLink.";
 	private static final String _NO_SUCH_ENTITY_WITH_PRIMARY_KEY = "No AssetLink exists with the primary key ";
 	private static final String _NO_SUCH_ENTITY_WITH_KEY = "No AssetLink exists with the key {";
-	private static final boolean _HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE = com.liferay.portal.util.PropsValues.HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE;
-	private static Log _log = LogFactoryUtil.getLog(AssetLinkPersistenceImpl.class);
-	private static Set<String> _badColumnNames = SetUtil.fromArray(new String[] {
+	private static final Log _log = LogFactoryUtil.getLog(AssetLinkPersistenceImpl.class);
+	private static final Set<String> _badColumnNames = SetUtil.fromArray(new String[] {
 				"type"
 			});
-	private static AssetLink _nullAssetLink = new AssetLinkImpl() {
-			@Override
-			public Object clone() {
-				return this;
-			}
-
-			@Override
-			public CacheModel<AssetLink> toCacheModel() {
-				return _nullAssetLinkCacheModel;
-			}
-		};
-
-	private static CacheModel<AssetLink> _nullAssetLinkCacheModel = new CacheModel<AssetLink>() {
-			@Override
-			public AssetLink toEntityModel() {
-				return _nullAssetLink;
-			}
-		};
 }

@@ -1,0 +1,10 @@
+@default = "isChecked"
+definition {
+	function isChecked {
+		WaitForSPARefresh();
+
+		selenium.waitForElementPresent();
+
+		selenium.isChecked();
+	}
+}

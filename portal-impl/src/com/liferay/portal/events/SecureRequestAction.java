@@ -19,8 +19,8 @@ import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.util.PortalUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -85,9 +85,8 @@ public class SecureRequestAction extends Action {
 		if (unsecureCompleteURL.equals(secureCompleteURL)) {
 			return null;
 		}
-		else {
-			return secureCompleteURL;
-		}
+
+		return secureCompleteURL;
 	}
 
 	protected boolean isRequiresSecure(HttpServletRequest request) {
@@ -96,6 +95,7 @@ public class SecureRequestAction extends Action {
 
 	private static final boolean _REQUIRES_SECURE = true;
 
-	private static Log _log = LogFactoryUtil.getLog(SecureRequestAction.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		SecureRequestAction.class);
 
 }

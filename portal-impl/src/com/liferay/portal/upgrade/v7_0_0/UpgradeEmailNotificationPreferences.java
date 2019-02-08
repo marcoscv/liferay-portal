@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author Eduardo Garcia
+ * @author Eduardo García
  */
 public class UpgradeEmailNotificationPreferences
 	extends RenameUpgradePortalPreferences {
@@ -60,7 +60,6 @@ public class UpgradeEmailNotificationPreferences
 		return _preferenceNamesMap;
 	}
 
-	private Map<String, String> _preferenceNamesMap =
-		new HashMap<String, String>();
+	private final Map<String, String> _preferenceNamesMap = new HashMap<>();
 
 }

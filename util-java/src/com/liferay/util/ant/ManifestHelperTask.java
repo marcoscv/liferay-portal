@@ -17,9 +17,9 @@ package com.liferay.util.ant;
 import aQute.bnd.osgi.Analyzer;
 import aQute.bnd.osgi.Constants;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.OSDetector;
 import com.liferay.portal.kernel.util.ReleaseInfo;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -109,35 +109,35 @@ public class ManifestHelperTask extends Task {
 			return;
 		}
 
-		Analyzer analyzer = new Analyzer();
+		try (Analyzer analyzer = new Analyzer()) {
+			analyzer.setBase(project.getBaseDir());
 
-		analyzer.setBase(project.getBaseDir());
+			File classesDir = new File(project.getBaseDir(), "classes");
 
-		File classesDir = new File(project.getBaseDir(), "classes");
+			analyzer.setJar(classesDir);
 
-		analyzer.setJar(classesDir);
+			File file = new File(project.getBaseDir(), "bnd.bnd");
 
-		File file = new File(project.getBaseDir(), "bnd.bnd");
+			if (file.exists()) {
+				analyzer.setProperties(file);
+			}
+			else {
+				analyzer.setProperty(Constants.EXPORT_PACKAGE, "*");
+				analyzer.setProperty(
+					Constants.IMPORT_PACKAGE, "*;resolution:=optional");
+			}
 
-		if (file.exists()) {
-			analyzer.setProperties(file);
+			Manifest manifest = analyzer.calcManifest();
+
+			Attributes attributes = manifest.getMainAttributes();
+
+			project.setProperty(
+				"export.packages",
+				attributes.getValue(Constants.EXPORT_PACKAGE));
+			project.setProperty(
+				"import.packages",
+				attributes.getValue(Constants.IMPORT_PACKAGE));
 		}
-		else {
-			analyzer.setProperty(Constants.EXPORT_PACKAGE, "*");
-			analyzer.setProperty(
-				Constants.IMPORT_PACKAGE, "*;resolution:=optional");
-		}
-
-		Manifest manifest = analyzer.calcManifest();
-
-		Attributes attributes = manifest.getMainAttributes();
-
-		project.setProperty(
-			"export.packages", attributes.getValue(Constants.EXPORT_PACKAGE));
-		project.setProperty(
-			"import.packages", attributes.getValue(Constants.IMPORT_PACKAGE));
-
-		analyzer.close();
 	}
 
 	protected String execute(String command) throws Exception {
@@ -160,9 +160,8 @@ public class ManifestHelperTask extends Task {
 			if (OSDetector.isWindows()) {
 				return execute("cmd /c git rev-parse HEAD");
 			}
-			else {
-				return execute("git rev-parse HEAD");
-			}
+
+			return execute("git rev-parse HEAD");
 		}
 
 		File svnDir = new File(projectDir, ".svn");
@@ -171,9 +170,8 @@ public class ManifestHelperTask extends Task {
 			if (OSDetector.isWindows()) {
 				return execute("cmd /c svnversion .");
 			}
-			else {
-				return execute("svnversion .");
-			}
+
+			return execute("svnversion .");
 		}
 
 		return StringPool.BLANK;

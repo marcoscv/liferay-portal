@@ -15,7 +15,10 @@
 package com.liferay.portlet.asset.util;
 
 /**
- * @author Brian Wing Shun Chan
+ * @author     Brian Wing Shun Chan
+ * @deprecated As of Wilberforce (7.0.x), replaced by {@link
+ *             com.liferay.asset.categories.validator.CardinalityAssetEntryValidator}
  */
+@Deprecated
 public class DefaultAssetEntryValidator extends BaseAssetEntryValidator {
 }

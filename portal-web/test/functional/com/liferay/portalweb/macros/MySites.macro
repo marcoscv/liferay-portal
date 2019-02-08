@@ -1,0 +1,41 @@
+definition {
+	macro gotoPagesPG {
+		LexiconList.clickEllipsisItem(
+			item = "${item}",
+			listEntry = "${siteName}"
+		);
+
+		SelectWindow.selectPopUp(locator1 = "null");
+
+		Navigator._gotoPage(pageName = "${pageName}");
+
+		Close.closeWindow(locator1 = "null");
+	}
+
+	macro viewMembershipRequested {
+		LexiconList.clickEllipsis(
+			listEntry = "${siteName}"
+		);
+
+		MenuItem.viewPresent(menuItem = "Membership Requested");
+
+		MenuItem.viewPresent(menuItem = "Membership Requested");
+	}
+
+	macro viewNoOptions {
+		Navigator.gotoNavItem(navItem = "${navItem}");
+
+		AssertElementNotPresent(
+			locator1 = "LexiconList#LIST_ENTRY_ELLIPSIS",
+			key_listEntry = "${siteName}"
+		);
+	}
+
+	macro viewTags {
+		AssertTextEquals(
+			locator1 = "Tags#VIEW_TAGS_VIA_MY_SITES",
+			value1 = "${tagName}",
+			key_tagName = "${tagName}"
+		);
+	}
+}

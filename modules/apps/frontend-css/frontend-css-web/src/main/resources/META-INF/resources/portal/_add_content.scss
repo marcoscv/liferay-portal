@@ -1,0 +1,115 @@
+@import "bourbon";
+@import "mixins";
+
+.lfr-add-panel {
+	width: 330px;
+
+	.add-content-menu {
+		.drag-content-item {
+			cursor: move;
+		}
+
+		.lfr-content-category .list-group-panel.collapse.in {
+			height: auto !important;
+		}
+
+		.lfr-content-item {
+			.drag-content-item {
+				display: inline-block;
+				width: 100%;
+			}
+
+			&:focus, &:hover {
+				.add-content-item {
+					clip: auto;
+					clip-path: none;
+					display: inline;
+					height: auto;
+					overflow: visible;
+					white-space: normal;
+					width: auto;
+				}
+			}
+
+			.add-content-item {
+				cursor: pointer;
+				margin-right: 15px;
+				padding: 2px 10px;
+				position: absolute;
+				right: 0;
+				top: -2px;
+
+				@include respond-to(phone, tablet) {
+					clip: auto;
+					clip-path: none;
+					display: inline;
+					height: auto;
+					overflow: visible;
+					white-space: normal;
+					width: auto;
+				}
+			}
+
+			.lfr-portlet-used {
+				opacity: 0.3;
+
+				&.drag-content-item {
+					cursor: default;
+				}
+
+				&.add-content-item {
+					display: none;
+				}
+			}
+
+			.taglib-icon-label {
+				display: inline-flex;
+				width: 70%;
+			}
+		}
+
+		.tabular-list-group {
+			padding-right: 16px;
+
+			> .list-group-item {
+				margin-bottom: 8px;
+				padding: 4px;
+
+				> .list-group-item-field {
+					padding-right: 4px;
+
+					.sticker, .user-icon {
+						margin: 0 auto;
+					}
+				}
+
+				> .list-group-item-content {
+					h1 {
+						font-size: 0.875rem;
+					}
+
+					.text-default {
+						color: #6B6C7E;
+						font-size: 0.875rem;
+						font-weight: 400;
+					}
+				}
+			}
+		}
+
+		.list-group-item > .list-unstyled {
+			padding-right: 16px;
+
+			.taglib-vertical-card-footer {
+				height: inherit;
+				min-height: inherit;
+			}
+		}
+
+		@include respond-to(phone) {
+			.lfr-drag-portlet-message {
+				display: none;
+			}
+		}
+	}
+}

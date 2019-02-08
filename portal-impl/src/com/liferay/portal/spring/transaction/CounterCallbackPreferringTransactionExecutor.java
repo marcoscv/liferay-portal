@@ -14,10 +14,10 @@
 
 package com.liferay.portal.spring.transaction;
 
-import org.aopalliance.intercept.MethodInvocation;
+import com.liferay.petra.function.UnsafeSupplier;
 
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.interceptor.TransactionAttribute;
 import org.springframework.transaction.support.TransactionCallback;
 
 /**
@@ -26,48 +26,52 @@ import org.springframework.transaction.support.TransactionCallback;
 public class CounterCallbackPreferringTransactionExecutor
 	extends CallbackPreferringTransactionExecutor {
 
-	@Override
-	protected TransactionCallback<Object> createTransactionCallback(
-		TransactionAttribute transactionAttribute,
-		MethodInvocation methodInvocation) {
+	public CounterCallbackPreferringTransactionExecutor(
+		PlatformTransactionManager platformTransactionManager) {
 
-		return new CounterCallbackPreferringTransactionCallback(
-			transactionAttribute, methodInvocation);
+		super(platformTransactionManager);
 	}
 
-	private class CounterCallbackPreferringTransactionCallback
+	@Override
+	protected TransactionCallback<Object> createTransactionCallback(
+		TransactionAttributeAdapter transactionAttributeAdapter,
+		UnsafeSupplier<Object, Throwable> unsafeSupplier) {
+
+		return new CounterCallbackPreferringTransactionCallback(
+			transactionAttributeAdapter, unsafeSupplier);
+	}
+
+	private static class CounterCallbackPreferringTransactionCallback
 		implements TransactionCallback<Object> {
-
-		private CounterCallbackPreferringTransactionCallback(
-			TransactionAttribute transactionAttribute,
-			MethodInvocation methodInvocation) {
-
-			_transactionAttribute = transactionAttribute;
-			_methodInvocation = methodInvocation;
-		}
 
 		@Override
 		public Object doInTransaction(TransactionStatus transactionStatus) {
 			try {
-				return _methodInvocation.proceed();
+				return _unsafeSupplier.get();
 			}
 			catch (Throwable throwable) {
-				if (_transactionAttribute.rollbackOn(throwable)) {
+				if (_transactionAttributeAdapter.rollbackOn(throwable)) {
 					if (throwable instanceof RuntimeException) {
 						throw (RuntimeException)throwable;
 					}
-					else {
-						throw new ThrowableHolderException(throwable);
-					}
+
+					throw new ThrowableHolderException(throwable);
 				}
-				else {
-					return new ThrowableHolder(throwable);
-				}
+
+				return new ThrowableHolder(throwable);
 			}
 		}
 
-		private MethodInvocation _methodInvocation;
-		private TransactionAttribute _transactionAttribute;
+		private CounterCallbackPreferringTransactionCallback(
+			TransactionAttributeAdapter transactionAttributeAdapter,
+			UnsafeSupplier<Object, Throwable> unsafeSupplier) {
+
+			_transactionAttributeAdapter = transactionAttributeAdapter;
+			_unsafeSupplier = unsafeSupplier;
+		}
+
+		private final TransactionAttributeAdapter _transactionAttributeAdapter;
+		private final UnsafeSupplier<Object, Throwable> _unsafeSupplier;
 
 	}
 

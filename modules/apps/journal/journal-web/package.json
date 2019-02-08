@@ -1,0 +1,31 @@
+{
+	"csfConfig": {
+		"path:**/*.js": {
+			"js": {
+				"lint": {
+					"globals": {
+						"MODULE_PATH": true
+					}
+				}
+			}
+		}
+	},
+	"dependencies": {
+		"clay-dropdown": "^2.5.0",
+		"clay-label": "^2.5.0",
+		"metal": "^2.5.18",
+		"metal-dom": "^2.5.18",
+		"metal-soy": "^2.4.5",
+		"metal-state": "^2.6.4"
+	},
+	"devDependencies": {
+		"liferay-npm-scripts": "1.2.0"
+	},
+	"name": "journal-web",
+	"scripts": {
+		"build": "liferay-npm-scripts build --soy --bridge --bundler",
+		"csf": "liferay-npm-scripts lint",
+		"format": "liferay-npm-scripts format"
+	},
+	"version": "3.0.0"
+}

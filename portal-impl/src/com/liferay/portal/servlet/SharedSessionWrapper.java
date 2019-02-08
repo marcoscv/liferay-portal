@@ -28,6 +28,7 @@ import java.util.Map;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionContext;
 
 /**
  * @author Brian Wing Shun Chan
@@ -44,8 +45,10 @@ public class SharedSessionWrapper implements HttpSession {
 				_log.warn("Wrapped portal session is null");
 			}
 		}
+		else {
+			_portalSession = portalSession;
+		}
 
-		_portalSession = portalSession;
 		_portletSession = portletSession;
 	}
 
@@ -118,21 +121,29 @@ public class SharedSessionWrapper implements HttpSession {
 	}
 
 	/**
-	 * @deprecated As of 6.1.0
+	 * @deprecated As of Paton (6.1.x)
 	 */
 	@Deprecated
 	@Override
-	public javax.servlet.http.HttpSessionContext getSessionContext() {
+	public HttpSessionContext getSessionContext() {
 		HttpSession session = getSessionDelegate();
 
 		return session.getSessionContext();
 	}
 
+	/**
+	 * @deprecated As of Wilberforce (7.0.x)
+	 */
+	@Deprecated
 	@Override
 	public Object getValue(String name) {
 		return getAttribute(name);
 	}
 
+	/**
+	 * @deprecated As of Wilberforce (7.0.x)
+	 */
+	@Deprecated
 	@Override
 	public String[] getValueNames() {
 		List<String> names = ListUtil.fromEnumeration(getAttributeNames());
@@ -154,6 +165,10 @@ public class SharedSessionWrapper implements HttpSession {
 		return session.isNew();
 	}
 
+	/**
+	 * @deprecated As of Wilberforce (7.0.x)
+	 */
+	@Deprecated
 	@Override
 	public void putValue(String name, Object value) {
 		setAttribute(name, value);
@@ -166,6 +181,10 @@ public class SharedSessionWrapper implements HttpSession {
 		session.removeAttribute(name);
 	}
 
+	/**
+	 * @deprecated As of Wilberforce (7.0.x)
+	 */
+	@Deprecated
 	@Override
 	public void removeValue(String name) {
 		removeAttribute(name);
@@ -199,9 +218,8 @@ public class SharedSessionWrapper implements HttpSession {
 		if (_portletSession != null) {
 			return _portletSession;
 		}
-		else {
-			return _portalSession;
-		}
+
+		return _portalSession;
 	}
 
 	protected HttpSession getSessionDelegate(String name) {
@@ -215,24 +233,25 @@ public class SharedSessionWrapper implements HttpSession {
 		else if (containsSharedAttribute(name)) {
 			return _portalSession;
 		}
-		else {
-			return _portletSession;
-		}
+
+		return _portletSession;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(SharedSessionWrapper.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		SharedSessionWrapper.class);
 
-	private static Map<String, String> _sharedSessionAttributesExcludes;
+	private static final Map<String, String> _sharedSessionAttributesExcludes =
+		new HashMap<String, String>() {
+			{
+				for (String name :
+						PropsValues.SESSION_SHARED_ATTRIBUTES_EXCLUDES) {
 
-	static {
-		_sharedSessionAttributesExcludes = new HashMap<String, String>();
+					put(name, name);
+				}
+			}
+		};
 
-		for (String name : PropsValues.SESSION_SHARED_ATTRIBUTES_EXCLUDES) {
-			_sharedSessionAttributesExcludes.put(name, name);
-		}
-	}
-
-	private HttpSession _portalSession;
+	private final HttpSession _portalSession;
 	private HttpSession _portletSession;
 
 }

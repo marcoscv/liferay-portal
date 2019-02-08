@@ -1,0 +1,263 @@
+definition {
+	macro addFromURL {
+		var key_imageSourceURL = "${imageSourceURL}";
+		var key_navTab = "${navTab}";
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		AssertClick(locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB", value1 = "URL");
+
+		AssertElementPresent(locator1 = "ItemSelector#URL_LABEL");
+
+		Type.typeAceEditor(locator1 = "TextInput#URL", value1 = "${imageSourceURL}");
+
+		AssertClick(locator1 = "Button#ENTER", value1 = "Enter");
+
+		AssertElementPresent(locator1 = "ItemSelector#URL_IMAGE_SOURCE");
+
+		SelectFrameTop(value1 = "relative=top");
+
+		AssertClick(locator1 = "ItemSelector#ADD_BUTTON", value1 = "Add");
+	}
+
+	macro gotoItemSelectorViaAlloyEditor {
+		AlloyEditor.clickContentField();
+
+		Click(locator1 = "AlloyEditor#CONTENT_ADD_BUTTON");
+
+		Click(locator1 = "AlloyEditor#CONTENT_ADD_MENUBAR_IMAGE");
+	}
+
+	macro gotoItemSelectorViaSelectButton {
+		Click(locator1 = "Button#SELECT");
+	}
+
+	macro searchBlogImages {
+		var key_imageFileName = "${imageFileName}";
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		var key_navTab = "Documents and Media";
+
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "Documents and Media"
+		);
+
+		AssertElementNotPresent(locator1 = "ItemSelector#SELECT_FILE_IMAGE_PREVIEW");
+
+		var key_navTab = "Blog Images";
+
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "Blog Images"
+		);
+
+		Type(locator1 = "TextInput#SEARCH", value1 = "${imageFileName}");
+
+		KeyPress(locator1 = "TextInput#SEARCH", value1 = "\RETURN");
+
+		AssertTextEquals(
+			locator1 = "Search#SEARCH_INFO",
+			value1 = "1 Results for ${imageFileName}"
+		);
+
+		AssertElementPresent(locator1 = "ItemSelector#SELECT_FILE_IMAGE_PREVIEW");
+
+		SelectFrameTop(value1 = "relative=top");
+	}
+
+	macro searchDMImages {
+		var key_imageFileName = "${imageFileName}";
+		var key_uploadFileName = "${imageFileName}";
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		var key_navTab = "Blog Images";
+
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "Blog Images"
+		);
+
+		AssertElementNotPresent(locator1 = "ItemSelector#SELECT_FILE_IMAGE_PREVIEW");
+
+		var key_navTab = "Documents and Media";
+
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "Documents and Media"
+		);
+
+		Type(locator1 = "TextInput#SEARCH", value1 = "${imageFileName}");
+
+		KeyPress(locator1 = "TextInput#SEARCH", value1 = "\RETURN");
+
+		AssertTextEquals(
+			locator1 = "Search#SEARCH_INFO",
+			value1 = "1 Results for ${imageFileName}"
+		);
+
+		AssertElementPresent(locator1 = "ItemSelector#SELECT_FILE_IMAGE_PREVIEW");
+
+		SelectFrameTop(value1 = "relative=top");
+	}
+
+	macro selectBlogImage {
+		var key_imageFileName = "${imageFileName}";
+		var key_navTab = "${navTab}";
+		var key_uploadFileName = "${imageFileName}";
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "Blog Images"
+		);
+
+		Click(locator1 = "ItemSelector#SELECT_FILE_IMAGE_PREVIEW");
+
+		AssertTextEquals(locator1 = "ItemSelector#CAPTION", value1 = "${imageFileName}");
+
+		SelectFrameTop(value1 = "relative=top");
+
+		AssertClick(locator1 = "ItemSelector#ADD_BUTTON", value1 = "Add");
+	}
+
+	macro selectDMImage {
+		var key_navTab = "${navTab}";
+		var key_uploadFileName = "${imageFileName}";
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "Documents and Media"
+		);
+
+		if (isSet(dmFolderName)) {
+			var key_dmFolderName = "${dmFolderName}";
+
+			AssertClick(
+				locator1 = "DocumentsAndMedia#ICON_FOLDER_TITLE",
+				value1 = "${dmFolderName}"
+			);
+		}
+
+		if (isSet(dmSubFolderName)) {
+			var key_dmFolderName = "${dmSubFolderName}";
+
+			AssertClick(
+				locator1 = "DocumentsAndMedia#ICON_FOLDER_TITLE",
+				value1 = "${dmSubFolderName}"
+			);
+		}
+
+		var key_imageFileName = StringUtil.replace("${imageFileName}", " ", "+");
+
+		Click(locator1 = "ItemSelector#SELECT_FILE_IMAGE_PREVIEW");
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "ItemSelector#CAPTION",
+			value1 = "${imageFileName}"
+		);
+
+		SelectFrameTop(value1 = "relative=top");
+
+		Click(locator1 = "Button#ADD");
+	}
+
+	macro uploadFile {
+		var key_navTab = "${navTab}";
+		var key_uploadFileName = "${uploadFileName}";
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		AssertClick(
+			locator1 = "ItemSelector#NAVIGATION_SPECIFIC_TAB",
+			value1 = "${navTab}"
+		);
+
+		AssertClick(
+			locator1 = "ItemSelector#SELECT_FILE_UPLOAD_IMAGE",
+			value1 = "Select File"
+		);
+
+		SikuliUploadCommonFile(
+			locator1 = "OS#FILE_DIALOG_BOX_FILE_NAME_FIELD_PNG",
+			value1 = "${uploadFileName}"
+		);
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#CAPTION",
+			value1 = "${uploadFileName}"
+		);
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_MODAL_FOOTER");
+
+		AssertClick(locator1 = "ItemSelector#ADD_BUTTON", value1 = "Add");
+
+		SelectFrameTop(value1 = "relative=top");
+	}
+
+	macro viewBlogImageDetails {
+		var key_imageFileName = "${imageFileName}";
+		var key_uploadFileName = "${uploadFileName}";
+
+		SelectFrame(locator1 = "ItemSelector#ITEM_SELECTOR_IFRAME");
+
+		Click(
+			locator1 = "ItemSelector#SELECT_FILE_IMAGE_PREVIEW",
+			value1 = "${imageFileName}"
+		);
+
+		AssertElementPresent(locator1 = "ItemSelector#SELECT_IMAGE_PREVIEW");
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#CAPTION",
+			value1 = "${uploadFileName}"
+		);
+
+		Click(locator1 = "ItemSelector#FILE_INFO_ICON");
+
+		AssertElementPresent(locator1 = "NavTab#FILE_INFO");
+
+		AssertElementPresent(locator1 = "NavTab#VERSION");
+
+		AssertClick(locator1 = "NavTab#FILE_INFO", value1 = "File Info");
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#SIDEBAR_FILE_INFO_FORMAT",
+			value1 = "${imageFormat}"
+		);
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#SIDEBAR_FILE_INFO_SIZE",
+			value1 = "${imageSize}"
+		);
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#SIDEBAR_FILE_INFO_NAME",
+			value1 = "${uploadFileName}"
+		);
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "ItemSelector#SIDEBAR_FILE_INFO_MODIFIED",
+			value1 = "${lastModifiedBy}"
+		);
+
+		AssertClick(locator1 = "NavTab#VERSION", value1 = "Version");
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#SIDEBAR_VERSION_VERSION",
+			value1 = "${versionNumber}"
+		);
+
+		AssertTextEquals(
+			locator1 = "ItemSelector#SIDEBAR_VERSION_STATUS",
+			value1 = "${imageStatus}"
+		);
+
+		SelectFrameTop(value1 = "relative=top");
+	}
+}

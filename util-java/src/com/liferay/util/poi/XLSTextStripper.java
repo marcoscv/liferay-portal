@@ -25,6 +25,8 @@ import java.util.Iterator;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
 
 /**
@@ -33,6 +35,8 @@ import org.apache.poi.ss.usermodel.Row;
 public class XLSTextStripper {
 
 	public XLSTextStripper(InputStream is) {
+		String text = null;
+
 		try {
 			StringBundler sb = new StringBundler();
 
@@ -55,19 +59,21 @@ public class XLSTextStripper {
 
 						String cellStringValue = null;
 
-						if (cell.getCellType() == 4) {
+						if (cell.getCellType() == CellType.BOOLEAN) {
 							boolean booleanValue = cell.getBooleanCellValue();
 
 							cellStringValue = String.valueOf(booleanValue);
 						}
-						else if (cell.getCellType() == 0) {
+						else if (cell.getCellType() == CellType.NUMERIC) {
 							double doubleValue = cell.getNumericCellValue();
 
 							cellStringValue = String.valueOf(doubleValue);
 						}
-						else if (cell.getCellType() == 1) {
-							cellStringValue =
-								cell.getRichStringCellValue().getString();
+						else if (cell.getCellType() == CellType.STRING) {
+							RichTextString richTextString =
+								cell.getRichStringCellValue();
+
+							cellStringValue = richTextString.getString();
 						}
 
 						if (cellStringValue != null) {
@@ -80,19 +86,22 @@ public class XLSTextStripper {
 				}
 			}
 
-			_text = sb.toString();
+			text = sb.toString();
 		}
 		catch (Exception e) {
 			_log.error(e.getMessage());
 		}
+
+		_text = text;
 	}
 
 	public String getText() {
 		return _text;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(XLSTextStripper.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		XLSTextStripper.class);
 
-	private String _text;
+	private final String _text;
 
 }

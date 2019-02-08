@@ -14,21 +14,21 @@
 
 package com.liferay.portal.service.impl;
 
-import com.liferay.portal.DuplicateTeamException;
-import com.liferay.portal.TeamNameException;
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.exception.DuplicateTeamException;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.portal.kernel.exception.TeamNameException;
+import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.RoleConstants;
+import com.liferay.portal.kernel.model.Team;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.model.ResourceConstants;
-import com.liferay.portal.model.Role;
-import com.liferay.portal.model.RoleConstants;
-import com.liferay.portal.model.Team;
-import com.liferay.portal.model.User;
 import com.liferay.portal.service.base.TeamLocalServiceBaseImpl;
 
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -37,15 +37,29 @@ import java.util.List;
  */
 public class TeamLocalServiceImpl extends TeamLocalServiceBaseImpl {
 
+	/**
+	 * @deprecated As of Wilberforce (7.0.x), replaced by {@link #addTeam(long,
+	 *             long, String, String, ServiceContext)}
+	 */
+	@Deprecated
 	@Override
 	public Team addTeam(
 			long userId, long groupId, String name, String description)
 		throws PortalException {
 
+		return addTeam(
+			userId, groupId, name, description, new ServiceContext());
+	}
+
+	@Override
+	public Team addTeam(
+			long userId, long groupId, String name, String description,
+			ServiceContext serviceContext)
+		throws PortalException {
+
 		// Team
 
 		User user = userPersistence.findByPrimaryKey(userId);
-		Date now = new Date();
 
 		validate(0, groupId, name);
 
@@ -53,11 +67,10 @@ public class TeamLocalServiceImpl extends TeamLocalServiceBaseImpl {
 
 		Team team = teamPersistence.create(teamId);
 
-		team.setUserId(userId);
+		team.setUuid(serviceContext.getUuid());
 		team.setCompanyId(user.getCompanyId());
+		team.setUserId(userId);
 		team.setUserName(user.getFullName());
-		team.setCreateDate(now);
-		team.setModifiedDate(now);
 		team.setGroupId(groupId);
 		team.setName(name);
 		team.setDescription(description);
@@ -118,8 +131,18 @@ public class TeamLocalServiceImpl extends TeamLocalServiceBaseImpl {
 	}
 
 	@Override
+	public Team fetchTeam(long groupId, String name) {
+		return teamPersistence.fetchByG_N(groupId, name);
+	}
+
+	@Override
 	public List<Team> getGroupTeams(long groupId) {
 		return teamPersistence.findByGroupId(groupId);
+	}
+
+	@Override
+	public int getGroupTeamsCount(long groupId) {
+		return teamPersistence.countByGroupId(groupId);
 	}
 
 	@Override
@@ -128,10 +151,14 @@ public class TeamLocalServiceImpl extends TeamLocalServiceBaseImpl {
 	}
 
 	@Override
-	public List<Team> getUserTeams(long userId, long groupId) {
+	public List<Team> getUserOrUserGroupTeams(long groupId, long userId) {
+		return teamFinder.findByG_U(
+			groupId, userId, QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+	}
 
-		LinkedHashMap<String, Object> params =
-			new LinkedHashMap<String, Object>();
+	@Override
+	public List<Team> getUserTeams(long userId, long groupId) {
+		LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
 		params.put("usersTeams", userId);
 
@@ -144,7 +171,7 @@ public class TeamLocalServiceImpl extends TeamLocalServiceBaseImpl {
 	public List<Team> search(
 		long groupId, String name, String description,
 		LinkedHashMap<String, Object> params, int start, int end,
-		OrderByComparator obc) {
+		OrderByComparator<Team> obc) {
 
 		return teamFinder.findByG_N_D(
 			groupId, name, description, params, start, end, obc);
@@ -162,13 +189,10 @@ public class TeamLocalServiceImpl extends TeamLocalServiceBaseImpl {
 	public Team updateTeam(long teamId, String name, String description)
 		throws PortalException {
 
-		Date now = new Date();
-
 		Team team = teamPersistence.findByPrimaryKey(teamId);
 
 		validate(teamId, team.getGroupId(), name);
 
-		team.setModifiedDate(now);
 		team.setName(name);
 		team.setDescription(description);
 

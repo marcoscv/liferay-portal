@@ -1,0 +1,649 @@
+definition {
+	var assetType = "Documents Folder";
+
+	macro addCP {
+		var key_dmFolderName = "${dmFolderName}";
+
+		LexiconEntry.gotoAdd();
+
+		AssertClick.assertTextClickAt(
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			value1 = "Folder",
+			key_menuItem = "Folder"
+		);
+
+		Pause(locator1 = "1000");
+
+		PortletEntry.inputName(name = "${dmFolderName}");
+
+		if (isSet(dmFolderDescription)) {
+			PortletEntry.inputDescription(description = "${dmFolderDescription}");
+		}
+
+		PortletEntry.save();
+
+		if (isSet(siteName)) {
+			ProductMenu.gotoSite(site = "${siteName}");
+
+			ProductMenu.gotoPortlet(
+				category = "Content",
+				panel = "Site Administration",
+				portlet = "Documents and Media"
+			);
+		}
+
+		AssertElementPresent(locator1 = "DocumentsAndMedia#ICON_FOLDER_THUMBNAIL");
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#ICON_FOLDER_TITLE",
+			value1 = "${dmFolderName}"
+		);
+	}
+
+	macro addPG {
+		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
+
+		AssertClick.assertTextClickAt(
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			value1 = "Folder",
+			key_menuItem = "Folder"
+		);
+
+		Pause(locator1 = "1000");
+
+		PortletEntry.inputName(name = "${dmFolderName}");
+
+		PortletEntry.inputDescription(description = "${dmFolderDescription}");
+
+		if (isSet(viewableBy)) {
+			Panel.expandPanel(panel = "Permissions");
+
+			Select(locator1 = "Select#PERMISSIONS", value1 = "${viewableBy}");
+		}
+
+		Button.clickSave();
+
+		if ("${dmFolder}" == "Duplicate") {
+			Alert.viewRequestFailedToComplete();
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_1",
+				value1 = "Please enter a unique folder name."
+			);
+		}
+		else if ("${dmFolder}" == "Invalid") {
+			Alert.viewRequestFailedToComplete();
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_1",
+				value1 = "The Folder Name cannot contain the following invalid characters: \ // : * ? &quot; < > | ../ /..."
+			);
+		}
+		else {
+			Alert.viewSuccessMessage();
+		}
+	}
+
+	macro addPGViaMG {
+		Portlet.clickPortletPlusIconPG(portletName = "Media Gallery");
+
+		AssertClick.assertTextClickAt(
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			value1 = "Folder",
+			key_menuItem = "Folder"
+		);
+
+		Pause(locator1 = "1000");
+
+		PortletEntry.inputName(name = "${mgFolderName}");
+
+		PortletEntry.inputDescription(description = "${mgFolderDescription}");
+
+		PortletEntry.save();
+
+		var key_mgFolderName = "${mgFolderName}";
+
+		AssertTextEquals(
+			locator1 = "MediaGallery#FOLDER_NAME",
+			value1 = "${mgFolderName}"
+		);
+	}
+
+	macro addSubfolderCP {
+		MouseOver.mouseOverNotVisible(locator1 = "Button#PLUS");
+
+		LexiconEntry.gotoAdd();
+
+		AssertClick.assertTextClickAt(
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			value1 = "Subfolder",
+			key_menuItem = "Subfolder"
+		);
+
+		Pause(locator1 = "1000");
+
+		PortletEntry.inputName(name = "${dmSubFolderName}");
+
+		if (isSet(dmSubFolderDescription)) {
+			PortletEntry.inputDescription(description = "${dmSubFolderDescription}");
+		}
+
+		Button.clickSave();
+
+		if ("${dmSubFolder}" == "Duplicate") {
+			Alert.viewRequestFailedToComplete();
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_1",
+				value1 = "Please enter a unique folder name."
+			);
+		}
+		else {
+			Alert.viewSuccessMessage();
+		}
+	}
+
+	macro addSubfolderPG {
+		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
+
+		AssertClick.assertTextClickAt(
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			value1 = "Subfolder",
+			key_menuItem = "Subfolder"
+		);
+
+		Pause(locator1 = "1000");
+
+		PortletEntry.inputName(name = "${dmSubFolderName}");
+
+		if (isSet(dmSubFolderDescription)) {
+			PortletEntry.inputDescription(description = "${dmSubFolderDescription}");
+		}
+
+		Button.clickSave();
+
+		if ("${dmSubFolder}" == "Duplicate") {
+			Alert.viewRequestFailedToComplete();
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_ENTER_A_UNIQUE_FOLDER",
+				value1 = "Please enter a unique folder name."
+			);
+		}
+		else {
+			Alert.viewSuccessMessage();
+		}
+	}
+
+	macro addSubfolderPGViaMG {
+		Portlet.clickPortletPlusIconPG(portletName = "Media Gallery");
+
+		AssertClick.assertTextClickAt(
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			value1 = "Subfolder",
+			key_menuItem = "Subfolder"
+		);
+
+		Pause(locator1 = "1000");
+
+		PortletEntry.inputName(name = "${mgSubfolderName}");
+
+		PortletEntry.inputDescription(description = "${mgSubfolderDescription}");
+
+		PortletEntry.save();
+	}
+
+	macro cannotViewCP {
+		var key_dmFolderName = "${dmFolderName}";
+
+		AssertElementNotPresent(locator1 = "DocumentsAndMedia#ICON_FOLDER_THUMBNAIL");
+	}
+
+	macro configureWorkflowCP {
+		DMFolder.gotoEditCP(folderName = "${dmFolderName}");
+
+		if (IsElementNotPresent.isNotVisible(locator1 = "Radio#WORKFLOW_PARENT_FOLDER")) {
+			Click(
+				locator1 = "DocumentsAndMediaEditFolder#WORKFLOW_DOCUMENT_TYPE_RESTRICTIONS_TOGGLE"
+			);
+		}
+
+		if ("${workflowRestriction}" == "Parent Folder") {
+			Click(locator1 = "Radio#WORKFLOW_PARENT_FOLDER");
+
+			Button.clickSave();
+		}
+		else if ("${workflowRestriction}" == "Specific Restrictions") {
+			Click(locator1 = "Radio#WORKFLOW_SPECIFIC_RESTRICTIONS");
+
+			AssertClick(
+				locator1 = "DocumentsAndMediaEditFolder#WORKFLOW_SPECIFIC_RESTRICTIONS_SELECT_DOCUMENT_TYPE_BUTTON",
+				value1 = "Select Document Type"
+			);
+
+			SelectFrame(value1 = "relative=top");
+
+			SelectFrame(locator1 = "DocumentsAndMediaSelectDocument#SELECT_DOCUMENT_IFRAME");
+
+			var key_dmDocumentTypeName = "${dmDocumentTypeName}";
+
+			AssertClick(
+				locator1 = "DocumentsAndMediaSelectDocument#DOCUMENTS_TABLE_CHOOSE",
+				value1 = "Choose"
+			);
+
+			SelectFrameTop(value1 = "relative=top");
+
+			Select(
+				locator1 = "DocumentsAndMediaEditFolder#WORKFLOW_SPECIFIC_RESTRICTIONS_TYPE_WORKFLOW_SELECT",
+				value1 = "${workflowDefinition}"
+			);
+
+			AssertClickNoError(locator1 = "Button#ANY", value1 = "Save", key_text = "Save");
+
+			AssertConfirm(
+				value1 = "You are making changes to the document types. If a document in this folder or its subfolders is currently in draft or pending workflow states, you may lose some or all of its metadata. A new version will be created for all other documents. Are you sure you wish to continue?"
+			);
+		}
+		else if ("${workflowRestriction}" == "Default Workflow") {
+			Click(locator1 = "Radio#WORKFLOW_DEFAULT_WORKFLOW");
+
+			Select(locator1 = "Select#WORKFLOW_DEFAULT", value1 = "${workflowDefinition}");
+
+			Button.clickSave();
+		}
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro deleteCP {
+		var key_dmFolderName = "${dmFolderName}";
+
+		Click(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_VERTICAL_ELLIPSIS");
+
+		if (isSet(recycleBinDisabled)) {
+			MenuItem.clickNoError(menuItem = "Delete");
+
+			AssertConfirm(
+				value1 = "Are you sure you want to delete this? It will be deleted immediately."
+			);
+
+			Alert.viewSuccessMessage();
+		}
+		else {
+			PortletEntry.clickMoveToRecycleBin();
+
+			AssertElementPresent(locator1 = "Message#SUCCESS");
+		}
+	}
+
+	macro deletePG {
+		var key_dmFolderName = "${dmFolderName}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
+			value1 = "${dmFolderName}"
+		);
+
+		Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_CHECKBOX");
+
+		Click(locator1 = "Icon#MOVE_TO_RECYCLE_BIN");
+
+		AssertElementPresent(locator1 = "Message#SUCCESS");
+
+		AssertElementNotPresent(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_ICON"
+		);
+	}
+
+	macro editCP {
+		var key_dmFolderName = "${dmFolderName}";
+
+		AssertElementPresent(locator1 = "DocumentsAndMedia#ICON_FOLDER_THUMBNAIL");
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#ICON_FOLDER_THUMBNAIL",
+			value1 = "${dmFolderName}"
+		);
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_VERTICAL_ELLIPSIS"
+		);
+
+		Click(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Edit");
+
+		PortletEntry.inputName(name = "${dmFolderNameEdit}");
+
+		PortletEntry.inputDescription(description = "${dmFolderDescriptionEdit}");
+
+		PortletEntry.save();
+
+		AssertElementPresent(locator1 = "DocumentsAndMedia#ICON_FOLDER_THUMBNAIL");
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#ICON_FOLDER_THUMBNAIL",
+			value1 = "${dmFolderNameEdit}"
+		);
+	}
+
+	macro editPG {
+		var key_dmFolderName = "${dmFolderName}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
+			value1 = "${dmFolderName}"
+		);
+
+		Click(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Edit");
+
+		PortletEntry.inputName(name = "${dmFolderNameEdit}");
+
+		PortletEntry.inputDescription(description = "${dmFolderDescriptionEdit}");
+
+		Button.clickSave();
+
+		var key_dmFolderNameEdit = "${dmFolderNameEdit}";
+
+		Alert.viewSuccessMessage();
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_EDITED_TITLE",
+			value1 = "${dmFolderNameEdit}"
+		);
+	}
+
+	macro editPGViaMG {
+		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Edit");
+
+		PortletEntry.inputName(name = "${mgFolderNameEdit}");
+
+		PortletEntry.inputDescription(description = "${mgFolderDescriptionEdit}");
+
+		PortletEntry.save();
+
+		var key_mgFolderName = "${mgFolderName}";
+
+		AssertTextEquals(
+			locator1 = "MediaGallery#FOLDER_NAME",
+			value1 = "${mgFolderNameEdit}"
+		);
+	}
+
+	macro gotoEditCP {
+		var key_dmFolderName = "${folderName}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#ICON_FOLDER_THUMBNAIL",
+			value1 = "${folderName}"
+		);
+
+		Click(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Edit");
+	}
+
+	macro gotoPGViaMG {
+		var key_mgFolderName = "${mgFolderName}";
+
+		Click(locator1 = "MediaGallery#FOLDER_NAME");
+
+		AssertTextEquals(
+			locator1 = "MediaGallery#BREADCRUMB",
+			value1 = "${mgFolderName}"
+		);
+	}
+
+	macro moveToFolderCP {
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		var key_dmFolderName = "${dmFolderName}";
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE"
+		);
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE"
+		);
+
+		Click(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_VERTICAL_ELLIPSIS",
+			value1 = "${dmFolderName2}"
+		);
+
+		MenuItem.click(menuItem = "Move");
+
+		AssertClick(locator1 = "Button#SELECT", value1 = "Select");
+
+		SelectFrame(locator1 = "DocumentsAndMediaSelectFolder#SELECT_FOLDER_IFRAME");
+
+		var key_dmFolderName = "${dmFolderName1}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMediaSelectFolder#CHOOSE_BUTTON",
+			value1 = "Choose"
+		);
+
+		SelectFrame(locator1 = "relative=top");
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaEditDocument#FOLDER",
+			value1 = "${dmFolderName1}"
+		);
+
+		AssertClick(locator1 = "Button#MOVE", value1 = "Move");
+
+		Alert.viewSuccessMessage();
+
+		AssertElementNotPresent(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
+			key_dmFolderName = "${dmFolderName2}"
+		);
+
+		Click(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
+			value1 = "${dmFolderName1}",
+			key_dmFolderName = "${dmFolderName1}"
+		);
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
+			key_dmFolderName = "${dmFolderName2}"
+		);
+	}
+
+	macro moveToRecycleBinCP {
+		var key_dmFolderName = "${dmFolderName}";
+
+		AssertElementPresent(locator1 = "DocumentsAndMedia#ICON_FOLDER_THUMBNAIL");
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#ICON_FOLDER_THUMBNAIL",
+			value1 = "${dmFolderName}"
+		);
+
+		Click(locator1 = "DocumentsAndMedia#ICON_FOLDER_CHECKBOX");
+
+		Click(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_VERTICAL_ELLIPSIS");
+
+		PortletEntry.clickMoveToRecycleBin();
+
+		AssertElementPresent(locator1 = "Message#SUCCESS");
+
+		AssertTextEquals(
+			locator1 = "Message#EMPTY_INFO",
+			value1 = "There are no documents or media files in this folder."
+		);
+	}
+
+	macro removePermissions {
+		DMFolder.viewFolderPermissionsPG(
+			dmFolder = "${dmFolder}",
+			key_roleTitle = "${roleTitle}"
+		);
+
+		var key_roleTitle = "${roleTitle}";
+
+		for (var permissionName : list "${permissionNameList}") {
+			Uncheck(locator1 = "Permissions#CONTENT_PERMISSIONS_${permissionName}_CHECKBOX");
+		}
+
+		PortletEntry.save();
+	}
+
+	macro subscribePG {
+		Click(locator1 = "Icon#INFO");
+
+		Click(locator1 = "Icon#SUBSCRIBE");
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro tearDownCP {
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Content",
+			panel = "Site Administration",
+			portlet = "Documents and Media"
+		);
+
+		if (IsElementNotPresent(locator1 = "Message#EMPTY_INFO")) {
+			Check(locator1 = "DocumentsAndMedia#TOOLBAR_SELECT_ALL_CHECKBOX");
+
+			AssertClick.waitForDMHomeAssertTextEqualsClick(
+				locator1 = "DocumentsAndMedia#TOOLBAR_ACTIONS",
+				value1 = "Actions"
+			);
+
+			MenuItem.viewPresent(menuItem = "Move to Recycle Bin");
+
+			PortletEntry.clickMoveToRecycleBin();
+		}
+
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Recycle Bin",
+			panel = "Site Administration",
+			portlet = "Recycle Bin"
+		);
+
+		RecycleBin.emptyCP();
+	}
+
+	macro tearDownPGViaMG {
+		Navigator.gotoPage(pageName = "${pageName}");
+
+		while (IsElementPresent(locator1 = "MediaGallery#ENTRIES_FOLDER")) {
+			Click(locator1 = "MediaGallery#ENTRIES_FOLDER");
+
+			AssertClick(
+				locator1 = "MediaGallery#ENTRY_RECYCLE_BIN_ICON",
+				value1 = "Move to Recycle Bin"
+			);
+
+			AssertElementPresent(locator1 = "Message#SUCCESS");
+		}
+
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Recycle Bin",
+			panel = "Site Administration",
+			portlet = "Recycle Bin"
+		);
+
+		RecycleBin.emptyCP();
+	}
+
+	macro viewCP {
+		var key_dmFolderName = "${dmFolderName}";
+
+		if (IsElementPresent(locator1 = "Icon#CURRENT_DISPLAY_STYLE_ACTIVE", key_displayStyle = "list")) {
+			AssertElementPresent(
+				locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_ICON"
+			);
+
+			AssertTextEquals(
+				locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
+				value1 = "${dmFolderName}"
+			);
+		}
+		else {
+			AssertElementPresent(locator1 = "DocumentsAndMedia#ICON_FOLDER_THUMBNAIL");
+
+			AssertTextEquals(
+				locator1 = "DocumentsAndMedia#ICON_FOLDER_THUMBNAIL",
+				value1 = "${dmFolderName}"
+			);
+		}
+
+		if ("${specificNameFolder}" == "true") {
+			var rowEntry = "${dmFolderName}";
+
+			AssertClick(
+				locator1 = "Card#SPECIFIC_LARGE_TEXT",
+				value1 = "${rowEntry}",
+				key_cardText = "${rowEntry}"
+			);
+		}
+		else {
+			LexiconEntry.gotoEntry(
+				displayStyle = "${displayStyle}",
+				rowEntry = "${dmFolderName}"
+			);
+		}
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#BREADCRUMB_FOLDER_NAME",
+			value1 = "${dmFolderName}"
+		);
+	}
+
+	macro viewDefaultCP {
+		AssertElementNotPresent(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_GENERIC");
+
+		AssertTextEquals(
+			locator1 = "Message#EMPTY_INFO",
+			value1 = "There are no documents or media files in this folder."
+		);
+	}
+
+	macro viewFolderPermissionsPG {
+		var key_dmFolderName = "${dmFolder}";
+		var key_roleTitle = StringUtil.lowerCase("${key_roleTitle}");
+
+		Check(locator1 = "DocumentsAndMedia#ICON_FOLDER_CHECKBOX");
+
+		Click(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Permissions");
+
+		IFrame.selectPermissionsFrame();
+	}
+
+	macro viewPG {
+		var key_dmFolderName = "${dmFolderName}";
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "DocumentsAndMedia#BREADCRUMB_FOLDER_NAME",
+			value1 = "${dmFolderName}"
+		);
+	}
+
+	macro viewPGViaMG {
+		var key_mgFolderName = "${mgFolderName}";
+
+		Click(locator1 = "MediaGallery#FOLDER_NAME");
+
+		AssertTextEquals(
+			locator1 = "MediaGallery#FOLDER_HEADER_TITLE",
+			value1 = "${mgFolderName}"
+		);
+	}
+}

@@ -1,0 +1,49 @@
+definition {
+	macro configureLookAndFeelShowHeaderSearch {
+		if ("${showHeaderSearch}" == "true") {
+			Check.checkToggleSwitch(
+				locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH",
+				key_toggleSwitchLabel = "Show Header Search"
+			);
+		}
+		else if ("${showHeaderSearch}" == "false") {
+			Uncheck.uncheckToggleSwitch(
+				locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH",
+				key_toggleSwitchLabel = "Show Header Search"
+			);
+		}
+	}
+
+	macro configureLookAndFeelShowMaxMinAppLinks {
+		if ("${showMaxMinAppLinks}" == "true") {
+			Check.checkToggleSwitch(
+				locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH",
+				key_toggleSwitchLabel = "Show Maximize/Minimize Application Links"
+			);
+		}
+		else if ("${showMaxMinAppLinks}" == "false") {
+			Uncheck.uncheckToggleSwitch(
+				locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH",
+				key_toggleSwitchLabel = "Show Maximize/Minimize Application Links"
+			);
+		}
+	}
+
+	macro configureLookAndFeelSpecificLook {
+		Click(locator1 = "Radio#SPECIFIC_LOOK");
+	}
+
+	macro viewMaxMinPortletOptions {
+		AssertTextEquals(
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			value1 = "Maximize",
+			key_menuItem = "Maximize"
+		);
+
+		AssertTextEquals(
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			value1 = "Minimize",
+			key_menuItem = "Minimize"
+		);
+	}
+}

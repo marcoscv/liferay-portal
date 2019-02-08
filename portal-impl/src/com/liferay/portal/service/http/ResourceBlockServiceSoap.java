@@ -18,13 +18,13 @@ import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.service.ResourceBlockServiceUtil;
+import com.liferay.portal.kernel.service.ResourceBlockServiceUtil;
 
 import java.rmi.RemoteException;
 
 /**
  * Provides the SOAP utility for the
- * {@link com.liferay.portal.service.ResourceBlockServiceUtil} service utility. The
+ * {@link ResourceBlockServiceUtil} service utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it is difficult for SOAP to
  * support certain types.
@@ -32,10 +32,10 @@ import java.rmi.RemoteException;
  * <p>
  * ServiceBuilder follows certain rules in translating the methods. For example,
  * if the method in the service utility returns a {@link java.util.List}, that
- * is translated to an array of {@link com.liferay.portal.model.ResourceBlockSoap}.
+ * is translated to an array of {@link com.liferay.portal.kernel.model.ResourceBlockSoap}.
  * If the method in the service utility returns a
- * {@link com.liferay.portal.model.ResourceBlock}, that is translated to a
- * {@link com.liferay.portal.model.ResourceBlockSoap}. Methods that SOAP cannot
+ * {@link com.liferay.portal.kernel.model.ResourceBlock}, that is translated to a
+ * {@link com.liferay.portal.kernel.model.ResourceBlockSoap}. Methods that SOAP cannot
  * safely wire are skipped.
  * </p>
  *
@@ -58,15 +58,17 @@ import java.rmi.RemoteException;
  *
  * @author Brian Wing Shun Chan
  * @see ResourceBlockServiceHttp
- * @see com.liferay.portal.model.ResourceBlockSoap
- * @see com.liferay.portal.service.ResourceBlockServiceUtil
+ * @see com.liferay.portal.kernel.model.ResourceBlockSoap
+ * @see ResourceBlockServiceUtil
+ * @deprecated
  * @generated
  */
+@Deprecated
 @ProviderType
 public class ResourceBlockServiceSoap {
 	public static void addCompanyScopePermission(long scopeGroupId,
-		long companyId, java.lang.String name, long roleId,
-		java.lang.String actionId) throws RemoteException {
+		long companyId, String name, long roleId, String actionId)
+		throws RemoteException {
 		try {
 			ResourceBlockServiceUtil.addCompanyScopePermission(scopeGroupId,
 				companyId, name, roleId, actionId);
@@ -79,8 +81,8 @@ public class ResourceBlockServiceSoap {
 	}
 
 	public static void addGroupScopePermission(long scopeGroupId,
-		long companyId, long groupId, java.lang.String name, long roleId,
-		java.lang.String actionId) throws RemoteException {
+		long companyId, long groupId, String name, long roleId, String actionId)
+		throws RemoteException {
 		try {
 			ResourceBlockServiceUtil.addGroupScopePermission(scopeGroupId,
 				companyId, groupId, name, roleId, actionId);
@@ -93,8 +95,8 @@ public class ResourceBlockServiceSoap {
 	}
 
 	public static void addIndividualScopePermission(long companyId,
-		long groupId, java.lang.String name, long primKey, long roleId,
-		java.lang.String actionId) throws RemoteException {
+		long groupId, String name, long primKey, long roleId, String actionId)
+		throws RemoteException {
 		try {
 			ResourceBlockServiceUtil.addIndividualScopePermission(companyId,
 				groupId, name, primKey, roleId, actionId);
@@ -107,8 +109,8 @@ public class ResourceBlockServiceSoap {
 	}
 
 	public static void removeAllGroupScopePermissions(long scopeGroupId,
-		long companyId, java.lang.String name, long roleId,
-		java.lang.String actionId) throws RemoteException {
+		long companyId, String name, long roleId, String actionId)
+		throws RemoteException {
 		try {
 			ResourceBlockServiceUtil.removeAllGroupScopePermissions(scopeGroupId,
 				companyId, name, roleId, actionId);
@@ -121,8 +123,8 @@ public class ResourceBlockServiceSoap {
 	}
 
 	public static void removeCompanyScopePermission(long scopeGroupId,
-		long companyId, java.lang.String name, long roleId,
-		java.lang.String actionId) throws RemoteException {
+		long companyId, String name, long roleId, String actionId)
+		throws RemoteException {
 		try {
 			ResourceBlockServiceUtil.removeCompanyScopePermission(scopeGroupId,
 				companyId, name, roleId, actionId);
@@ -135,8 +137,8 @@ public class ResourceBlockServiceSoap {
 	}
 
 	public static void removeGroupScopePermission(long scopeGroupId,
-		long companyId, long groupId, java.lang.String name, long roleId,
-		java.lang.String actionId) throws RemoteException {
+		long companyId, long groupId, String name, long roleId, String actionId)
+		throws RemoteException {
 		try {
 			ResourceBlockServiceUtil.removeGroupScopePermission(scopeGroupId,
 				companyId, groupId, name, roleId, actionId);
@@ -149,8 +151,8 @@ public class ResourceBlockServiceSoap {
 	}
 
 	public static void removeIndividualScopePermission(long companyId,
-		long groupId, java.lang.String name, long primKey, long roleId,
-		java.lang.String actionId) throws RemoteException {
+		long groupId, String name, long primKey, long roleId, String actionId)
+		throws RemoteException {
 		try {
 			ResourceBlockServiceUtil.removeIndividualScopePermission(companyId,
 				groupId, name, primKey, roleId, actionId);
@@ -163,8 +165,8 @@ public class ResourceBlockServiceSoap {
 	}
 
 	public static void setCompanyScopePermissions(long scopeGroupId,
-		long companyId, java.lang.String name, long roleId,
-		java.util.List<java.lang.String> actionIds) throws RemoteException {
+		long companyId, String name, long roleId,
+		java.util.List<String> actionIds) throws RemoteException {
 		try {
 			ResourceBlockServiceUtil.setCompanyScopePermissions(scopeGroupId,
 				companyId, name, roleId, actionIds);
@@ -177,8 +179,8 @@ public class ResourceBlockServiceSoap {
 	}
 
 	public static void setGroupScopePermissions(long scopeGroupId,
-		long companyId, long groupId, java.lang.String name, long roleId,
-		java.util.List<java.lang.String> actionIds) throws RemoteException {
+		long companyId, long groupId, String name, long roleId,
+		java.util.List<String> actionIds) throws RemoteException {
 		try {
 			ResourceBlockServiceUtil.setGroupScopePermissions(scopeGroupId,
 				companyId, groupId, name, roleId, actionIds);
@@ -191,8 +193,8 @@ public class ResourceBlockServiceSoap {
 	}
 
 	public static void setIndividualScopePermissions(long companyId,
-		long groupId, java.lang.String name, long primKey, long roleId,
-		java.util.List<java.lang.String> actionIds) throws RemoteException {
+		long groupId, String name, long primKey, long roleId,
+		java.util.List<String> actionIds) throws RemoteException {
 		try {
 			ResourceBlockServiceUtil.setIndividualScopePermissions(companyId,
 				groupId, name, primKey, roleId, actionIds);

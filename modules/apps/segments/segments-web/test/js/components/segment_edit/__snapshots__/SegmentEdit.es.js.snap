@@ -1,0 +1,126 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SegmentEdit should render 1`] = `
+<DocumentFragment>
+  <div
+    class="segment-edit-page-root"
+  >
+    <input
+      name="name"
+      type="hidden"
+      value="unnamed-segment"
+    />
+    <input
+      name="name_en_US"
+      type="hidden"
+      value="unnamed-segment"
+    />
+    <input
+      name="key"
+      type="hidden"
+      value="unnamed-segment"
+    />
+    <input
+      name="active"
+      type="hidden"
+      value="true"
+    />
+    <div
+      class="form-header"
+    >
+      <div
+        class="container-fluid container-fluid-max-xl form-header-container"
+      >
+        <div
+          class="form-header-section-left"
+        >
+          <div
+            class="title-editor-root"
+          >
+            <input
+              class="title-input hide"
+              data-testid="title-input"
+              name="name"
+              placeholder="unnamed-segment"
+              type="text"
+              value="unnamed-segment"
+            />
+            <div
+              class="title-display placeholder-display"
+            >
+              <span>
+                unnamed-segment
+              </span>
+              <button
+                class="btn btn-outline-secondary btn-sm btn-monospaced btn-outline-borderless edit-icon ml-1"
+                data-testid="edit-button"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lexicon-icon lexicon-icon-pencil icon"
+                  viewBox="0 0 512 512"
+                >
+                  <use
+                    xlink:href="#pencil"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <img
+            class="source-icon"
+            data-testid="source-icon"
+            src="/dxp-icon.svg"
+          />
+        </div>
+        <div
+          class="form-header-section-right"
+        >
+          <div
+            class="btn-group mr-3"
+          >
+            <div
+              class="btn-group-item"
+            >
+              <div
+                class="members-count mr-3"
+              >
+                x-members
+              </div>
+            </div>
+          </div>
+          <div
+            class="btn-group"
+          >
+            <div
+              class="btn-group-item"
+            >
+              <button
+                class="btn btn-secondary btn-sm"
+                type="button"
+              >
+                cancel
+              </button>
+            </div>
+            <div
+              class="btn-group-item"
+            >
+              <button
+                class="btn btn-primary btn-sm"
+                disabled=""
+                type="submit"
+              >
+                save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="form-body"
+    />
+  </div>
+</DocumentFragment>
+`;

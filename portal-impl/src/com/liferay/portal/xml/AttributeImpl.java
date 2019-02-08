@@ -63,9 +63,8 @@ public class AttributeImpl extends NodeImpl implements Attribute {
 		if (namespace == null) {
 			return null;
 		}
-		else {
-			return new NamespaceImpl(namespace);
-		}
+
+		return new NamespaceImpl(namespace);
 	}
 
 	@Override
@@ -85,9 +84,8 @@ public class AttributeImpl extends NodeImpl implements Attribute {
 		if (qName == null) {
 			return null;
 		}
-		else {
-			return new QNameImpl(qName);
-		}
+
+		return new QNameImpl(qName);
 	}
 
 	@Override
@@ -131,6 +129,6 @@ public class AttributeImpl extends NodeImpl implements Attribute {
 		return _attribute.toString();
 	}
 
-	private org.dom4j.Attribute _attribute;
+	private final org.dom4j.Attribute _attribute;
 
 }

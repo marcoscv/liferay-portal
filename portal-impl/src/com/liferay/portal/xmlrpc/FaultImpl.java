@@ -41,7 +41,8 @@ public class FaultImpl implements Fault {
 
 	@Override
 	public String toString() {
-		return "XML-RPC fault " + _code + " " + _description;
+		return StringBundler.concat(
+			"XML-RPC fault ", String.valueOf(_code), " ", _description);
 	}
 
 	@Override
@@ -70,7 +71,7 @@ public class FaultImpl implements Fault {
 		return sb.toString();
 	}
 
-	private int _code;
-	private String _description;
+	private final int _code;
+	private final String _description;
 
 }

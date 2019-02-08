@@ -32,11 +32,10 @@ public class PortletBeanLocatorUtil {
 		if (_beanLocator == null) {
 			_log.error("BeanLocator is null");
 
-			throw new BeanLocatorException("BeanLocator has not been set");
+			throw new BeanLocatorException("BeanLocator is not set");
 		}
-		else {
-			return _beanLocator.locate(name);
-		}
+
+		return _beanLocator.locate(name);
 	}
 
 	public static void setBeanLocator(BeanLocator beanLocator) {
@@ -52,7 +51,7 @@ public class PortletBeanLocatorUtil {
 		_beanLocator = beanLocator;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		PortletBeanLocatorUtil.class);
 
 	private static BeanLocator _beanLocator;

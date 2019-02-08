@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.NamedThreadFactory;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.StreamUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Time;
 
 import java.io.FileOutputStream;
@@ -69,7 +70,7 @@ public class RequiredPluginsUtil {
 		_unschedule(true);
 	}
 
-	protected synchronized static void checkRequiredPlugins() {
+	protected static synchronized void checkRequiredPlugins() {
 		List<String[]> levelsRequiredDeploymentContexts =
 			DeployManagerUtil.getLevelsRequiredDeploymentContexts();
 		List<String[]> levelsRequiredDeploymentWARFileNames =
@@ -95,21 +96,14 @@ public class RequiredPluginsUtil {
 
 				deployed = true;
 
-				String levelRequiredDeploymentWARFileName =
-					levelRequiredDeploymentWARFileNames[j];
-
 				if (_log.isDebugEnabled()) {
+					String levelRequiredDeploymentWARFileName =
+						levelRequiredDeploymentWARFileNames[j];
+
 					_log.debug(
 						"Automatically deploying the required plugin " +
 							levelRequiredDeploymentWARFileName);
 				}
-
-				ClassLoader classLoader =
-					PortalClassLoaderUtil.getClassLoader();
-
-				InputStream inputStream = classLoader.getResourceAsStream(
-					"com/liferay/portal/deploy/dependencies/plugins" +
-						(i + 1) + "/" + levelRequiredDeploymentWARFileNames[j]);
 
 				AutoDeployDir autoDeployDir = AutoDeployUtil.getDir(
 					AutoDeployDir.DEFAULT_NAME);
@@ -126,6 +120,15 @@ public class RequiredPluginsUtil {
 
 					continue;
 				}
+
+				ClassLoader classLoader =
+					PortalClassLoaderUtil.getClassLoader();
+
+				InputStream inputStream = classLoader.getResourceAsStream(
+					StringBundler.concat(
+						"com/liferay/portal/deploy/dependencies/plugins",
+						String.valueOf(i + 1), "/",
+						levelRequiredDeploymentWARFileNames[j]));
 
 				try {
 					StreamUtil.transfer(
@@ -169,7 +172,8 @@ public class RequiredPluginsUtil {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(RequiredPluginsUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		RequiredPluginsUtil.class);
 
 	private static ScheduledExecutorService _scheduledExecutorService;
 

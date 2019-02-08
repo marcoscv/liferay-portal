@@ -19,7 +19,9 @@ import java.security.PrivilegedExceptionAction;
 
 /**
  * @author Raymond Augé
+ * @deprecated As of Judson (7.1.x), with no direct replacement
  */
+@Deprecated
 public class DoPrivilegedUtil {
 
 	public static <T> T wrap(PrivilegedAction<T> privilegedAction) {
@@ -55,7 +57,7 @@ public class DoPrivilegedUtil {
 
 	}
 
-	private static PACL _pacl = new NoPACL();
+	private static final PACL _pacl = new NoPACL();
 
 	private static class NoPACL implements PACL {
 

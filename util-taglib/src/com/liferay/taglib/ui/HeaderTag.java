@@ -15,8 +15,11 @@
 package com.liferay.taglib.ui;
 
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.taglib.util.IncludeTag;
+
+import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -30,6 +33,10 @@ public class HeaderTag extends IncludeTag {
 	}
 
 	public void setBackURL(String backURL) {
+		if (Objects.equals(backURL, "javascript:history.go(-1)")) {
+			backURL += ";";
+		}
+
 		_backURL = backURL;
 	}
 
@@ -55,6 +62,8 @@ public class HeaderTag extends IncludeTag {
 
 	@Override
 	protected void cleanUp() {
+		super.cleanUp();
+
 		_backLabel = null;
 		_backURL = null;
 		_cssClass = null;
@@ -78,10 +87,18 @@ public class HeaderTag extends IncludeTag {
 	protected void setAttributes(HttpServletRequest request) {
 		request.setAttribute("liferay-ui:header:backLabel", _backLabel);
 
-		String redirect = ParamUtil.getString(request, "redirect");
+		String redirect = PortalUtil.escapeRedirect(
+			ParamUtil.getString(request, "redirect"));
 
 		if (Validator.isNull(_backURL) && Validator.isNotNull(redirect)) {
 			request.setAttribute("liferay-ui:header:backURL", redirect);
+		}
+		else if (Validator.isNotNull(_backURL) &&
+				 !_backURL.equals("javascript:history.go(-1);")) {
+
+			request.setAttribute(
+				"liferay-ui:header:backURL",
+				PortalUtil.escapeRedirect(_backURL));
 		}
 		else {
 			request.setAttribute("liferay-ui:header:backURL", _backURL);

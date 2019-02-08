@@ -14,8 +14,8 @@
 
 package com.liferay.portal.util;
 
-import com.liferay.portal.kernel.util.InitialThreadLocal;
-import com.liferay.portal.model.ResourcePermission;
+import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.portal.kernel.model.ResourcePermission;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +24,9 @@ import java.util.Map;
 /**
  * @author Shuyang Zhou
  * @author Brian Wing Shun Chan
+ * @deprecated As of Judson (7.1.x), with no direct replacement
  */
+@Deprecated
 public class ResourcePermissionsThreadLocal {
 
 	public static Map<Long, ResourcePermission> getResourcePermissions() {
@@ -36,22 +38,23 @@ public class ResourcePermissionsThreadLocal {
 
 		if (resourcePermissions != null) {
 			Map<Long, ResourcePermission> resourcePermissionMap =
-				new HashMap<Long, ResourcePermission>();
+				new HashMap<>();
 
 			for (ResourcePermission resourcePermission : resourcePermissions) {
 				resourcePermissionMap.put(
 					resourcePermission.getRoleId(), resourcePermission);
 			}
+
+			_resourcePermissions.set(resourcePermissionMap);
 		}
 		else {
 			_resourcePermissions.remove();
 		}
 	}
 
-	private static ThreadLocal<Map<Long, ResourcePermission>>
-		_resourcePermissions = new InitialThreadLocal
-			<Map<Long, ResourcePermission>>(
-				ResourcePermissionsThreadLocal.class + "._resourcePermissions",
-				null);
+	private static final ThreadLocal<Map<Long, ResourcePermission>>
+		_resourcePermissions = new CentralizedThreadLocal<>(
+			ResourcePermissionsThreadLocal.class + "._resourcePermissions",
+			() -> null, false);
 
 }

@@ -14,42 +14,60 @@
 
 package com.liferay.portal.messaging.async;
 
+import com.liferay.portal.internal.messaging.async.AsyncInvokeThreadLocal;
+import com.liferay.portal.internal.messaging.async.AsyncProcessCallable;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.MessageBusUtil;
 import com.liferay.portal.kernel.messaging.async.Async;
-import com.liferay.portal.kernel.transaction.TransactionCommitCallbackRegistryUtil;
-import com.liferay.portal.spring.aop.AnnotationChainableMethodAdvice;
+import com.liferay.portal.kernel.transaction.TransactionCommitCallbackUtil;
+import com.liferay.portal.spring.aop.AopMethodInvocation;
+import com.liferay.portal.spring.aop.ChainableMethodAdvice;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 import java.util.Map;
-import java.util.concurrent.Callable;
-
-import org.aopalliance.intercept.MethodInvocation;
 
 /**
  * @author Shuyang Zhou
  * @author Brian Wing Shun Chan
  */
-public class AsyncAdvice extends AnnotationChainableMethodAdvice<Async> {
+public class AsyncAdvice extends ChainableMethodAdvice {
 
 	@Override
-	public Object before(final MethodInvocation methodInvocation)
-		throws Throwable {
+	public Object before(
+		AopMethodInvocation aopMethodInvocation, Object[] arguments) {
 
 		if (AsyncInvokeThreadLocal.isEnabled()) {
 			return null;
 		}
 
-		Async async = findAnnotation(methodInvocation);
+		String callbackDestinationName =
+			aopMethodInvocation.getAdviceMethodContext();
 
-		if (async == _nullAsync) {
+		TransactionCommitCallbackUtil.registerCallback(
+			() -> {
+				MessageBusUtil.sendMessage(
+					callbackDestinationName,
+					new AsyncProcessCallable(aopMethodInvocation, arguments));
+
+				return null;
+			});
+
+		return nullResult;
+	}
+
+	@Override
+	public Object createMethodContext(
+		Class<?> targetClass, Method method,
+		Map<Class<? extends Annotation>, Annotation> annotations) {
+
+		Annotation annotation = annotations.get(Async.class);
+
+		if (annotation == null) {
 			return null;
 		}
-
-		Method method = methodInvocation.getMethod();
 
 		if (method.getReturnType() != void.class) {
 			if (_log.isWarnEnabled()) {
@@ -64,41 +82,18 @@ public class AsyncAdvice extends AnnotationChainableMethodAdvice<Async> {
 		String destinationName = null;
 
 		if ((_destinationNames != null) && !_destinationNames.isEmpty()) {
-			Object thisObject = methodInvocation.getThis();
-
-			destinationName = _destinationNames.get(thisObject.getClass());
+			destinationName = _destinationNames.get(targetClass);
 		}
 
 		if (destinationName == null) {
 			destinationName = _defaultDestinationName;
 		}
 
-		final String callbackDestinationName = destinationName;
-
-		TransactionCommitCallbackRegistryUtil.registerCallback(
-			new Callable<Void>() {
-
-				@Override
-				public Void call() throws Exception {
-					MessageBusUtil.sendMessage(
-						callbackDestinationName,
-						new AsyncProcessCallable(methodInvocation));
-
-					return null;
-				}
-
-			});
-
-		return nullResult;
+		return destinationName;
 	}
 
 	public String getDefaultDestinationName() {
 		return _defaultDestinationName;
-	}
-
-	@Override
-	public Async getNullAnnotation() {
-		return _nullAsync;
 	}
 
 	public void setDefaultDestinationName(String defaultDestinationName) {
@@ -109,17 +104,7 @@ public class AsyncAdvice extends AnnotationChainableMethodAdvice<Async> {
 		_destinationNames = destinationNames;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(AsyncAdvice.class);
-
-	private static Async _nullAsync =
-		new Async() {
-
-			@Override
-			public Class<? extends Annotation> annotationType() {
-				return Async.class;
-			}
-
-		};
+	private static final Log _log = LogFactoryUtil.getLog(AsyncAdvice.class);
 
 	private String _defaultDestinationName;
 	private Map<Class<?>, String> _destinationNames;

@@ -1,0 +1,55 @@
+definition {
+	macro addPage {
+		var key_breadcrumbName="Pages";
+
+		if (IsElementPresent(locator1 = "Message#EMPTY_INFO_TAGLIB")) {
+			SitePages.gotoAddFirstPage(
+				pageType = "Public Page"
+			);
+		} else {
+			AssertClick(
+				locator1 = "Breadcrumb#BREADCRUMB_ENTRY",
+				value1="Pages"
+			);
+
+			LexiconEntry.gotoAddMenuItem(menuItem = "Public Page");
+		}
+
+		if (!(isSet(collectionName))) {
+			var collectionName = "Basic Pages";
+		}
+
+		Navigator.gotoNavNested(navNested = "${collectionName}");
+
+		if (isSet(pageTemplateName)) {
+			LexiconCard.clickCard(
+				card = "${pageTemplateName}"
+			);
+		}
+		else {
+			LexiconCard.clickCard(
+				card = "Content Page"
+			);
+		}
+
+		SelectFrame(locator1 = "IFrame#DIALOG");
+
+		PortletEntry.inputName(name = "${pageName}");
+
+		Button.click(button = "Save");
+
+		SelectFrame.selectFrameTop();
+	}
+
+	macro gotoEditMode {
+		Click(locator1 = "ToggleSwitch#EDIT_MODE");
+
+		AssertLocation.assertPartialLocation(value1 = "mode=edit");
+	}
+
+	macro gotoViewMode {
+		Click(locator1 = "ToggleSwitch#EDIT_MODE");
+
+		AssertLocation.assertPartialLocation(value1 = "mode=view");
+	}
+}

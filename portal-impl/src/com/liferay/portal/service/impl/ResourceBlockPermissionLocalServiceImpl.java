@@ -15,12 +15,13 @@
 package com.liferay.portal.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.model.ResourceBlock;
-import com.liferay.portal.model.ResourceBlockConstants;
-import com.liferay.portal.model.ResourceBlockPermission;
-import com.liferay.portal.model.ResourceBlockPermissionsContainer;
+import com.liferay.portal.kernel.model.ResourceBlock;
+import com.liferay.portal.kernel.model.ResourceBlockConstants;
+import com.liferay.portal.kernel.model.ResourceBlockPermission;
+import com.liferay.portal.kernel.model.ResourceBlockPermissionsContainer;
 import com.liferay.portal.service.base.ResourceBlockPermissionLocalServiceBaseImpl;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,8 +36,10 @@ import java.util.Set;
  * local service.
  * </p>
  *
- * @author Connor McKay
+ * @author     Connor McKay
+ * @deprecated As of Judson (7.1.x), with no direct replacement
  */
+@Deprecated
 public class ResourceBlockPermissionLocalServiceImpl
 	extends ResourceBlockPermissionLocalServiceBaseImpl {
 
@@ -65,44 +68,61 @@ public class ResourceBlockPermissionLocalServiceImpl
 
 	@Override
 	public void deleteResourceBlockPermissions(long resourceBlockId) {
-
 		resourceBlockPermissionPersistence.removeByResourceBlockId(
 			resourceBlockId);
 	}
 
+	/**
+	 * @deprecated As of Wilberforce (7.0.x), replaced by {@link
+	 *             #getAvailableResourceBlockPermissionActionIds(String, long,
+	 *             List)}
+	 */
+	@Deprecated
 	@Override
 	public Map<Long, Set<String>> getAvailableResourceBlockPermissionActionIds(
 			long[] roleIds, String name, long primKey, List<String> actionIds)
 		throws PortalException {
 
+		return getAvailableResourceBlockPermissionActionIds(
+			name, primKey, actionIds);
+	}
+
+	@Override
+	public Map<Long, Set<String>> getAvailableResourceBlockPermissionActionIds(
+			String name, long primKey, List<String> actionIds)
+		throws PortalException {
+
+		if (actionIds.isEmpty()) {
+			return Collections.emptyMap();
+		}
+
 		ResourceBlock resourceBlock =
 			resourceBlockLocalService.getResourceBlock(name, primKey);
 
-		Map<Long, Set<String>> roleIdsToActionIds =
-			new HashMap<Long, Set<String>>();
+		List<ResourceBlockPermission> resourceBlockPermissions =
+			resourceBlockPermissionPersistence.findByResourceBlockId(
+				resourceBlock.getResourceBlockId());
 
-		for (long roleId : roleIds) {
-			Set<String> availableActionIds = roleIdsToActionIds.get(roleId);
+		Map<Long, Set<String>> roleIdsToActionIds = new HashMap<>();
 
-			if (availableActionIds != null) {
-				continue;
-			}
+		for (ResourceBlockPermission resourceBlockPermission :
+				resourceBlockPermissions) {
+
+			Set<String> availableActionIds = new HashSet<>();
 
 			List<String> resourceBlockActionIds =
-				resourceBlockLocalService.getPermissions(resourceBlock, roleId);
-
-			if (resourceBlockActionIds.isEmpty()) {
-				continue;
-			}
-
-			availableActionIds = new HashSet<String>();
-
-			roleIdsToActionIds.put(roleId, availableActionIds);
+				resourceBlockLocalService.getActionIds(
+					name, resourceBlockPermission.getActionIds());
 
 			for (String actionId : actionIds) {
 				if (resourceBlockActionIds.contains(actionId)) {
 					availableActionIds.add(actionId);
 				}
+			}
+
+			if (!availableActionIds.isEmpty()) {
+				roleIdsToActionIds.put(
+					resourceBlockPermission.getRoleId(), availableActionIds);
 			}
 		}
 
@@ -111,24 +131,24 @@ public class ResourceBlockPermissionLocalServiceImpl
 
 	@Override
 	public ResourceBlockPermissionsContainer
-			getResourceBlockPermissionsContainer(long resourceBlockId) {
+		getResourceBlockPermissionsContainer(long resourceBlockId) {
 
 		List<ResourceBlockPermission> resourceBlockPermissions =
 			resourceBlockPermissionPersistence.findByResourceBlockId(
 				resourceBlockId);
 
-		ResourceBlockPermissionsContainer resourceBlockPermissionContainer =
+		ResourceBlockPermissionsContainer resourceBlockPermissionsContainer =
 			new ResourceBlockPermissionsContainer();
 
 		for (ResourceBlockPermission resourceBlockPermission :
 				resourceBlockPermissions) {
 
-			resourceBlockPermissionContainer.setPermissions(
+			resourceBlockPermissionsContainer.setPermissions(
 				resourceBlockPermission.getRoleId(),
 				resourceBlockPermission.getActionIds());
 		}
 
-		return resourceBlockPermissionContainer;
+		return resourceBlockPermissionsContainer;
 	}
 
 	@Override

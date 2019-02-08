@@ -34,12 +34,14 @@ import javax.servlet.http.HttpServletResponse;
 public class GZipFilter extends BasePortalFilter {
 
 	public static final String SKIP_FILTER =
-		GZipFilter.class.getName() + "SKIP_FILTER";
+		GZipFilter.class.getName() + "#SKIP_FILTER";
 
 	public GZipFilter() {
 
 		// The compression filter will work on JBoss, Jetty, JOnAS, OC4J,
 		// Tomcat, WebLogic, and WebSphere, but may break on other servers
+
+		boolean filterEnabled = false;
 
 		if (super.isFilterEnabled()) {
 			if (ServerDetector.isJBoss() || ServerDetector.isJetty() ||
@@ -47,12 +49,11 @@ public class GZipFilter extends BasePortalFilter {
 				ServerDetector.isTomcat() || ServerDetector.isWebLogic() ||
 				ServerDetector.isWebSphere()) {
 
-				_filterEnabled = true;
-			}
-			else {
-				_filterEnabled = false;
+				filterEnabled = true;
 			}
 		}
+
+		_filterEnabled = filterEnabled;
 	}
 
 	@Override
@@ -70,27 +71,24 @@ public class GZipFilter extends BasePortalFilter {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected boolean isAlreadyFiltered(HttpServletRequest request) {
 		if (request.getAttribute(SKIP_FILTER) != null) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected boolean isCompress(HttpServletRequest request) {
 		if (ParamUtil.getBoolean(request, _COMPRESS, true)) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	protected boolean isInclude(HttpServletRequest request) {
@@ -100,9 +98,8 @@ public class GZipFilter extends BasePortalFilter {
 		if (uri == null) {
 			return false;
 		}
-		else {
-			return true;
-		}
+
+		return true;
 	}
 
 	@Override
@@ -119,17 +116,18 @@ public class GZipFilter extends BasePortalFilter {
 
 		request.setAttribute(SKIP_FILTER, Boolean.TRUE);
 
-		GZipResponse gZipResponse = new GZipResponse(request, response);
+		GZipResponse gZipResponse = new GZipResponse(response);
 
-		processFilter(GZipFilter.class, request, gZipResponse, filterChain);
+		processFilter(
+			GZipFilter.class.getName(), request, gZipResponse, filterChain);
 
 		gZipResponse.finishResponse();
 	}
 
 	private static final String _COMPRESS = "compress";
 
-	private static Log _log = LogFactoryUtil.getLog(GZipFilter.class);
+	private static final Log _log = LogFactoryUtil.getLog(GZipFilter.class);
 
-	private boolean _filterEnabled;
+	private final boolean _filterEnabled;
 
 }

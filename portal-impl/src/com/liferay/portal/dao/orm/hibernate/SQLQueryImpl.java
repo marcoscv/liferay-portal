@@ -21,11 +21,12 @@ import com.liferay.portal.kernel.dao.orm.Query;
 import com.liferay.portal.kernel.dao.orm.SQLQuery;
 import com.liferay.portal.kernel.dao.orm.ScrollableResults;
 import com.liferay.portal.kernel.dao.orm.Type;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
-import com.liferay.portal.kernel.security.pacl.NotPrivileged;
 import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 
 import java.io.Serializable;
+
+import java.math.BigDecimal;
 
 import java.sql.Timestamp;
 
@@ -38,18 +39,21 @@ import java.util.List;
  * @author Brian Wing Shun Chan
  * @author Shuyang Zhou
  */
-@DoPrivileged
 public class SQLQueryImpl implements SQLQuery {
 
 	public SQLQueryImpl(org.hibernate.SQLQuery sqlQuery, boolean strictName) {
 		_sqlQuery = sqlQuery;
 		_strictName = strictName;
 
-		if (!_strictName) {
-			_names = sqlQuery.getNamedParameters();
+		String[] names = null;
 
-			Arrays.sort(_names);
+		if (!_strictName) {
+			names = sqlQuery.getNamedParameters();
+
+			Arrays.sort(names);
 		}
+
+		_names = names;
 	}
 
 	@Override
@@ -114,7 +118,6 @@ public class SQLQueryImpl implements SQLQuery {
 		return this;
 	}
 
-	@NotPrivileged
 	@Override
 	public int executeUpdate() throws ORMException {
 		try {
@@ -125,26 +128,25 @@ public class SQLQueryImpl implements SQLQuery {
 		}
 	}
 
-	@NotPrivileged
 	@Override
 	@SuppressWarnings("rawtypes")
 	public Iterator iterate() throws ORMException {
 		return iterate(true);
 	}
 
-	@NotPrivileged
 	@Override
 	@SuppressWarnings("rawtypes")
 	public Iterator iterate(boolean unmodifiable) throws ORMException {
 		try {
-			return list(unmodifiable).iterator();
+			return list(
+				unmodifiable
+			).iterator();
 		}
 		catch (Exception e) {
 			throw ExceptionTranslator.translate(e);
 		}
 	}
 
-	@NotPrivileged
 	@Override
 	public Object iterateNext() throws ORMException {
 		Iterator<?> iterator = iterate(false);
@@ -156,19 +158,16 @@ public class SQLQueryImpl implements SQLQuery {
 		return null;
 	}
 
-	@NotPrivileged
 	@Override
 	public List<?> list() throws ORMException {
 		return list(false, false);
 	}
 
-	@NotPrivileged
 	@Override
 	public List<?> list(boolean unmodifiable) throws ORMException {
 		return list(true, unmodifiable);
 	}
 
-	@NotPrivileged
 	@Override
 	public List<?> list(boolean copy, boolean unmodifiable)
 		throws ORMException {
@@ -190,7 +189,6 @@ public class SQLQueryImpl implements SQLQuery {
 		}
 	}
 
-	@NotPrivileged
 	@Override
 	public ScrollableResults scroll() throws ORMException {
 		try {
@@ -199,6 +197,24 @@ public class SQLQueryImpl implements SQLQuery {
 		catch (Exception e) {
 			throw ExceptionTranslator.translate(e);
 		}
+	}
+
+	@Override
+	public Query setBigDecimal(int pos, BigDecimal value) {
+		_sqlQuery.setBigDecimal(pos, value);
+
+		return this;
+	}
+
+	@Override
+	public Query setBigDecimal(String name, BigDecimal value) {
+		if (!_strictName && (Arrays.binarySearch(_names, name) < 0)) {
+			return this;
+		}
+
+		_sqlQuery.setBigDecimal(name, value);
+
+		return this;
 	}
 
 	@Override
@@ -405,7 +421,21 @@ public class SQLQueryImpl implements SQLQuery {
 		return this;
 	}
 
-	@NotPrivileged
+	@Override
+	public String toString() {
+		StringBundler sb = new StringBundler(7);
+
+		sb.append("{names=");
+		sb.append(Arrays.toString(_names));
+		sb.append(", _sqlQuery=");
+		sb.append(String.valueOf(_sqlQuery));
+		sb.append(", _strictName=");
+		sb.append(_strictName);
+		sb.append("}");
+
+		return sb.toString();
+	}
+
 	@Override
 	public Object uniqueResult() throws ORMException {
 		try {
@@ -416,8 +446,8 @@ public class SQLQueryImpl implements SQLQuery {
 		}
 	}
 
-	private String[] _names;
-	private org.hibernate.SQLQuery _sqlQuery;
-	private boolean _strictName;
+	private final String[] _names;
+	private final org.hibernate.SQLQuery _sqlQuery;
+	private final boolean _strictName;
 
 }

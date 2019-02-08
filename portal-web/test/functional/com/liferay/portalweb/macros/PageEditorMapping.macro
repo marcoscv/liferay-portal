@@ -1,0 +1,57 @@
+definition {
+	macro assertAssetTypeUnselectable {
+		PageEditor.gotoTab(tabName = "Mapping");
+
+		Button.viewNotPresent(button = "Select");
+	}
+
+	macro mapEditableTextToAsset {
+		MouseOver.mouseOverNotVisible(
+			locator1 = "Fragment#EDITABLE_FIELD",
+			key_fragmentName = "${fragmentName}",
+			key_id = "${id}"
+		);
+
+		Click(
+			locator1 = "Fragment#EDITABLE_FIELD",
+			key_fragmentName = "${fragmentName}",
+			key_id = "${id}"
+		);
+
+		Button.clickMap();
+
+		AssertClick(
+			locator1 = "PageEditor#LIST_GROUP_ITEM",
+			value1 = "${itemName}",
+			key_itemName = "${itemName}"
+		);
+	}
+
+	macro selectAssetType {
+		PageEditor.gotoTab(tabName = "Mapping");
+
+		Button.clickSelect();
+
+		if (contains("${assetType}", "{assetType}")) {
+			var assetType = "Web Content Article";
+
+			if (contains("${subType}", "{subType}")) {
+				var subType = "Basic Web Content";
+			}
+		}
+
+		Select(
+			locator1 = "Select#GENERIC_SELECT_FIELD",
+			value1 = "${assetType}",
+			key_fieldLabel = "Asset Type"
+		);
+
+		Select(
+			locator1 = "Select#GENERIC_SELECT_FIELD",
+			value1 = "${subType}",
+			key_fieldLabel = "Subtype"
+		);
+
+		Button.clickSave();
+	}
+}

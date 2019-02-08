@@ -16,7 +16,7 @@ package com.liferay.util.servlet;
 
 /**
  * @author     Brian Wing Shun Chan
- * @deprecated As of 6.2.0, moved to {@link
+ * @deprecated As of Bunyan (6.0.x), moved to {@link
  *             com.liferay.portal.kernel.servlet.ProtectedPrincipal}
  */
 @Deprecated
@@ -24,7 +24,6 @@ public class ProtectedPrincipal
 	extends com.liferay.portal.kernel.servlet.ProtectedPrincipal {
 
 	public ProtectedPrincipal() {
-		super();
 	}
 
 	public ProtectedPrincipal(String name) {

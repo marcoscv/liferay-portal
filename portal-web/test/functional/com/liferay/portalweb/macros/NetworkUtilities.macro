@@ -1,0 +1,16 @@
+definition {
+	macro searchPG {
+		Type.typeAceEditor(
+			locator1 = "NetworkUtilities#DNS_LOOKUP_FIELD",
+			value1 = "${dnsDomain}"
+		);
+
+		AssertClick(locator1 = "Button#ANY", value1 = "Search", key_text = "Search");
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "NetworkUtilities#NETWORK_DOMAIN",
+			value1 = "${networkDomain}",
+			key_networkDomain = "${networkDomain}"
+		);
+	}
+}

@@ -14,9 +14,10 @@
 
 package com.liferay.portal.dao.orm.hibernate;
 
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.cache.PortalCache;
-import com.liferay.portal.kernel.cache.SingleVMPoolUtil;
-import com.liferay.portal.kernel.util.CharPool;
+import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
+import com.liferay.portal.kernel.cache.PortalCacheManagerNames;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.HashSet;
@@ -36,7 +37,7 @@ public class SQLQueryTableNamesUtil {
 
 		String lowerCaseSQL = StringUtil.toLowerCase(sql);
 
-		Set<String> tableNameSet = new HashSet<String>();
+		Set<String> tableNameSet = new HashSet<>();
 
 		// Find table name from the "from" clause
 
@@ -108,7 +109,9 @@ public class SQLQueryTableNamesUtil {
 		return new int[] {start, end};
 	}
 
-	private static PortalCache<String, String[]> _portalCache =
-		SingleVMPoolUtil.getCache(SQLQueryTableNamesUtil.class.getName());
+	private static final PortalCache<String, String[]> _portalCache =
+		PortalCacheHelperUtil.getPortalCache(
+			PortalCacheManagerNames.SINGLE_VM,
+			SQLQueryTableNamesUtil.class.getName());
 
 }

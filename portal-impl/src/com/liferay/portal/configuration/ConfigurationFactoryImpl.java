@@ -16,20 +16,19 @@ package com.liferay.portal.configuration;
 
 import com.liferay.portal.kernel.configuration.Configuration;
 import com.liferay.portal.kernel.configuration.ConfigurationFactory;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
-import com.liferay.portal.security.lang.DoPrivilegedUtil;
+import com.liferay.portal.kernel.model.CompanyConstants;
 
 /**
  * @author Brian Wing Shun Chan
  */
-@DoPrivileged
 public class ConfigurationFactoryImpl implements ConfigurationFactory {
 
 	@Override
 	public Configuration getConfiguration(
 		ClassLoader classLoader, String name) {
 
-		return DoPrivilegedUtil.wrap(new ConfigurationImpl(classLoader, name));
+		return new ConfigurationImpl(
+			classLoader, name, CompanyConstants.SYSTEM, null);
 	}
 
 }

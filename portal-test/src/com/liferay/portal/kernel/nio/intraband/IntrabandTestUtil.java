@@ -16,7 +16,6 @@ package com.liferay.portal.kernel.nio.intraband;
 
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SocketUtil;
-import com.liferay.portal.kernel.util.SocketUtil.ServerSocketConfigurator;
 
 import java.io.IOException;
 
@@ -67,19 +66,22 @@ public class IntrabandTestUtil {
 	public static SocketChannel[] createSocketChannelPeers()
 		throws IOException {
 
-		ServerSocketChannel serverSocketChannel =
-			SocketUtil.createServerSocketChannel(
-				InetAddress.getLocalHost(), 15238, _serverSocketConfigurator);
+		SocketChannel clientPeerSocketChannel = null;
+		SocketChannel serverPeerSocketChannel = null;
 
-		ServerSocket serverSocket = serverSocketChannel.socket();
+		try (ServerSocketChannel serverSocketChannel =
+				SocketUtil.createServerSocketChannel(
+					InetAddress.getLocalHost(), 15238,
+					_serverSocketConfigurator)) {
 
-		SocketChannel clientPeerSocketChannel = SocketChannel.open(
-			new InetSocketAddress(
-				InetAddress.getLocalHost(), serverSocket.getLocalPort()));
+			ServerSocket serverSocket = serverSocketChannel.socket();
 
-		SocketChannel serverPeerSocketChannel = serverSocketChannel.accept();
+			clientPeerSocketChannel = SocketChannel.open(
+				new InetSocketAddress(
+					InetAddress.getLocalHost(), serverSocket.getLocalPort()));
 
-		serverSocketChannel.close();
+			serverPeerSocketChannel = serverSocketChannel.accept();
+		}
 
 		SocketChannel[] socketChannels = new SocketChannel[2];
 
@@ -100,16 +102,16 @@ public class IntrabandTestUtil {
 		return datagram;
 	}
 
-	private static ServerSocketConfigurator _serverSocketConfigurator =
-		new ServerSocketConfigurator() {
+	private static final SocketUtil.ServerSocketConfigurator
+		_serverSocketConfigurator = new SocketUtil.ServerSocketConfigurator() {
 
-		@Override
-		public void configure(ServerSocket serverSocket)
-			throws SocketException {
+			@Override
+			public void configure(ServerSocket serverSocket)
+				throws SocketException {
 
-			serverSocket.setReuseAddress(true);
-		}
+				serverSocket.setReuseAddress(true);
+			}
 
-	};
+		};
 
 }

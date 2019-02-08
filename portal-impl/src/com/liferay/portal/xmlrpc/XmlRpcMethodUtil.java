@@ -16,14 +16,13 @@ package com.liferay.portal.xmlrpc;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.xmlrpc.Method;
 import com.liferay.registry.Registry;
 import com.liferay.registry.RegistryUtil;
 import com.liferay.registry.ServiceReference;
-import com.liferay.registry.ServiceRegistration;
 import com.liferay.registry.ServiceTracker;
 import com.liferay.registry.ServiceTrackerCustomizer;
-import com.liferay.registry.collections.ServiceRegistrationMap;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,26 +34,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class XmlRpcMethodUtil {
 
 	public static Method getMethod(String token, String methodName) {
-		return _instance._getMethod(token, methodName);
+		return _instance.doGetMethod(token, methodName);
 	}
 
-	public static void registerMethod(Method method) {
-		if (method == null) {
-			return;
-		}
-
-		_instance._registerMethod(method);
-	}
-
-	public static void unregisterMethod(Method method) {
-		if (method == null) {
-			return;
-		}
-
-		_instance._unregisterMethod(method);
-	}
-
-	protected Method _getMethod(String token, String methodName) {
+	protected Method doGetMethod(String token, String methodName) {
 		Method method = null;
 
 		Map<String, Method> methods = _methodRegistry.get(token);
@@ -75,33 +58,14 @@ public class XmlRpcMethodUtil {
 		_serviceTracker.open();
 	}
 
-	private void _registerMethod(Method method) {
-		Registry registry = RegistryUtil.getRegistry();
+	private static final Log _log = LogFactoryUtil.getLog(
+		XmlRpcMethodUtil.class);
 
-		ServiceRegistration<Method> serviceRegistration =
-			registry.registerService(Method.class, method);
+	private static final XmlRpcMethodUtil _instance = new XmlRpcMethodUtil();
 
-		_serviceRegistrations.put(method, serviceRegistration);
-	}
-
-	private void _unregisterMethod(Method method) {
-		ServiceRegistration<Method> serviceRegistration =
-			_serviceRegistrations.remove(method);
-
-		if (serviceRegistration != null) {
-			serviceRegistration.unregister();
-		}
-	}
-
-	private static Log _log = LogFactoryUtil.getLog(XmlRpcMethodUtil.class);
-
-	private static XmlRpcMethodUtil _instance = new XmlRpcMethodUtil();
-
-	private Map<String, Map<String, Method>> _methodRegistry =
-		new ConcurrentHashMap<String, Map<String, Method>>();
-	private ServiceRegistrationMap<Method> _serviceRegistrations =
-		new ServiceRegistrationMap<Method>();
-	private ServiceTracker<Method, Method> _serviceTracker;
+	private final Map<String, Map<String, Method>> _methodRegistry =
+		new ConcurrentHashMap<>();
+	private final ServiceTracker<Method, Method> _serviceTracker;
 
 	private class MethodServiceTrackerCustomizer
 		implements ServiceTrackerCustomizer<Method, Method> {
@@ -117,7 +81,7 @@ public class XmlRpcMethodUtil {
 			Map<String, Method> methods = _methodRegistry.get(token);
 
 			if (methods == null) {
-				methods = new HashMap<String, Method>();
+				methods = new HashMap<>();
 
 				_methodRegistry.put(token, methods);
 			}
@@ -129,8 +93,9 @@ public class XmlRpcMethodUtil {
 			if (registeredMethod != null) {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
-						"There is already an XML-RPC method registered with " +
-							"name " + methodName + " at " + token);
+						StringBundler.concat(
+							"There is already an XML-RPC method registered ",
+							"with name ", methodName, " at ", token));
 				}
 			}
 			else {

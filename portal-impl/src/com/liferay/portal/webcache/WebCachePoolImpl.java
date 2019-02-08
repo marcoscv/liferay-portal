@@ -15,10 +15,10 @@
 package com.liferay.portal.webcache;
 
 import com.liferay.portal.kernel.cache.PortalCache;
-import com.liferay.portal.kernel.cache.SingleVMPool;
+import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
+import com.liferay.portal.kernel.cache.PortalCacheManagerNames;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.webcache.WebCacheException;
 import com.liferay.portal.kernel.webcache.WebCacheItem;
@@ -27,12 +27,11 @@ import com.liferay.portal.kernel.webcache.WebCachePool;
 /**
  * @author Brian Wing Shun Chan
  */
-@DoPrivileged
 public class WebCachePoolImpl implements WebCachePool {
 
 	public void afterPropertiesSet() {
-		_portalCache = (PortalCache<String, Object>)_singleVMPool.getCache(
-			_CACHE_NAME);
+		_portalCache = PortalCacheHelperUtil.getPortalCache(
+			PortalCacheManagerNames.SINGLE_VM, _CACHE_NAME);
 	}
 
 	@Override
@@ -50,6 +49,10 @@ public class WebCachePoolImpl implements WebCachePool {
 
 		try {
 			obj = wci.convert(key);
+
+			if (obj == null) {
+				return null;
+			}
 
 			int timeToLive = (int)(wci.getRefreshTime() / Time.SECOND);
 
@@ -76,15 +79,11 @@ public class WebCachePoolImpl implements WebCachePool {
 		_portalCache.remove(key);
 	}
 
-	public void setSingleVMPool(SingleVMPool singleVMPool) {
-		_singleVMPool = singleVMPool;
-	}
-
 	private static final String _CACHE_NAME = WebCachePool.class.getName();
 
-	private static Log _log = LogFactoryUtil.getLog(WebCachePoolImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		WebCachePoolImpl.class);
 
 	private PortalCache<String, Object> _portalCache;
-	private SingleVMPool _singleVMPool;
 
 }

@@ -1,0 +1,194 @@
+definition {
+	macro changeDisplayStyle {
+		var browserType = PropsUtil.get("browser.type");
+
+		if ("${browserType}" == "chrome") {
+			MetalComponent.waitForManagementBar();
+		}
+
+		Click(locator1 = "Icon#CURRENT_DISPLAY_STYLE");
+
+		MenuItem.click(menuItem = StringUtil.upperCaseFirstLetter("${displayStyle}"));
+	}
+
+	macro changeExportDisplayStyle {
+		Click.clickNoMouseOverNoWaitForVisible(locator1 = "Icon#CURRENT_DISPLAY_STYLE");
+
+		Click.clickNoMouseOverNoWaitForVisible(
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			key_menuItem = StringUtil.upperCaseFirstLetter("${displayStyle}")
+		);
+	}
+
+	macro delete {
+		LexiconEntry.gotoEntryMenuItemNoError(
+			menuItem = "Delete",
+			rowEntry = "${rowEntry}"
+		);
+
+		if (isSet(confirmationText)) {
+			AssertConfirm(value1 = "${confirmationText}");
+		}
+		else {
+			Confirm();
+		}
+
+		if (isSet(failure)) {
+			if (IsElementPresent(locator1 = "Message#ERROR_2")) {
+				Alert.viewRequestFailedToComplete();
+
+				AssertTextEquals(locator1 = "Message#ERROR_2", value1 = "${failure}");
+			}
+			else {
+				AssertTextEquals(locator1 = "Message#ERROR", value1 = "${failure}");
+			}
+		}
+		else {
+			Alert.viewSuccessMessage();
+		}
+	}
+
+	macro gotoAdd {
+		var browserType = PropsUtil.get("browser.type");
+
+		if ("${browserType}" == "chrome") {
+			MetalComponent.waitForManagementBar();
+		}
+
+		Click(locator1 = "Button#PLUS");
+	}
+
+	macro gotoAddDropdownMenuItem {
+		LexiconEntry.gotoAdd();
+
+		DropdownMenuItem.click(menuItem = "${menuItem}");
+	}
+
+	macro gotoAddMenuItem {
+		LexiconEntry.gotoAdd();
+
+		MenuItem.click(menuItem = "${menuItem}");
+	}
+
+	macro gotoEllipsisMenuItem {
+		Click.waitForMenuToggleJSClick(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "${menuItem}");
+	}
+
+	macro gotoEllipsisMenuItemNoError {
+		Click.waitForMenuToggleJSClick(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS");
+
+		MenuItem.clickNoError(menuItem = "${menuItem}");
+	}
+
+	macro gotoEntry {
+		if (IsElementPresent(locator1 = "Icon#DISPLAY_STYLE_ACTIVE", key_displayStyle = "cards")) {
+			AssertClick(
+				locator1 = "Card#SPECIFIC_LARGE_TEXT",
+				value1 = "${rowEntry}",
+				key_cardText = "${rowEntry}"
+			);
+		}
+		else {
+			AssertClick(
+				locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME_LINK",
+				value1 = "${rowEntry}",
+				key_rowEntry = "${rowEntry}"
+			);
+		}
+	}
+
+	macro gotoEntryMenuItem {
+		LexiconEntry.openEntryMenu(rowEntry = "${rowEntry}");
+
+		MenuItem.click(menuItem = "${menuItem}");
+	}
+
+	macro gotoEntryMenuItemNoError {
+		LexiconEntry.openEntryMenu(rowEntry = "${rowEntry}");
+
+		MenuItem.clickNoError(menuItem = "${menuItem}");
+	}
+
+	macro gotoEntryMenuItemNoWait {
+		LexiconEntry.openEntryMenu(rowEntry = "${rowEntry}");
+
+		MenuItem.click(menuItem = "${menuItem}");
+	}
+
+	macro gotoEntryMenuItemNoWaitNoError {
+		LexiconEntry.openEntryMenu(rowEntry = "${rowEntry}");
+
+		MenuItem.clickNoError(menuItem = "${menuItem}");
+	}
+
+	macro gotoHeaderMenuItem {
+		Click(locator1 = "Icon#HEADER_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "${menuItem}");
+	}
+
+	macro openEntryMenu {
+		Click.waitForMenuToggleJSClick(
+			locator1 = "Icon#ROW_VERTICAL_ELLIPSIS",
+			key_rowEntry = "${rowEntry}"
+		);
+	}
+
+	macro selectEntry {
+		Check(
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_CHECKBOX",
+			key_rowEntry = "${rowEntry}"
+		);
+	}
+
+	macro viewActiveDisplayStyle {
+		AssertElementPresent(
+			locator1 = "Icon#CURRENT_DISPLAY_STYLE_ACTIVE",
+			key_displayStyle = "${displayStyle}"
+		);
+	}
+
+	macro viewEntryName {
+		var browserType = PropsUtil.get("browser.type");
+
+		if ("${browserType}" == "chrome") {
+			AssertTextEquals.assertPartialText(
+				locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME",
+				value1 = "${rowEntry}",
+				key_rowEntry = "${rowEntry}"
+			);
+		}
+		else {
+			AssertTextEquals(
+				locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME",
+				value1 = "${rowEntry}",
+				key_rowEntry = "${rowEntry}"
+			);
+		}
+	}
+
+	macro viewNoEntry {
+		AssertElementNotPresent(
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME",
+			key_rowEntry = "${rowEntry}"
+		);
+	}
+
+	macro viewNoEntryMenu {
+		AssertElementNotPresent(
+			locator1 = "Icon#ROW_VERTICAL_ELLIPSIS",
+			key_rowEntry = "${rowEntry}"
+		);
+	}
+
+	macro viewNoEntryMenuItem {
+		LexiconEntry.openEntryMenu(rowEntry = "${rowEntry}");
+
+		AssertElementNotPresent(
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			key_menuItem = "${menuItem}"
+		);
+	}
+}

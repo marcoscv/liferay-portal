@@ -1,0 +1,354 @@
+{
+	"@context": [
+		{
+			"embedded2": {
+				"@type": "@id"
+			}
+		},
+		{
+			"linked1": {
+				"@type": "@id"
+			}
+		},
+		{
+			"linked2": {
+				"@type": "@id"
+			}
+		},
+		{
+			"relatedCollection1": {
+				"@type": "@id"
+			}
+		},
+		{
+			"relatedCollection2": {
+				"@type": "@id"
+			}
+		},
+		{
+			"@vocab": "http://schema.org/"
+		},
+		"https://www.w3.org/ns/hydra/core#"
+	],
+	"@id": "/model/first",
+	"@type": [
+		"Type 1",
+		"Type 2"
+	],
+	"applicationRelativeURL1": "/first",
+	"binary1": "/model/first/binary1",
+	"binary2": "/model/first/binary2",
+	"boolean1": true,
+	"boolean2": false,
+	"booleanList1": [
+		true,
+		true,
+		false,
+		false
+	],
+	"booleanList2": [
+		true,
+		false,
+		true,
+		false
+	],
+	"date1": "2016-06-15T09:00Z",
+	"date2": "2017-04-03T18:36Z",
+	"embedded1": {
+		"@context": [
+			{
+				"linked": {
+					"@type": "@id"
+				}
+			},
+			{
+				"relatedCollection": {
+					"@type": "@id"
+				}
+			}
+		],
+		"@id": "/first-inner-model/first",
+		"@type": [
+			"Type"
+		],
+		"binary": "/first-inner-model/first/binary",
+		"boolean": true,
+		"booleanList": [
+			true,
+			false
+		],
+		"embedded": {
+			"@context": [
+				{
+					"embedded": {
+						"@type": "@id"
+					}
+				},
+				{
+					"linked": {
+						"@type": "@id"
+					}
+				},
+				{
+					"relatedCollection": {
+						"@type": "@id"
+					}
+				}
+			],
+			"@id": "/second-inner-model/first",
+			"@type": [
+				"Type"
+			],
+			"binary": "/second-inner-model/first/binary",
+			"boolean": false,
+			"booleanList": [
+				true
+			],
+			"embedded": "/third-inner-model/first",
+			"link": "community.liferay.com",
+			"linked": "/third-inner-model/second",
+			"number": 2017,
+			"numberList": [
+				1
+			],
+			"relatedCollection": "/second/first/models",
+			"string": "A string",
+			"stringList": [
+				"a"
+			]
+		},
+		"link": "www.liferay.com",
+		"linked": "/second-inner-model/second",
+		"localizedString": "Translated",
+		"nestedList": {
+			"@type": [
+				"Collection"
+			],
+			"manages": {
+				"object": "schema:Type 7",
+				"property": "rdf:type"
+			},
+			"member": [
+				{
+					"@type": [
+						"Type 7"
+					],
+					"number1": 2018,
+					"string1": "id 1",
+					"string2": "string3"
+				},
+				{
+					"@type": [
+						"Type 7"
+					],
+					"number1": 2018,
+					"string1": "id 2",
+					"string2": "string3"
+				}
+			],
+			"totalItems": 2
+		},
+		"number": 42,
+		"numberList": [
+			1,
+			2
+		],
+		"operation": [
+			{
+				"@id": "_:first/remove",
+				"@type": [
+					"DeleteAction",
+					"Operation"
+				],
+				"method": "DELETE",
+				"target": "/first/first"
+			}
+		],
+		"relatedCollection": "/first/first/models",
+		"string": "A string",
+		"stringList": [
+			"a",
+			"b"
+		]
+	},
+	"embedded2": "/first-inner-model/second",
+	"link1": "www.liferay.com",
+	"link2": "community.liferay.com",
+	"linked1": "/first-inner-model/third",
+	"linked2": "/first-inner-model/fourth",
+	"localizedString1": "Translated 1",
+	"localizedString2": "Translated 2",
+	"nested1": {
+		"@type": [
+			"Type 3"
+		],
+		"number1": 2017,
+		"string1": "id 1",
+		"string2": "string2"
+	},
+	"nested2": {
+		"@context": [
+			{
+				"linked3": {
+					"@type": "@id"
+				}
+			}
+		],
+		"@type": [
+			"Type 4"
+		],
+		"linked3": "/third-inner-model/fifth",
+		"nested3": {
+			"@type": [
+				"Type 5"
+			],
+			"string1": "id 3"
+		},
+		"number1": 42,
+		"string1": "first"
+	},
+	"nestedList": {
+		"@type": [
+			"Collection"
+		],
+		"manages": {
+			"object": "schema:Type 6",
+			"property": "rdf:type"
+		},
+		"member": [
+			{
+				"@type": [
+					"Type 6"
+				],
+				"nested4" : {
+					"@type" : [
+						"Type 7"
+					],
+					"nestedList" : {
+						"@type" : [
+							"Collection"
+						],
+						"manages": {
+							"object": "schema:Type 8",
+							"property": "rdf:type"
+						},
+						"member" : [
+							{
+								"@type" : [
+									"Type 8"
+								],
+								"number1" : 2017
+							},
+							{
+								"@type" : [
+									"Type 8"
+								],
+								"number1" : 2017
+							}
+						],
+						"totalItems" : 2
+					},
+					"string1" : "id 4"
+				},
+				"number1": 2017,
+				"string1": "id 1",
+				"string2": "string2"
+			},
+			{
+				"@type": [
+					"Type 6"
+				],
+				"nested4" : {
+					"@type" : [
+						"Type 7"
+					],
+					"nestedList" : {
+						"@type" : [
+							"Collection"
+						],
+						"manages": {
+							"object": "schema:Type 8",
+							"property": "rdf:type"
+						},
+						"member" : [
+							{
+								"@type" : [
+									"Type 8"
+								],
+								"number1" : 2017
+							},
+							{
+								"@type" : [
+									"Type 8"
+								],
+								"number1" : 2017
+							}
+						],
+						"totalItems" : 2
+					},
+					"string1" : "id 4"
+				},
+				"number1": 2017,
+				"string1": "id 2",
+				"string2": "string2"
+			}
+		],
+		"totalItems": 2
+	},
+	"number1": 2017,
+	"number2": 42,
+	"numberList1": [
+		1,
+		2,
+		3,
+		4,
+		5
+	],
+	"numberList2": [
+		6,
+		7,
+		8,
+		9,
+		10
+	],
+	"operation": [
+		{
+			"@id": "_:root/replace",
+			"@type": [
+				"ReplaceAction",
+				"Operation"
+			],
+			"method": "PUT",
+			"target": "/root/first"
+		},
+		{
+			"@id": "_:root/remove",
+			"@type": [
+				"DeleteAction",
+				"Operation"
+			],
+			"method": "DELETE",
+			"target": "/root/first"
+		}
+	],
+	"relatedCollection1": "/root/first/models",
+	"relatedCollection2": "/root/first/models",
+	"relativeURL1": "/first",
+	"relativeURL2": "/second",
+	"string1": "Live long and prosper",
+	"string2": "Hypermedia",
+	"stringList1": [
+		"a",
+		"b",
+		"c",
+		"d",
+		"e"
+	],
+	"stringList2": [
+		"f",
+		"g",
+		"h",
+		"i",
+		"j"
+	]
+}

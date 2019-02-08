@@ -1,0 +1,304 @@
+@component-name = "portal-document-management"
+definition {
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Documents Management";
+	var pageName = "Media Gallery Page";
+	var portletName = "Media Gallery";
+
+	setUp {
+		TestCase.setUpPortalInstance();
+
+		User.firstLoginPG();
+
+		ProductMenu.gotoPortlet(
+			category = "Build",
+			panel = "Site Administration",
+			portlet = "Pages"
+		);
+
+		SitePages.addPublicPage(pageName = "Media Gallery Page");
+
+		SitePages.configurePage(
+			columnName = "1 Column",
+			pageName = "Media Gallery Page",
+			privacy = "Public Pages",
+			sitePageType = "Widget Page"
+		);
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		Portlet.addPG(portletName = "Media Gallery");
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		MGPortlet.configureShowAllPG(pageName = "Media Gallery Page");
+	}
+
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
+
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			DMFolder.tearDownPGViaMG(pageName = "Media Gallery Page");
+
+			Page.tearDownCP(pageName = "Media Gallery Page");
+		}
+	}
+
+	@priority = "4"
+	test AddFolder {
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.addPGViaMG(
+			mgFolderDescription = "DM Folder Description",
+			mgFolderName = "DM Folder Name"
+		);
+
+		DMFolder.viewPGViaMG(mgFolderName = "DM Folder Name");
+	}
+
+	@priority = "4"
+	test AddFolderDocument {
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.addPGViaMG(
+			mgFolderDescription = "DM Folder Description",
+			mgFolderName = "DM Folder Name"
+		);
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.gotoPGViaMG(mgFolderName = "DM Folder Name");
+
+		DMDocument.addPGViaMG(
+			mgDocumentDescription = "DM Document Description",
+			mgDocumentFile = "Document_1.jpg",
+			mgDocumentTitle = "DM Document Title"
+		);
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.gotoPGViaMG(mgFolderName = "DM Folder Name");
+
+		DMDocument.viewPGViaMG(mgDocumentTitle = "DM Document Title");
+	}
+
+	@priority = "4"
+	test AddFolders {
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.addPGViaMG(
+			mgFolderDescription = "DM Folder1 Description",
+			mgFolderName = "DM Folder1 Name"
+		);
+
+		DMFolder.viewPGViaMG(mgFolderName = "DM Folder1 Name");
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.addPGViaMG(
+			mgFolderDescription = "DM Folder2 Description",
+			mgFolderName = "DM Folder2 Name"
+		);
+
+		DMFolder.viewPGViaMG(mgFolderName = "DM Folder2 Name");
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.addPGViaMG(
+			mgFolderDescription = "DM Folder3 Description",
+			mgFolderName = "DM Folder3 Name"
+		);
+
+		DMFolder.viewPGViaMG(mgFolderName = "DM Folder3 Name");
+	}
+
+	@priority = "4"
+	test AddSubfolderDocument {
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.addPGViaMG(
+			mgFolderDescription = "DM Folder Description",
+			mgFolderName = "DM Folder Name"
+		);
+
+		DMFolder.gotoPGViaMG(mgFolderName = "DM Folder Name");
+
+		DMFolder.addSubfolderPGViaMG(
+			mgSubfolderDescription = "DM Subfolder Description",
+			mgSubfolderName = "DM Subfolder Name"
+		);
+
+		DMFolder.gotoPGViaMG(mgFolderName = "DM Subfolder Name");
+
+		DMDocument.addPGViaMG(
+			mgDocumentDescription = "DM Document Description",
+			mgDocumentFile = "Document_1.jpg",
+			mgDocumentTitle = "DM Document Title"
+		);
+	}
+
+	@priority = "4"
+	test AddSubfolders {
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.addPGViaMG(
+			mgFolderDescription = "DM Folder Description",
+			mgFolderName = "DM Folder Name"
+		);
+
+		DMFolder.gotoPGViaMG(mgFolderName = "DM Folder Name");
+
+		DMFolder.addSubfolderPGViaMG(
+			mgSubfolderDescription = "DM Subfolder1 Description",
+			mgSubfolderName = "DM Subfolder1 Name"
+		);
+
+		DMFolder.viewPGViaMG(mgFolderName = "DM Subfolder1 Name");
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.gotoPGViaMG(mgFolderName = "DM Folder Name");
+
+		DMFolder.addSubfolderPGViaMG(
+			mgSubfolderDescription = "DM Subfolder2 Description",
+			mgSubfolderName = "DM Subfolder2 Name"
+		);
+
+		DMFolder.viewPGViaMG(mgFolderName = "DM Subfolder2 Name");
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.gotoPGViaMG(mgFolderName = "DM Folder Name");
+
+		DMFolder.addSubfolderPGViaMG(
+			mgSubfolderDescription = "DM Subfolder3 Description",
+			mgSubfolderName = "DM Subfolder3 Name"
+		);
+
+		DMFolder.viewPGViaMG(mgFolderName = "DM Subfolder3 Name");
+	}
+
+	@priority = "5"
+	test DeleteFolderDocument {
+		property portal.acceptance = "true";
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.addPGViaMG(
+			mgFolderDescription = "DM Folder Description",
+			mgFolderName = "DM Folder Name"
+		);
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.gotoPGViaMG(mgFolderName = "DM Folder Name");
+
+		DMDocument.addPGViaMG(
+			mgDocumentDescription = "DM Document Description",
+			mgDocumentFile = "Document_1.jpg",
+			mgDocumentTitle = "DM Document Title"
+		);
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.gotoPGViaMG(mgFolderName = "DM Folder Name");
+
+		DMDocument.deletePGViaMG(mgDocumentTitle = "DM Document Title");
+	}
+
+	@priority = "5"
+	test EditFolder {
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.addPGViaMG(
+			mgFolderDescription = "DM Folder Description",
+			mgFolderName = "DM Folder Name"
+		);
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.editPGViaMG(
+			mgFolderDescription = "DM Folder Description Edit",
+			mgFolderDescriptionEdit = "DM Folder Description Edit",
+			mgFolderName = "DM Folder Name Edit",
+			mgFolderNameEdit = "DM Folder Name Edit"
+		);
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.viewPGViaMG(mgFolderName = "DM Folder Name Edit");
+	}
+
+	@priority = "5"
+	test EditFolderDocument {
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.addPGViaMG(
+			mgFolderDescription = "DM Folder Description",
+			mgFolderName = "DM Folder Name"
+		);
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.gotoPGViaMG(mgFolderName = "DM Folder Name");
+
+		DMDocument.addPGViaMG(
+			mgDocumentDescription = "DM Document Description",
+			mgDocumentFile = "Document_1.jpg",
+			mgDocumentTitle = "DM Document Title"
+		);
+
+		DMDocument.editPGViaMG(
+			mgDocumentDescription = "DM Document Description",
+			mgDocumentDescriptionEdit = "DM Document Description Edit",
+			mgDocumentTitle = "DM Document Title",
+			mgDocumentTitleEdit = "DM Document Title Edit"
+		);
+	}
+
+	@priority = "4"
+	test SearchFolderDocument {
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		DMFolder.addPGViaMG(
+			mgFolderDescription = "DM Folder Description",
+			mgFolderName = "DM Folder Name"
+		);
+
+		DMFolder.gotoPGViaMG(mgFolderName = "DM Folder Name");
+
+		DMDocument.addPGViaMG(
+			mgDocumentDescription = "DM Document Description",
+			mgDocumentFile = "Document_1.jpg",
+			mgDocumentTitle = "DM Document Title"
+		);
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		SearchPortlets.searchEmbedded(searchTerm = "DM Document Title");
+
+		SearchResultPortlet.viewSearchResults(
+			searchAssetTitle = "DM Document Title",
+			searchAssetType = "Document"
+		);
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		SearchPortlets.searchEmbedded(searchTerm = '''"DM Document Title"''');
+
+		SearchResultPortlet.viewSearchResults(
+			searchAssetTitle = "DM Document Title",
+			searchAssetType = "Document"
+		);
+
+		Navigator.gotoPage(pageName = "Media Gallery Page");
+
+		SearchPortlets.searchEmbedded(searchTerm = "asdf");
+
+		SearchResultPortlet.viewNoSearchResults(searchTerm = "asdf");
+	}
+}

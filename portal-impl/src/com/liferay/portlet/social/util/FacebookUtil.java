@@ -14,20 +14,22 @@
 
 package com.liferay.portlet.social.util;
 
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Http;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.util.Portal;
 
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * @author Jorge Ferrer
+ * @author     Jorge Ferrer
+ * @deprecated As of Judson (7.1.x), with no direct replacement
  */
+@Deprecated
 public class FacebookUtil {
 
 	public static final String FACEBOOK_APPS_URL = "http://apps.facebook.com/";
@@ -95,11 +97,10 @@ public class FacebookUtil {
 		if (path.startsWith(FACEBOOK_SERVLET_PATH)) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(FacebookUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(FacebookUtil.class);
 
 }

@@ -14,11 +14,13 @@
 
 package com.liferay.portal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.petra.string.StringBundler;
+
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.Group;
-import com.liferay.portal.service.GroupLocalServiceUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,9 +34,10 @@ import java.util.List;
  *
  * @author Brian Wing Shun Chan
  * @see GroupImpl
- * @see com.liferay.portal.model.Group
+ * @see Group
  * @generated
  */
+@ProviderType
 public abstract class GroupBaseImpl extends GroupModelImpl implements Group {
 	/*
 	 * NOTE FOR DEVELOPERS:
@@ -66,13 +69,13 @@ public abstract class GroupBaseImpl extends GroupModelImpl implements Group {
 
 		StringBundler sb = new StringBundler((groups.size() * 2) + 1);
 
-		sb.append(StringPool.SLASH);
+		sb.append("/");
 
 		for (int i = groups.size() - 1; i >= 0; i--) {
 			group = groups.get(i);
 
 			sb.append(group.getGroupId());
-			sb.append(StringPool.SLASH);
+			sb.append("/");
 		}
 
 		return sb.toString();

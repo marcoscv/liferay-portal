@@ -35,8 +35,8 @@ public class JavaFieldsParser {
 			return s;
 		}
 
-		List<String> replaceFrom = new ArrayList<String>();
-		List<String> replaceWith = new ArrayList<String>();
+		List<String> replaceFrom = new ArrayList<>();
+		List<String> replaceWith = new ArrayList<>();
 
 		while (true) {
 			if (x == -1) {
@@ -71,9 +71,7 @@ public class JavaFieldsParser {
 				clazz = classLoader.loadClass(className);
 			}
 			catch (Exception e) {
-				if (_log.isWarnEnabled()) {
-					_log.warn("Unable to load class " + className);
-				}
+				_log.error("Unable to load class " + className, e);
 
 				break;
 			}
@@ -100,14 +98,17 @@ public class JavaFieldsParser {
 				}
 			}
 			catch (Exception e) {
-				if (_log.isWarnEnabled()) {
-					_log.warn("Unable to load field " + fieldName);
-				}
+				_log.error("Unable to load field " + fieldName, e);
 
 				break;
 			}
 
-			replaceFrom.add("${".concat(javaSnippet).concat("}"));
+			replaceFrom.add(
+				"${".concat(
+					javaSnippet
+				).concat(
+					"}"
+				));
 			replaceWith.add(fieldValue);
 
 			x = s.indexOf("${", y);
@@ -142,6 +143,7 @@ public class JavaFieldsParser {
 		return javaSnippet.substring(x + 1);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(JavaFieldsParser.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		JavaFieldsParser.class);
 
 }

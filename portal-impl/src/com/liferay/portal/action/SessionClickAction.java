@@ -14,15 +14,18 @@
 
 package com.liferay.portal.action;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.security.auth.AuthTokenUtil;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.ParamUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.security.auth.AuthTokenUtil;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.SessionClicks;
+import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.SessionClicks;
+import com.liferay.portal.struts.Action;
+import com.liferay.portal.struts.model.ActionForward;
+import com.liferay.portal.struts.model.ActionMapping;
 
 import java.util.Enumeration;
 
@@ -31,20 +34,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.struts.action.Action;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-
 /**
  * @author Brian Wing Shun Chan
  */
-public class SessionClickAction extends Action {
+public class SessionClickAction implements Action {
 
 	@Override
 	public ActionForward execute(
-			ActionMapping actionMapping, ActionForm actionForm,
-			HttpServletRequest request, HttpServletResponse response)
+			ActionMapping actionMapping, HttpServletRequest request,
+			HttpServletResponse response)
 		throws Exception {
 
 		try {
@@ -61,7 +59,7 @@ public class SessionClickAction extends Action {
 			while (enu.hasMoreElements()) {
 				String name = enu.nextElement();
 
-				if (!name.equals("doAsUserId")) {
+				if (!name.equals("doAsUserId") && !name.equals("p_auth")) {
 					String value = ParamUtil.getString(request, name);
 
 					if (useHttpSession) {
@@ -76,7 +74,14 @@ public class SessionClickAction extends Action {
 			String value = getValue(request);
 
 			if (value != null) {
-				response.setContentType(ContentTypes.APPLICATION_JSON);
+				String cmd = ParamUtil.getString(request, Constants.CMD);
+
+				if (cmd.equals("get")) {
+					response.setContentType(ContentTypes.TEXT_PLAIN);
+				}
+				else {
+					response.setContentType(ContentTypes.APPLICATION_JSON);
+				}
 
 				ServletOutputStream servletOutputStream =
 					response.getOutputStream();

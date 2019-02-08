@@ -1,0 +1,15 @@
+@default = "assertElementNotPresent"
+@summary = "Assert that '${locator1}' is not available"
+definition {
+	function assertElementNotPresent {
+		WaitForSPARefresh();
+
+		selenium.waitForElementNotPresent();
+
+		selenium.assertElementNotPresent();
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+}

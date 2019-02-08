@@ -14,23 +14,53 @@
 
 package com.liferay.portal.template;
 
+import com.liferay.expando.kernel.service.ExpandoColumnLocalService;
+import com.liferay.expando.kernel.service.ExpandoRowLocalService;
+import com.liferay.expando.kernel.service.ExpandoTableLocalService;
+import com.liferay.expando.kernel.service.ExpandoValueLocalService;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.audit.AuditMessageFactoryUtil;
 import com.liferay.portal.kernel.audit.AuditRouterUtil;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.image.ImageToolUtil;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.language.UnicodeLanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.Theme;
 import com.liferay.portal.kernel.portlet.PortletModeFactory_IW;
+import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletRequestModel;
 import com.liferay.portal.kernel.portlet.PortletRequestModelFactory;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.WindowStateFactory_IW;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.GroupService;
+import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.LayoutService;
+import com.liferay.portal.kernel.service.OrganizationLocalService;
+import com.liferay.portal.kernel.service.OrganizationService;
+import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.service.UserService;
+import com.liferay.portal.kernel.service.permission.AccountPermissionUtil;
+import com.liferay.portal.kernel.service.permission.CommonPermissionUtil;
+import com.liferay.portal.kernel.service.permission.GroupPermissionUtil;
+import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
+import com.liferay.portal.kernel.service.permission.OrganizationPermissionUtil;
+import com.liferay.portal.kernel.service.permission.PasswordPolicyPermissionUtil;
+import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
+import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
+import com.liferay.portal.kernel.service.permission.RolePermissionUtil;
+import com.liferay.portal.kernel.service.permission.UserGroupPermissionUtil;
+import com.liferay.portal.kernel.service.permission.UserPermissionUtil;
 import com.liferay.portal.kernel.servlet.BrowserSnifferUtil;
-import com.liferay.portal.kernel.template.Template;
 import com.liferay.portal.kernel.template.TemplateHandler;
 import com.liferay.portal.kernel.template.TemplateHandlerRegistryUtil;
 import com.liferay.portal.kernel.template.TemplateVariableGroup;
+import com.liferay.portal.kernel.theme.NavItem;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil_IW;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.DateUtil_IW;
@@ -38,59 +68,34 @@ import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.GetterUtil_IW;
 import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.HttpUtil;
+import com.liferay.portal.kernel.util.InetAddressUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.ListMergeable;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil_IW;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.SessionClicks_IW;
 import com.liferay.portal.kernel.util.StaticFieldGetter;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil_IW;
 import com.liferay.portal.kernel.util.TimeZoneUtil_IW;
 import com.liferay.portal.kernel.util.UnicodeFormatter_IW;
 import com.liferay.portal.kernel.util.Validator_IW;
+import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.webserver.WebServerServletTokenUtil;
 import com.liferay.portal.kernel.xml.SAXReader;
-import com.liferay.portal.model.Layout;
-import com.liferay.portal.model.Theme;
-import com.liferay.portal.service.GroupLocalService;
-import com.liferay.portal.service.GroupService;
-import com.liferay.portal.service.LayoutLocalService;
-import com.liferay.portal.service.LayoutService;
-import com.liferay.portal.service.OrganizationLocalService;
-import com.liferay.portal.service.OrganizationService;
-import com.liferay.portal.service.UserLocalService;
-import com.liferay.portal.service.UserService;
-import com.liferay.portal.service.permission.AccountPermissionUtil;
-import com.liferay.portal.service.permission.CommonPermissionUtil;
-import com.liferay.portal.service.permission.GroupPermissionUtil;
-import com.liferay.portal.service.permission.LayoutPermissionUtil;
-import com.liferay.portal.service.permission.OrganizationPermissionUtil;
-import com.liferay.portal.service.permission.PasswordPolicyPermissionUtil;
-import com.liferay.portal.service.permission.PortalPermissionUtil;
-import com.liferay.portal.service.permission.PortletPermissionUtil;
-import com.liferay.portal.service.permission.RolePermissionUtil;
-import com.liferay.portal.service.permission.UserGroupPermissionUtil;
-import com.liferay.portal.service.permission.UserPermissionUtil;
-import com.liferay.portal.theme.NavItem;
-import com.liferay.portal.theme.ThemeDisplay;
-import com.liferay.portal.util.ClassLoaderUtil;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.SessionClicks_IW;
-import com.liferay.portal.util.WebKeys;
-import com.liferay.portal.webserver.WebServerServletTokenUtil;
-import com.liferay.portlet.PortletURLFactoryUtil;
-import com.liferay.portlet.documentlibrary.util.DLUtil;
-import com.liferay.portlet.dynamicdatamapping.util.DDMUtil;
-import com.liferay.portlet.expando.service.ExpandoColumnLocalService;
-import com.liferay.portlet.expando.service.ExpandoRowLocalService;
-import com.liferay.portlet.expando.service.ExpandoTableLocalService;
-import com.liferay.portlet.expando.service.ExpandoValueLocalService;
-import com.liferay.portlet.journalcontent.util.JournalContentUtil;
-import com.liferay.taglib.util.VelocityTaglibImpl;
+import com.liferay.portal.struts.Definition;
+import com.liferay.portal.struts.TilesUtil;
 
-import java.lang.reflect.Method;
+import java.io.IOException;
+import java.io.InputStream;
+
+import java.net.InetAddress;
+import java.net.URL;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -100,20 +105,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.portlet.ActionRequest;
 import javax.portlet.PortletConfig;
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-
-import org.apache.struts.taglib.tiles.ComponentConstants;
-import org.apache.struts.tiles.ComponentContext;
 
 /**
  * @author Tina Tian
  * @author Jorge Ferrer
+ * @author Raymond Augé
  */
 public class TemplateContextHelper {
 
@@ -179,7 +184,7 @@ public class TemplateContextHelper {
 			}
 		}
 
-		Map<String, Object> helperUtilities = new HashMap<String, Object>();
+		Map<String, Object> helperUtilities = new HashMap<>();
 
 		populateCommonHelperUtilities(helperUtilities);
 		populateExtraHelperUtilities(helperUtilities);
@@ -205,14 +210,19 @@ public class TemplateContextHelper {
 	}
 
 	public TemplateControlContext getTemplateControlContext() {
-		return _pacl.getTemplateControlContext();
+		Thread currentThread = Thread.currentThread();
+
+		ClassLoader contextClassLoader = currentThread.getContextClassLoader();
+
+		return new TemplateControlContext(null, contextClassLoader);
 	}
 
-	public void prepare(Template template, HttpServletRequest request) {
+	public void prepare(
+		Map<String, Object> contextObjects, HttpServletRequest request) {
 
 		// Request
 
-		template.put("request", request);
+		contextObjects.put("request", request);
 
 		// Portlet config
 
@@ -220,7 +230,7 @@ public class TemplateContextHelper {
 			JavaConstants.JAVAX_PORTLET_CONFIG);
 
 		if (portletConfig != null) {
-			template.put("portletConfig", portletConfig);
+			contextObjects.put("portletConfig", portletConfig);
 		}
 
 		// Render request
@@ -231,7 +241,7 @@ public class TemplateContextHelper {
 
 		if (portletRequest != null) {
 			if (portletRequest instanceof RenderRequest) {
-				template.put("renderRequest", portletRequest);
+				contextObjects.put("renderRequest", portletRequest);
 			}
 		}
 
@@ -243,21 +253,21 @@ public class TemplateContextHelper {
 
 		if (portletResponse != null) {
 			if (portletResponse instanceof RenderResponse) {
-				template.put("renderResponse", portletResponse);
+				contextObjects.put("renderResponse", portletResponse);
 			}
 		}
 
 		// XML request
 
 		if ((portletRequest != null) && (portletResponse != null)) {
-			template.put(
+			contextObjects.put(
 				"portletRequestModelFactory",
 				new PortletRequestModelFactory(
 					portletRequest, portletResponse));
 
 			// Deprecated
 
-			template.put(
+			contextObjects.put(
 				"xmlRequest",
 				new Object() {
 
@@ -270,8 +280,7 @@ public class TemplateContextHelper {
 						return portletRequestModel.toXML();
 					}
 
-				}
-			);
+				});
 		}
 
 		// Theme display
@@ -283,37 +292,44 @@ public class TemplateContextHelper {
 			Layout layout = themeDisplay.getLayout();
 			List<Layout> layouts = themeDisplay.getLayouts();
 
-			template.put("themeDisplay", themeDisplay);
-			template.put("company", themeDisplay.getCompany());
-			template.put("user", themeDisplay.getUser());
-			template.put("realUser", themeDisplay.getRealUser());
-			template.put("layout", layout);
-			template.put("layouts", layouts);
-			template.put("plid", String.valueOf(themeDisplay.getPlid()));
-			template.put(
+			contextObjects.put("bodyCssClass", StringPool.BLANK);
+			contextObjects.put("colorScheme", themeDisplay.getColorScheme());
+			contextObjects.put("company", themeDisplay.getCompany());
+			contextObjects.put("layout", layout);
+			contextObjects.put("layouts", layouts);
+			contextObjects.put(
 				"layoutTypePortlet", themeDisplay.getLayoutTypePortlet());
-			template.put(
-				"scopeGroupId", new Long(themeDisplay.getScopeGroupId()));
-			template.put(
+			contextObjects.put("locale", themeDisplay.getLocale());
+			contextObjects.put(
 				"permissionChecker", themeDisplay.getPermissionChecker());
-			template.put("locale", themeDisplay.getLocale());
-			template.put("timeZone", themeDisplay.getTimeZone());
-			template.put("colorScheme", themeDisplay.getColorScheme());
-			template.put("portletDisplay", themeDisplay.getPortletDisplay());
+			contextObjects.put("plid", String.valueOf(themeDisplay.getPlid()));
+			contextObjects.put(
+				"portletDisplay", themeDisplay.getPortletDisplay());
+			contextObjects.put("realUser", themeDisplay.getRealUser());
+			contextObjects.put(
+				"scopeGroupId", Long.valueOf(themeDisplay.getScopeGroupId()));
+			contextObjects.put("themeDisplay", themeDisplay);
+			contextObjects.put("timeZone", themeDisplay.getTimeZone());
+			contextObjects.put("user", themeDisplay.getUser());
 
 			// Navigation items
 
 			if (layout != null) {
-				List<NavItem> navItems = NavItem.fromLayouts(
-					request, layouts, template);
+				try {
+					List<NavItem> navItems = NavItem.fromLayouts(
+						request, themeDisplay, contextObjects);
 
-				template.put("navItems", navItems);
+					contextObjects.put("navItems", navItems);
+				}
+				catch (PortalException pe) {
+					_log.error(pe, pe);
+				}
 			}
 
 			// Deprecated
 
-			template.put(
-				"portletGroupId", new Long(themeDisplay.getScopeGroupId()));
+			contextObjects.put(
+				"portletGroupId", Long.valueOf(themeDisplay.getScopeGroupId()));
 		}
 
 		// Theme
@@ -325,12 +341,12 @@ public class TemplateContextHelper {
 		}
 
 		if (theme != null) {
-			template.put("theme", theme);
+			contextObjects.put("theme", theme);
 		}
 
 		// Tiles attributes
 
-		prepareTiles(template, request);
+		prepareTiles(contextObjects, request);
 
 		// Page title and subtitle
 
@@ -341,7 +357,7 @@ public class TemplateContextHelper {
 			String pageTitle = pageTitleListMergeable.mergeToString(
 				StringPool.SPACE);
 
-			template.put("pageTitle", pageTitle);
+			contextObjects.put("pageTitle", pageTitle);
 		}
 
 		ListMergeable<String> pageSubtitleListMergeable =
@@ -351,7 +367,7 @@ public class TemplateContextHelper {
 			String pageSubtitle = pageSubtitleListMergeable.mergeToString(
 				StringPool.SPACE);
 
-			template.put("pageSubtitle", pageSubtitle);
+			contextObjects.put("pageSubtitle", pageSubtitle);
 		}
 	}
 
@@ -363,6 +379,10 @@ public class TemplateContextHelper {
 		_helperUtilitiesMaps.remove(classLoader);
 	}
 
+	/**
+	 * @deprecated As of Judson (7.1.x), with no direct replacement
+	 */
+	@Deprecated
 	public interface PACL {
 
 		public TemplateControlContext getTemplateControlContext();
@@ -430,24 +450,6 @@ public class TemplateContextHelper {
 		// Date util
 
 		variables.put("dateUtil", DateUtil_IW.getInstance());
-
-		// Dynamic data mapping util
-
-		try {
-			variables.put("ddmUtil", DDMUtil.getDDM());
-		}
-		catch (SecurityException se) {
-			_log.error(se, se);
-		}
-
-		// Document library util
-
-		try {
-			variables.put("dlUtil", DLUtil.getDL());
-		}
-		catch (SecurityException se) {
-			_log.error(se, se);
-		}
 
 		// Expando column service
 
@@ -524,7 +526,15 @@ public class TemplateContextHelper {
 		// Http util
 
 		try {
-			variables.put("httpUtil", HttpUtil.getHttp());
+			variables.put("httpUtil", new HttpWrapper(HttpUtil.getHttp()));
+		}
+		catch (SecurityException se) {
+			_log.error(se, se);
+		}
+
+		try {
+			variables.put(
+				"httpUtilUnsafe", new HttpWrapper(HttpUtil.getHttp(), false));
 		}
 		catch (SecurityException se) {
 			_log.error(se, se);
@@ -534,16 +544,6 @@ public class TemplateContextHelper {
 
 		try {
 			variables.put("imageToolUtil", ImageToolUtil.getImageTool());
-		}
-		catch (SecurityException se) {
-			_log.error(se, se);
-		}
-
-		// Journal content util
-
-		try {
-			variables.put(
-				"journalContentUtil", JournalContentUtil.getJournalContent());
 		}
 		catch (SecurityException se) {
 			_log.error(se, se);
@@ -685,20 +685,6 @@ public class TemplateContextHelper {
 
 		variables.put("validator", Validator_IW.getInstance());
 
-		// VelocityTaglib methods
-
-		try {
-			Class<?> clazz = VelocityTaglibImpl.class;
-
-			Method method = clazz.getMethod(
-				"layoutIcon", new Class[] {Layout.class});
-
-			variables.put("velocityTaglib_layoutIcon", method);
-		}
-		catch (Exception e) {
-			_log.error(e, e);
-		}
-
 		// Web server servlet token
 
 		try {
@@ -785,6 +771,20 @@ public class TemplateContextHelper {
 			_log.error(se, se);
 		}
 
+		Map<String, PortletProvider.Action> portletProviderActionMap =
+			new HashMap<>();
+
+		for (PortletProvider.Action action : PortletProvider.Action.values()) {
+			portletProviderActionMap.put(action.name(), action);
+		}
+
+		try {
+			variables.put("portletProviderAction", portletProviderActionMap);
+		}
+		catch (SecurityException se) {
+			_log.error(se, se);
+		}
+
 		try {
 			variables.put(
 				"rolePermission", RolePermissionUtil.getRolePermission());
@@ -860,55 +860,552 @@ public class TemplateContextHelper {
 	protected void populateExtraHelperUtilities(Map<String, Object> variables) {
 	}
 
-	protected void prepareTiles(Template template, HttpServletRequest request) {
-		ComponentContext componentContext =
-			(ComponentContext)request.getAttribute(
-				ComponentConstants.COMPONENT_CONTEXT);
-
-		if (componentContext == null) {
-			return;
-		}
+	protected void prepareTiles(
+		Map<String, Object> contextObjects, HttpServletRequest request) {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		String tilesTitle = (String)componentContext.getAttribute("title");
+		Definition definition = (Definition)request.getAttribute(
+			TilesUtil.DEFINITION);
+
+		if (definition == null) {
+			themeDisplay.setTilesSelectable(true);
+
+			return;
+		}
+
+		Map<String, String> attributes = definition.getAttributes();
+
+		String tilesTitle = attributes.get("title");
 
 		themeDisplay.setTilesTitle(tilesTitle);
 
-		template.put("tilesTitle", tilesTitle);
+		contextObjects.put("tilesTitle", tilesTitle);
 
-		String tilesContent = (String)componentContext.getAttribute("content");
+		String tilesContent = attributes.get("content");
 
 		themeDisplay.setTilesContent(tilesContent);
 
-		template.put("tilesContent", tilesContent);
+		contextObjects.put("tilesContent", tilesContent);
 
 		boolean tilesSelectable = GetterUtil.getBoolean(
-			(String)componentContext.getAttribute("selectable"));
+			attributes.get("selectable"));
 
 		themeDisplay.setTilesSelectable(tilesSelectable);
 
-		template.put("tilesSelectable", tilesSelectable);
+		contextObjects.put("tilesSelectable", tilesSelectable);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		TemplateContextHelper.class);
 
-	private static PACL _pacl = new NoPACL();
+	private final Map<ClassLoader, Map<String, Object>[]> _helperUtilitiesMaps =
+		new ConcurrentHashMap<>();
 
-	private Map<ClassLoader, Map<String, Object>[]> _helperUtilitiesMaps =
-		new ConcurrentHashMap<ClassLoader, Map<String, Object>[]>();
+	private static class HttpWrapper implements Http {
 
-	private static class NoPACL implements PACL {
+		public HttpWrapper(Http http) {
+			this(http, true);
+		}
+
+		public HttpWrapper(Http http, boolean disableLocalNetworkAccess) {
+			_http = http;
+			_disableLocalNetworkAccess = disableLocalNetworkAccess;
+		}
 
 		@Override
-		public TemplateControlContext getTemplateControlContext() {
-			ClassLoader contextClassLoader =
-				ClassLoaderUtil.getContextClassLoader();
-
-			return new TemplateControlContext(null, contextClassLoader);
+		public String addParameter(String url, String name, boolean value) {
+			return _http.addParameter(url, name, value);
 		}
+
+		@Override
+		public String addParameter(String url, String name, double value) {
+			return _http.addParameter(url, name, value);
+		}
+
+		@Override
+		public String addParameter(String url, String name, int value) {
+			return _http.addParameter(url, name, value);
+		}
+
+		@Override
+		public String addParameter(String url, String name, long value) {
+			return _http.addParameter(url, name, value);
+		}
+
+		@Override
+		public String addParameter(String url, String name, short value) {
+			return _http.addParameter(url, name, value);
+		}
+
+		@Override
+		public String addParameter(String url, String name, String value) {
+			return _http.addParameter(url, name, value);
+		}
+
+		@Override
+		public String decodePath(String path) {
+			return _http.decodePath(path);
+		}
+
+		@Override
+		public String decodeURL(String url) {
+			return _http.decodeURL(url);
+		}
+
+		/**
+		 * @deprecated As of Wilberforce (7.0.x), replaced by {@link
+		 *             #decodeURL(String)}
+		 */
+		@Deprecated
+		@Override
+		public String decodeURL(String url, boolean unescapeSpaces) {
+			return _http.decodeURL(url, unescapeSpaces);
+		}
+
+		@Override
+		public String encodeParameters(String url) {
+			return _http.encodeParameters(url);
+		}
+
+		@Override
+		public String encodePath(String path) {
+			return _http.encodePath(path);
+		}
+
+		/**
+		 * @deprecated As of Judson (7.1.x), replaced by {@link
+		 *             URLCodec#encodeURL(String)}
+		 */
+		@Deprecated
+		@Override
+		public String encodeURL(String url) {
+			return _http.encodeURL(url);
+		}
+
+		/**
+		 * @deprecated As of Judson (7.1.x), replaced by {@link
+		 *             URLCodec#encodeURL(String, boolean)}
+		 */
+		@Deprecated
+		@Override
+		public String encodeURL(String url, boolean escapeSpaces) {
+			return _http.encodeURL(url, escapeSpaces);
+		}
+
+		@Override
+		public String fixPath(String path) {
+			return _http.fixPath(path);
+		}
+
+		@Override
+		public String fixPath(String path, boolean leading, boolean trailing) {
+			return _http.fixPath(path, leading, trailing);
+		}
+
+		@Override
+		public String getCompleteURL(HttpServletRequest request) {
+			return _http.getCompleteURL(request);
+		}
+
+		@Override
+		public Cookie[] getCookies() {
+			return _http.getCookies();
+		}
+
+		@Override
+		public String getDomain(String url) {
+			return _http.getDomain(url);
+		}
+
+		@Override
+		public String getIpAddress(String url) {
+			return _http.getIpAddress(url);
+		}
+
+		@Override
+		public String getParameter(String url, String name) {
+			return _http.getParameter(url, name);
+		}
+
+		@Override
+		public String getParameter(String url, String name, boolean escaped) {
+			return _http.getParameter(url, name, escaped);
+		}
+
+		@Override
+		public Map<String, String[]> getParameterMap(String queryString) {
+			return _http.getParameterMap(queryString);
+		}
+
+		@Override
+		public String getPath(String url) {
+			return _http.getPath(url);
+		}
+
+		@Override
+		public String getProtocol(ActionRequest actionRequest) {
+			return _http.getProtocol(actionRequest);
+		}
+
+		@Override
+		public String getProtocol(boolean secure) {
+			return _http.getProtocol(secure);
+		}
+
+		@Override
+		public String getProtocol(HttpServletRequest request) {
+			return _http.getProtocol(request);
+		}
+
+		@Override
+		public String getProtocol(RenderRequest renderRequest) {
+			return _http.getProtocol(renderRequest);
+		}
+
+		@Override
+		public String getProtocol(String url) {
+			return _http.getProtocol(url);
+		}
+
+		@Override
+		public String getQueryString(String url) {
+			return _http.getQueryString(url);
+		}
+
+		@Override
+		public String getRequestURL(HttpServletRequest request) {
+			return _http.getRequestURL(request);
+		}
+
+		@Override
+		public boolean hasDomain(String url) {
+			return _http.hasDomain(url);
+		}
+
+		@Override
+		public boolean hasProtocol(String url) {
+			return _http.hasProtocol(url);
+		}
+
+		@Override
+		public boolean hasProxyConfig() {
+			return _http.hasProxyConfig();
+		}
+
+		@Override
+		public boolean isNonProxyHost(String host) {
+			return _http.isNonProxyHost(host);
+		}
+
+		@Override
+		public boolean isProxyHost(String host) {
+			return _http.isProxyHost(host);
+		}
+
+		@Override
+		public boolean isSecure(String url) {
+			return _http.isSecure(url);
+		}
+
+		@Override
+		public String normalizePath(String uri) {
+			return _http.normalizePath(uri);
+		}
+
+		@Override
+		public Map<String, String[]> parameterMapFromString(
+			String queryString) {
+
+			return _http.parameterMapFromString(queryString);
+		}
+
+		@Override
+		public String parameterMapToString(Map<String, String[]> parameterMap) {
+			return _http.parameterMapToString(parameterMap);
+		}
+
+		@Override
+		public String parameterMapToString(
+			Map<String, String[]> parameterMap, boolean addQuestion) {
+
+			return _http.parameterMapToString(parameterMap, addQuestion);
+		}
+
+		@Override
+		public String protocolize(String url, ActionRequest actionRequest) {
+			return _http.protocolize(url, actionRequest);
+		}
+
+		@Override
+		public String protocolize(String url, boolean secure) {
+			return _http.protocolize(url, secure);
+		}
+
+		@Override
+		public String protocolize(String url, HttpServletRequest request) {
+			return _http.protocolize(url, request);
+		}
+
+		@Override
+		public String protocolize(String url, int port, boolean secure) {
+			return _http.protocolize(url, port, secure);
+		}
+
+		@Override
+		public String protocolize(String url, RenderRequest renderRequest) {
+			return _http.protocolize(url, renderRequest);
+		}
+
+		@Override
+		public String removeDomain(String url) {
+			return _http.removeDomain(url);
+		}
+
+		@Override
+		public String removeParameter(String url, String name) {
+			return _http.removeParameter(url, name);
+		}
+
+		@Override
+		public String removePathParameters(String uri) {
+			return _http.removePathParameters(uri);
+		}
+
+		@Override
+		public String removeProtocol(String url) {
+			return _http.removeProtocol(url);
+		}
+
+		@Override
+		public String sanitizeHeader(String header) {
+			return _http.sanitizeHeader(header);
+		}
+
+		@Override
+		public String setParameter(String url, String name, boolean value) {
+			return _http.setParameter(url, name, value);
+		}
+
+		@Override
+		public String setParameter(String url, String name, double value) {
+			return _http.setParameter(url, name, value);
+		}
+
+		@Override
+		public String setParameter(String url, String name, int value) {
+			return _http.setParameter(url, name, value);
+		}
+
+		@Override
+		public String setParameter(String url, String name, long value) {
+			return _http.setParameter(url, name, value);
+		}
+
+		@Override
+		public String setParameter(String url, String name, short value) {
+			return _http.setParameter(url, name, value);
+		}
+
+		@Override
+		public String setParameter(String url, String name, String value) {
+			return _http.setParameter(url, name, value);
+		}
+
+		@Override
+		public String shortenURL(String url) {
+			return _http.shortenURL(url);
+		}
+
+		/**
+		 * @deprecated As of Judson (7.1.x), replaced by {@link
+		 * 													#shortenURL(String)}
+		 */
+		@Deprecated
+		@Override
+		public String shortenURL(String url, int count) {
+			return _http.shortenURL(url, count);
+		}
+
+		@Override
+		public byte[] URLtoByteArray(Options options) throws IOException {
+			if (isLocationAccessDenied(options.getLocation())) {
+				throw new IOException(
+					StringBundler.concat(
+						"Denied access to resource ", options.getLocation(),
+						" using $httpUtil variable from a template. Please ",
+						"use restricted variable $httpUtilUnsafe to access ",
+						"local network."));
+			}
+
+			return _http.URLtoByteArray(options);
+		}
+
+		@Override
+		public byte[] URLtoByteArray(String location) throws IOException {
+			if (isLocationAccessDenied(location)) {
+				throw new IOException(
+					StringBundler.concat(
+						"Denied access to resource ", location,
+						" using $httpUtil variable from a template. Please ",
+						"use restricted variable $httpUtilUnsafe to access ",
+						"local network."));
+			}
+
+			return _http.URLtoByteArray(location);
+		}
+
+		@Override
+		public byte[] URLtoByteArray(String location, boolean post)
+			throws IOException {
+
+			if (isLocationAccessDenied(location)) {
+				throw new IOException(
+					StringBundler.concat(
+						"Denied access to resource ", location,
+						" using $httpUtil variable from a template. Please ",
+						"use restricted variable $httpUtilUnsafe to access ",
+						"local network."));
+			}
+
+			return _http.URLtoByteArray(location, post);
+		}
+
+		@Override
+		public InputStream URLtoInputStream(Options options)
+			throws IOException {
+
+			if (isLocationAccessDenied(options.getLocation())) {
+				throw new IOException(
+					StringBundler.concat(
+						"Denied access to resource ", options.getLocation(),
+						" using $httpUtil variable from a template. Please ",
+						"use restricted variable $httpUtilUnsafe to access ",
+						"local network."));
+			}
+
+			return _http.URLtoInputStream(options);
+		}
+
+		@Override
+		public InputStream URLtoInputStream(String location)
+			throws IOException {
+
+			if (isLocationAccessDenied(location)) {
+				throw new IOException(
+					StringBundler.concat(
+						"Denied access to resource ", location,
+						" using $httpUtil variable from a template. Please ",
+						"use restricted variable $httpUtilUnsafe to access ",
+						"local network."));
+			}
+
+			return _http.URLtoInputStream(location);
+		}
+
+		@Override
+		public InputStream URLtoInputStream(String location, boolean post)
+			throws IOException {
+
+			if (isLocationAccessDenied(location)) {
+				throw new IOException(
+					StringBundler.concat(
+						"Denied access to resource ", location,
+						" using $httpUtil variable from a template. Please ",
+						"use restricted variable $httpUtilUnsafe to access ",
+						"local network."));
+			}
+
+			return _http.URLtoInputStream(location, post);
+		}
+
+		@Override
+		public String URLtoString(Options options) throws IOException {
+			if (isLocationAccessDenied(options.getLocation())) {
+				throw new IOException(
+					StringBundler.concat(
+						"Denied access to resource ", options.getLocation(),
+						" using $httpUtil variable from a template. Please ",
+						"use restricted variable $httpUtilUnsafe to access ",
+						"local network."));
+			}
+
+			return _http.URLtoString(options);
+		}
+
+		@Override
+		public String URLtoString(String location) throws IOException {
+			if (isLocationAccessDenied(location)) {
+				throw new IOException(
+					StringBundler.concat(
+						"Denied access to resource ", location,
+						" using $httpUtil variable from a template. Please ",
+						"use restricted variable $httpUtilUnsafe to access ",
+						"local network."));
+			}
+
+			return _http.URLtoString(location);
+		}
+
+		@Override
+		public String URLtoString(String location, boolean post)
+			throws IOException {
+
+			if (isLocationAccessDenied(location)) {
+				throw new IOException(
+					StringBundler.concat(
+						"Denied access to resource ", location,
+						" using $httpUtil variable from a template. Please ",
+						"use restricted variable $httpUtilUnsafe to access ",
+						"local network."));
+			}
+
+			return _http.URLtoString(location, post);
+		}
+
+		@Override
+		public String URLtoString(URL url) throws IOException {
+			String protocol = url.getProtocol();
+
+			if (!HTTP.equals(protocol) && !HTTPS.equals(protocol)) {
+				throw new IOException(
+					StringBundler.concat(
+						"Denied access to resource ", url.toString(),
+						". $httpUtil template variable supports only HTTP and ",
+						"HTTPS protocols."));
+			}
+
+			if (isLocationAccessDenied(url.toString())) {
+				throw new IOException(
+					StringBundler.concat(
+						"Denied access to resource ", url.toString(),
+						" using $httpUtil variable from a template. Please ",
+						"use restricted variable $httpUtilUnsafe to access ",
+						"local network."));
+			}
+
+			return _http.URLtoString(url);
+		}
+
+		protected boolean isLocationAccessDenied(String location)
+			throws IOException {
+
+			if (_disableLocalNetworkAccess) {
+				URL url = new URL(location);
+
+				if (InetAddressUtil.isLocalInetAddress(
+						InetAddress.getByName(url.getHost()))) {
+
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private final boolean _disableLocalNetworkAccess;
+		private final Http _http;
 
 	}
 

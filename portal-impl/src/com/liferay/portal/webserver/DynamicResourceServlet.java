@@ -14,12 +14,12 @@
 
 package com.liferay.portal.webserver;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.image.SpriteProcessor;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.util.PropsValues;
 
@@ -115,7 +115,7 @@ public class DynamicResourceServlet extends WebServerServlet {
 		// Send file
 
 		if (isSupportsRangeHeader(contentType)) {
-			sendFileWithRangeHeader(
+			ServletResponseUtil.sendFileWithRangeHeader(
 				request, response, fileName, new FileInputStream(file),
 				file.length(), contentType);
 		}

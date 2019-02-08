@@ -1,0 +1,13 @@
+{
+	"resources": {
+		"type1": {
+			"href": "/type1"
+		},
+		"type2": {
+			"href": "/type2"
+		},
+		"type3": {
+			"href": "/type3"
+		}
+	}
+}

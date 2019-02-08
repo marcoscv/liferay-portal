@@ -1,0 +1,46 @@
+@default = "keyPress"
+definition {
+	function keyDown {
+		WaitForSPARefresh();
+
+		selenium.mouseOver();
+
+		selenium.keyDown();
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+
+	function keyPress {
+		WaitForSPARefresh();
+
+		selenium.mouseOver();
+
+		selenium.keyPress();
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+
+	function keyPressNoError {
+		WaitForSPARefresh();
+
+		selenium.mouseOver();
+
+		selenium.keyPress();
+	}
+
+	function keyUp {
+		WaitForSPARefresh();
+
+		selenium.mouseOver();
+
+		selenium.keyUp();
+
+		selenium.assertJavaScriptErrors();
+
+		selenium.assertLiferayErrors();
+	}
+}

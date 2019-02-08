@@ -1,0 +1,19 @@
+Bundle-Name: Liferay Document Library Web
+Bundle-SymbolicName: com.liferay.document.library.web
+Bundle-Version: 4.0.0
+Import-Package:\
+	org.apache.xerces.parsers,\
+	\
+	*
+Liferay-JS-Config: /META-INF/resources/document_library/js/config.js
+Provide-Capability:\
+	soy;\
+		type="document-library-web";\
+		version:Version="${Bundle-Version}"
+Require-Capability:\
+	soy;\
+		filter:="(type=frontend-js-web)"
+	osgi.extender;\
+		filter:="(&(osgi.extender=jsp.taglib)(uri=http://liferay.com/tld/soy))"
+Web-ContextPath: /document-library-web
+-dsannotations-options: inherit

@@ -1,0 +1,37 @@
+definition {
+	macro searchCP {
+		AssertElementPresent(locator1 = "TextInput#SEARCH");
+
+		AssertElementPresent(locator1 = "Icon#BASIC_SEARCH");
+
+		Type(locator1 = "TextInput#SEARCH", value1 = "${searchTerm}");
+
+		KeyPress(locator1 = "TextInput#SEARCH", value1 = "\RETURN");
+	}
+
+	macro searchPG {
+		var key_portletName = "${portletName}";
+
+		AssertElementPresent(locator1 = "Portlet#SEARCH_FIELD");
+
+		Type(locator1 = "Portlet#SEARCH_FIELD", value1 = "${searchTerm}");
+
+		KeyPress(locator1 = "Portlet#SEARCH_FIELD", value1 = "\RETURN");
+	}
+
+	macro viewNoResultAssetTitle {
+		AssertElementNotPresent(
+			locator1 = "SearchResults#ASSET_ENTRY_TABLE_TITLE",
+			key_searchAssetTitle = "${searchAssetTitle}"
+		);
+	}
+
+	macro viewResultAssetTitle {
+		var key_searchAssetTitle = "${searchAssetTitle}";
+
+		AssertTextEquals(
+			locator1 = "SearchResults#ASSET_ENTRY_TABLE_TITLE",
+			value1 = "${searchAssetTitle}"
+		);
+	}
+}

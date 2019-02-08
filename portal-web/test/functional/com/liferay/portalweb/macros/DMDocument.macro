@@ -1,0 +1,2169 @@
+definition {
+	var assetType = "Document";
+	var dmDocumentTypeName = "Basic Document";
+
+	macro addCategories {
+		Panel.expandPanel(panel = "Categorization");
+
+		AssetCategorization.addMultipleCategories(
+			categoryNameList = "${categoryNameList}",
+			vocabularyName = "${vocabularyName}"
+		);
+	}
+
+	macro addContractCP {
+		DMNavigator.gotoAddDocumentType(dmDocumentTypeName = "Contract");
+
+		if (isSet(dmContractFile)) {
+			UploadCommonFile(locator1 = "TextInput#FILE", value1 = "${dmContractFile}");
+		}
+
+		PortletEntry.inputTitle(title = "${dmContractTitle}");
+
+		if (isSet(dmContractDescription)) {
+			PortletEntry.inputDescription(description = "${dmContractDescription}");
+		}
+
+		if (isSet(effectiveDate)) {
+			Type.clickAtType(
+				locator1 = "TextInput#GENERIC_TEXT_INPUT",
+				value1 = "${effectiveDate}",
+				key_fieldLabel = "Effective Date"
+			);
+		}
+
+		if (isSet(expirationDate)) {
+			Type.clickAtType(
+				locator1 = "TextInput#GENERIC_TEXT_INPUT",
+				value1 = "${expirationDate}",
+				key_fieldLabel = "Expiration Date"
+			);
+		}
+
+		if (isSet(contractType)) {
+			Select(
+				locator1 = "Select#GENERIC_SELECT_FIELD",
+				value1 = "${contractType}",
+				key_fieldLabel = "Contract Type"
+			);
+		}
+
+		if (isSet(status)) {
+			Select(
+				locator1 = "Select#GENERIC_SELECT_FIELD",
+				value1 = "${status}",
+				key_fieldLabel = "Status"
+			);
+		}
+
+		if (isSet(dmContractLegalReviewer)) {
+			Type(
+				locator1 = "TextInput#GENERIC_TEXT_INPUT",
+				value1 = "${dmContractLegalReviewer}",
+				key_fieldLabel = "Legal Reviewer"
+			);
+		}
+
+		if (isSet(dmContractSigningAuthority)) {
+			Type(
+				locator1 = "TextInput#GENERIC_TEXT_INPUT",
+				value1 = "${dmContractSigningAuthority}",
+				key_fieldLabel = "Signing Authority"
+			);
+		}
+
+		if (isSet(dmContractDealName)) {
+			Type(
+				locator1 = "TextInput#GENERIC_TEXT_INPUT",
+				value1 = "${dmContractDealName}",
+				key_fieldLabel = "Deal Name"
+			);
+		}
+
+		AssertClick(locator1 = "Button#PUBLISH", value1 = "Publish");
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro addCP {
+		DMNavigator.gotoAddDocumentType(dmDocumentTypeName = "${dmDocumentTypeName}");
+
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		if ("${uploadTempFile}" == "true") {
+			UploadTempFile(locator1 = "TextInput#FILE", value1 = "${dmDocumentFile}");
+		}
+		else if ("${nullFile}" == "true") {
+			AssertElementPresent(locator1 = "TextInput#FILE");
+		}
+		else {
+			if (isSet(dmDocumentFile)) {
+				UploadCommonFile(locator1 = "TextInput#FILE", value1 = "${dmDocumentFile}");
+			}
+		}
+
+		if (isSet(tagNameList)) {
+			Panel.expandPanel(panel = "Categorization");
+
+			for (var tagName : list "${tagNameList}") {
+				Click.clickAt(locator1 = "Button#ADD_TAGS", value1 = "Add");
+
+				Type(locator1 = "AssetCategorization#TAGS_FIELD", value1 = "${tagName}");
+			}
+
+			Click.clickAt(locator1 = "Button#ADD_TAGS", value1 = "Add");
+		}
+
+		if (isSet(vocabularyName)) {
+			DMDocument.addCategories(
+				categoryNameList = "${categoryNameList}",
+				vocabularyName = "${vocabularyName}"
+			);
+		}
+
+		PortletEntry.inputTitle(title = "${dmDocumentTitle}");
+
+		if (isSet(dmDocumentDescription)) {
+			PortletEntry.inputDescription(description = "${dmDocumentDescription}");
+		}
+
+		if (isSet(validationError)) {
+			Button.clickPublish();
+
+			AssertTextEquals(
+				locator1 = "Message#ERROR_FORM_VALIDATION",
+				value1 = "${validationError}"
+			);
+		}
+		else {
+			PortletEntry.publish();
+		}
+	}
+
+	macro addDMMarketingBannerCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		LexiconEntry.gotoAdd();
+
+		MenuItem.click(menuItem = "Marketing Banner");
+
+		UploadCommonFile(locator1 = "TextInput#FILE", value1 = "${dmDocumentFile}");
+
+		PortletEntry.inputTitle(title = "${dmDocumentTitle}");
+
+		PortletEntry.inputDescription(description = "${dmDocumentDescription}");
+
+		Select(
+			locator1 = "DocumentsAndMediaEditMarketingBanner#MARKETING_SELECT",
+			value1 = "${marketingSelect}"
+		);
+
+		Select(
+			locator1 = "DocumentsAndMediaEditMarketingBanner#CAMPAIGN_THEME_SELECT",
+			value1 = "${campaignTheme}"
+		);
+
+		Select(
+			locator1 = "DocumentsAndMediaEditMarketingBanner#BUSINESS_GOAL_SELECT",
+			value1 = "${businessGoal}"
+		);
+
+		Click(
+			locator1 = "DocumentsAndMediaEditMarketingBanner#NEEDS_LEGAL_REVIEW_${legalReview}_RADIO"
+		);
+
+		Type(
+			locator1 = "DocumentsAndMediaEditMarketingBanner#BANNER_NAME_FIELD",
+			value1 = "${bannerName}"
+		);
+
+		Type(
+			locator1 = "DocumentsAndMediaEditMarketingBanner#BANNER_DESCRIPTION_FIELD",
+			value1 = "${bannerDescription}"
+		);
+
+		PortletEntry.publish();
+	}
+
+	macro addDMShortcutCP {
+		DMNavigator.gotoAddDocumentType(dmDocumentTypeName = "Shortcut");
+
+		Click(locator1 = "DocumentsAndMediaAddShortcut#SELECT_SITE_BUTTON");
+
+		var key_siteName = "${siteName}";
+
+		IFrame.selectModalFrame();
+
+		AssertClick(locator1 = "SitesSelectSite#CHOOSE_BUTTON", value1 = "Choose");
+
+		SelectFrameTop(value1 = "relative=top");
+
+		Click(locator1 = "DocumentsAndMediaAddShortcut#SELECT_DOCUMENT_BUTTON");
+
+		IFrame.selectModalFrame();
+
+		if (isSet(dmFolderName)) {
+			var key_dmFolderName = "${dmFolderName}";
+
+			AssertClick(
+				locator1 = "DocumentsAndMediaAddShortcut#SELECT_FILE_FOLDER_NAME",
+				value1 = "${dmFolderName}"
+			);
+		}
+
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick.assertPartialTextClickAt(
+			locator1 = "DocumentsAndMediaAddShortcut#SELECT_FILE_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		SelectFrameTop(value1 = "relative=top");
+
+		PortletEntry.save();
+	}
+
+	macro addDocumentTypePG {
+		var key_dmDocumentTypeName = "${dmDocumentTypeName}";
+
+		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
+
+		MenuItem.click(menuItem = "${dmDocumentTypeName}");
+
+		DMDocument.editDocument(
+			dmDocumentDescription = "${dmDocumentDescription}",
+			dmDocumentFile = "${dmDocumentFile}",
+			dmDocumentTitle = "${dmDocumentTitle}"
+		);
+
+		if (isSet(selectOption)) {
+			Select(
+				locator1 = "DocumentsAndMediaEditCustomDocumentType#SELECT_OPTIONS_SELECT",
+				value1 = "${selectOption}"
+			);
+		}
+
+		if (isSet(textField)) {
+			var key_fieldName = "Text";
+
+			Type(locator1 = "TextInput#DDM", value1 = "${textField}");
+		}
+
+		if (isSet(numberField)) {
+			var key_fieldName = "Number";
+
+			Type(locator1 = "TextInput#DDM", value1 = "${numberField}");
+		}
+
+		if (isSet(booleanField)) {
+			var key_fieldName = "Boolean";
+
+			Check(locator1 = "TextInput#DDM", value1 = "${booleanField}");
+		}
+
+		AssertClick(locator1 = "Button#PUBLISH", value1 = "Publish");
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro addGoogleApp {
+		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
+
+		if ("${dmGoogleApp}" == "Google Docs") {
+			Click(locator1 = "DocumentsAndMedia#GOOGLE_DOCS_MENU_ITEM");
+		}
+		else {
+			var key_menuItem = "${dmGoogleApp}";
+
+			MenuItem.click(menuItem = "${dmGoogleApp}");
+		}
+	}
+
+	macro addMultiplePG {
+		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
+
+		MenuItem.click(menuItem = "Multiple Documents");
+
+		if (isSet(dmDocumentFileList)) {
+			for (var dmDocumentFile : list "${dmDocumentFileList}") {
+				var key_dmDocumentFile = "${dmDocumentFile}";
+
+				AssertClick(locator1 = "Button#SELECT_FILES", value1 = "Select Files");
+
+				if ("${uploadTempFile}" == "true") {
+					SikuliUploadTempFile(
+						locator1 = "OS#FILE_DIALOG_BOX_FILE_NAME_FIELD_PNG",
+						value1 = "${dmDocumentFile}"
+					);
+				}
+				else {
+					SikuliUploadCommonFile(
+						locator1 = "OS#FILE_DIALOG_BOX_FILE_NAME_FIELD_PNG",
+						value1 = "${dmDocumentFile}"
+					);
+				}
+
+				AssertChecked(locator1 = "DynamicUploader#SELECT_ALL_CHECKBOX");
+
+				AssertElementPresent(
+					locator1 = "DynamicUploader#ALL_FILES_READY_TO_BE_SAVED_DOCUMENT_TITLE",
+					key_documentName = "${dmDocumentFile}"
+				);
+			}
+		}
+
+		if (isSet(viewableBy)) {
+			Select(locator1 = "Select#PERMISSIONS", value1 = "${viewableBy}");
+		}
+
+		AssertClick(locator1 = "Button#PUBLISH", value1 = "Publish");
+
+		AssertElementPresent(locator1 = "Message#SUCCESS");
+	}
+
+	macro addPG {
+		if ("${stagingActivated}" == "true") {
+			AssertElementNotPresent(locator1 = "Message#WORKFLOW_UNAPPROVED");
+		}
+
+		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
+
+		if (isSet(dmDocumentTypeName)) {
+			var key_dmDocumentTypeName = "${dmDocumentTypeName}";
+
+			MenuItem.click(menuItem = "${dmDocumentTypeName}");
+		}
+		else {
+			MenuItem.click(menuItem = "Basic Document");
+		}
+
+		DMDocument.editDocument(
+			dmDocumentDescription = "${dmDocumentDescription}",
+			dmDocumentFile = "${dmDocumentFile}",
+			dmDocumentTitle = "${dmDocumentTitle}"
+		);
+
+		if (isSet(categoryName)) {
+			var key_categoryName = "${categoryName}";
+
+			Panel.expandPanel(panel = "Categorization");
+
+			AssetCategorization.addCategory(
+				categoryName = "${categoryName}",
+				vocabularyName = "${vocabularyName}"
+			);
+		}
+
+		if (isSet(dmDocumentRelatedAsset)) {
+			RelatedAssets.selectAsset(
+				assetTitle = "${assetTitle}",
+				assetType = "${assetType}"
+			);
+		}
+
+		if (isSet(tagNameList)) {
+			Panel.expandPanel(panel = "Categorization");
+
+			for (var tagName : list "${tagNameList}") {
+				AssetCategorization.addTag(tagName = "${tagName}");
+			}
+		}
+
+		if (isSet(viewableBy)) {
+			Panel.expandPanel(panel = "Permissions");
+
+			Select(locator1 = "Select#PERMISSIONS", value1 = "${viewableBy}");
+		}
+
+		AssertClick(locator1 = "Button#PUBLISH", value1 = "Publish");
+
+		if ("${dmDocument}" == "Duplicate") {
+			Alert.viewRequestFailedToComplete();
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "DocumentsAndMediaEditDocument#UNIQUE_DOCUMENT_ERROR_MESSAGE",
+				value1 = "Please enter a unique document name."
+			);
+		}
+		else if ("${dmDocument}" == "Invalid") {
+			Alert.viewRequestFailedToComplete();
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_2",
+				value1 = "Please enter a file with a valid file name."
+			);
+		}
+		else {
+			Alert.viewSuccessMessage();
+		}
+	}
+
+	macro addPGViaAP {
+		AssetPublisherPortlet.addAsset(assetType = "Basic Document");
+
+		DMDocument.editDocument(
+			dmDocumentDescription = "${dmDocumentDescription}",
+			dmDocumentFile = "${dmDocumentFile}",
+			dmDocumentTitle = "${dmDocumentTitle}"
+		);
+
+		AssertClick(locator1 = "Button#PUBLISH", value1 = "Publish");
+
+		SelectFrame(locator1 = "relative=top");
+	}
+
+	macro addPGViaAPWithValidationPosition {
+		AssetPublisherPortlet.addAsset(assetType = "Basic Document");
+
+		DMDocument.editDocument(
+			dmDocumentDescription = "${dmDocumentDescription}",
+			dmDocumentFile = "${dmDocumentFile}",
+			dmDocumentTitle = "${dmDocumentTitle}"
+		);
+
+		AssertElementPresent(locator1 = "Button#CANCEL_GIVEN_POSITION");
+
+		AssertElementPresent(locator1 = "Button#PUBLISH_GIVEN_POSITION");
+
+		Button.clickPublish();
+
+		SelectFrame(locator1 = "relative=top");
+	}
+
+	macro addPGViaMG {
+		Portlet.clickPortletPlusIconPG(portletName = "Media Gallery");
+
+		MenuItem.click(menuItem = "Basic Document");
+
+		UploadCommonFile(locator1 = "TextInput#FILE", value1 = "${mgDocumentFile}");
+
+		PortletEntry.inputTitle(title = "${mgDocumentTitle}");
+
+		PortletEntry.inputDescription(description = "${mgDocumentDescription}");
+
+		PortletEntry.publish();
+	}
+
+	macro addRelatedAssetPG {
+		Panel.expandPanel(panel = "Related Assets");
+
+		var key_assetType = "${assetType}";
+
+		AssertClick(
+			locator1 = "AssetRelatedAssets#RELATED_ASSETS_SELECT",
+			value1 = "Select"
+		);
+
+		AssertClick(
+			locator1 = "APConfiguration#ASSET_SELECTION_MANUAL_ASSET_ENTRIES_ASSET",
+			value1 = "${assetType}"
+		);
+
+		var key_assetTitle = "${assetTitle}";
+
+		SelectFrame(locator1 = "IFrame#DIALOG");
+
+		AssertClick.assertPartialTextClickAt(
+			locator1 = "AssetRelatedAssets#ASSET_TABLE_CHOOSE",
+			value1 = "${assetType}"
+		);
+
+		SelectFrame(value1 = "relative=top");
+	}
+
+	macro addWithWorkflowCP {
+		DMNavigator.gotoAddDocumentType(dmDocumentTypeName = "${dmDocumentTypeName}");
+
+		DMDocument.editDocument(
+			dmDocumentDescription = "${dmDocumentDescription}",
+			dmDocumentFile = "${dmDocumentFile}",
+			dmDocumentTitle = "${dmDocumentTitle}"
+		);
+
+		Button.clickSubmitForPublication();
+
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#ICON_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+	}
+
+	macro cancelCheckoutCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		if ("${dmRepositoryName}" == "true") {
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#CHECKOUT_SUCCESS",
+				value1 = "You now have an indefinite lock on this document. No one else can edit this document until you unlock it. This lock will never expire."
+			);
+		}
+		else {
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#CHECKOUT_SUCCESS",
+				value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day."
+			);
+		}
+
+		LexiconEntry.gotoHeaderMenuItem(menuItem = "Cancel Checkout");
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro cancelCheckoutPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		AssertTextEquals(
+			locator1 = "Message#CHECKOUT_SUCCESS",
+			value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day."
+		);
+
+		AssertClick(locator1 = "Button#CANCEL_CHECKOUT", value1 = "Cancel Checkout");
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro cannotViewCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertElementNotPresent(locator1 = "DocumentsAndMedia#ICON_DOCUMENT");
+	}
+
+	macro cannotViewDocumentMetadataCP {
+		var key_metadataData = "${metadataData}";
+		var key_metadataLabel = "${metadataLabel}";
+
+		AssertElementNotPresent(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_EXTRACTED_METADATA_FIELD"
+		);
+	}
+
+	macro checkDocumentCheckboxCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		Check(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_CHECKBOX");
+	}
+
+	macro checkinCP {
+		if ("${dmRepositoryName}" == "true") {
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#CHECKOUT_SUCCESS",
+				value1 = "You now have an indefinite lock on this document. No one else can edit this document until you unlock it. This lock will never expire."
+			);
+		}
+		else {
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#CHECKOUT_SUCCESS",
+				value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day."
+			);
+		}
+
+		LexiconEntry.gotoHeaderMenuItem(menuItem = "Checkin");
+
+		if (IsElementPresent(locator1 = "Radio#MAJOR_VERSION")) {
+			if ("${revision}" == "Major") {
+				Click(locator1 = "Radio#MAJOR_VERSION");
+			}
+			else if ("${revision}" == "Minor") {
+				Click(locator1 = "Radio#MINOR_VERSION");
+			}
+			else if ("${revision}" == "Current") {
+				Click(locator1 = "Radio#CURRENT_VERSION");
+			}
+
+			if (isSet(changeLog)) {
+				Type(locator1 = "TextArea#CHANGE_LOG", value1 = "${changeLog}");
+			}
+
+			Click(locator1 = "Button#SAVE");
+		}
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro checkinPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		AssertTextEquals(
+			locator1 = "Message#CHECKOUT_SUCCESS",
+			value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day."
+		);
+
+		AssertClick(locator1 = "Button#CHECKIN", value1 = "Checkin");
+
+		if (IsElementPresent(locator1 = "Radio#MAJOR_VERSION")) {
+			if ("${revision}" == "Major") {
+				Click(locator1 = "Radio#MAJOR_VERSION");
+			}
+			else if ("${revision}" == "Minor") {
+				Click(locator1 = "Radio#MINOR_VERSION");
+			}
+
+			if (isSet(changeLog)) {
+				Type(locator1 = "TextArea#CHANGE_LOG", value1 = "${changeLog}");
+			}
+
+			Click(locator1 = "Button#SAVE");
+		}
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro checkoutCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		Click(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_VERTICAL_ELLIPSIS"
+		);
+
+		MenuItem.click(menuItem = "Checkout");
+
+		Alert.viewSuccessMessage();
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		if ("${dmRepositoryName}" == "true") {
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#CHECKOUT_SUCCESS",
+				value1 = "You now have an indefinite lock on this document. No one else can edit this document until you unlock it. This lock will never expire."
+			);
+		}
+		else {
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#CHECKOUT_SUCCESS",
+				value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day."
+			);
+		}
+	}
+
+	macro checkoutPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		AssertClick(locator1 = "Button#CHECKOUT", value1 = "Checkout");
+
+		Alert.viewSuccessMessage();
+
+		AssertTextEquals(
+			locator1 = "Message#CHECKOUT_SUCCESS",
+			value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day."
+		);
+	}
+
+	macro deleteCP {
+		if (isSet(recycleBinDisabled)) {
+			LexiconEntry.delete(rowEntry = "${dmDocumentTitle}");
+		}
+		else {
+			LexiconEntry.gotoEntryMenuItem(
+				menuItem = "Move to Recycle Bin",
+				rowEntry = "${dmDocumentTitle}"
+			);
+
+			Alert.viewSuccessMessage();
+		}
+	}
+
+	macro deletePG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		DMDocument.viewDocumentTitleCmdPG(dmDocumentTitle = "${dmDocumentTitle}");
+
+		AssertClick(
+			locator1 = "Button#MOVE_TO_RECYCLE_BIN",
+			value1 = "Move to Recycle Bin"
+		);
+
+		AssertElementPresent(locator1 = "Message#SUCCESS");
+	}
+
+	macro deletePGViaMG {
+		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Move to Recycle Bin");
+
+		AssertElementPresent(locator1 = "Message#SUCCESS");
+
+		AssertElementNotPresent(
+			locator1 = "MediaGallery#IMAGE_TITLE",
+			key_mgDocumentTitle = "${mgDocumentTitle}"
+		);
+	}
+
+	macro deleteViaActionsPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		Check(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_CHECKBOX");
+
+		Click(locator1 = "Icon#MOVE_TO_RECYCLE_BIN");
+
+		AssertElementPresent(locator1 = "Message#SUCCESS");
+	}
+
+	macro downloadPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		AssertClick(locator1 = "Button#DOWNLOAD", value1 = "Download");
+	}
+
+	macro editCmd {
+		if (!(contains("${dmDocumentFileEdit}", "{dmDocumentFileEdit}"))) {
+			UploadCommonFile(locator1 = "TextInput#FILE", value1 = "${dmDocumentFileEdit}");
+		}
+
+		if (!(contains("${dmDocumentTitleEdit}", "{dmDocumentTitleEdit}"))) {
+			PortletEntry.inputTitle(title = "${dmDocumentTitleEdit}");
+		}
+
+		if (!(contains("${dmDocumentDescriptionEdit}", "{dmDocumentDescriptionEdit}"))) {
+			PortletEntry.inputDescription(description = "${dmDocumentDescriptionEdit}");
+		}
+	}
+
+	macro editCmdPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		if ("${checkedOut}" == "true") {
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_2",
+				value1 = "You cannot modify this document because it was locked by ${userName}"
+			);
+		}
+		else {
+			AssertClick(locator1 = "Button#EDIT", value1 = "Edit");
+		}
+
+		if (!(contains("${dmDocumentFileEdit}", "{dmDocumentFileEdit}"))) {
+			UploadCommonFile(locator1 = "TextInput#FILE", value1 = "${dmDocumentFileEdit}");
+		}
+
+		if (!(contains("${dmDocumentTitleEdit}", "{dmDocumentTitleEdit}"))) {
+			Type(locator1 = "TextInput#TITLE", value1 = "${dmDocumentTitleEdit}");
+		}
+
+		if (!(contains("${dmDocumentDescriptionEdit}", "{dmDocumentDescriptionEdit}"))) {
+			PortletEntry.inputDescription(description = "${dmDocumentDescriptionEdit}");
+		}
+
+		if (!(contains("${dmDocumentTagName}", "{dmDocumentTagName}"))) {
+			Panel.expandPanel(panel = "Categorization");
+
+			Type(
+				locator1 = "AssetCategorization#TAGS_FIELD",
+				value1 = "${dmDocumentTagName}"
+			);
+		}
+
+		if (!(contains("${revision}", "{revision}"))) {
+			if ("${revision}" == "Major") {
+				Click(locator1 = "DocumentsAndMediaEditDocument#MAJOR_REVISION_BUTTON");
+			}
+			else {
+				Click(locator1 = "DocumentsAndMediaEditDocument#MINOR_REVISION_BUTTON");
+			}
+		}
+
+		if (isSet(changeLog)) {
+			Type(locator1 = "TextArea#CHANGE_LOG", value1 = "${changeLog}");
+		}
+	}
+
+	macro editCP {
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Edit",
+			rowEntry = "${dmDocumentTitle}"
+		);
+
+		DMDocument.editCmd(
+			dmDocumentDescriptionEdit = "${dmDocumentDescriptionEdit}",
+			dmDocumentFileEdit = "${dmDocumentFileEdit}",
+			dmDocumentTitleEdit = "${dmDocumentTitleEdit}"
+		);
+
+		if (isSet(versioning)) {
+			Panel.expandPanel(panel = "Versioning");
+
+			Check.checkToggleSwitch(
+				locator1 = "ToggleSwitch#ANY_TOGGLE_SWITCH",
+				key_toggleSwitchLabel = " Customize the Version Number Increment and Describe My Changes"
+			);
+
+			if ("${revision}" == "Major") {
+				Click(locator1 = "Radio#MAJOR_VERSION");
+			}
+			else if ("${revision}" == "Minor") {
+				Click(locator1 = "Radio#MINOR_VERSION");
+			}
+			else if ("${revision}" == "Current") {
+				Click(locator1 = "Radio#CURRENT_VERSION");
+			}
+		}
+
+		if (isSet(checkedOut)) {
+			Click(locator1 = "Button#SAVE");
+		}
+		else {
+			Click(locator1 = "Button#PUBLISH");
+		}
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro editDocument {
+		UploadCommonFile(locator1 = "TextInput#FILE", value1 = "${dmDocumentFile}");
+
+		PortletEntry.inputTitle(title = "${dmDocumentTitle}");
+
+		if (isSet(dmDocumentDescription)) {
+			PortletEntry.inputDescription(description = "${dmDocumentDescription}");
+		}
+	}
+
+	macro editPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		Click(locator1 = "Button#EDIT");
+
+		DMDocument.editCmd(
+			dmDocumentDescriptionEdit = "${dmDocumentDescriptionEdit}",
+			dmDocumentFileEdit = "${dmDocumentFileEdit}",
+			dmDocumentTitleEdit = "${dmDocumentTitleEdit}"
+		);
+
+		PortletEntry.publish();
+	}
+
+	macro editPGViaAP {
+		var key_assetTitle = "${assetTitle}";
+
+		Click(locator1 = "AP#ASSET_ABSTRACT_EDIT");
+
+		Click(locator1 = "Icon#BODY_VERTICAL_ELLIPSIS");
+
+		Click(locator1 = "AP#ASSET_EDIT");
+
+		SelectFrame(locator1 = "IFrame#DIALOG");
+
+		if (!(contains("${dmDocumentTitleEdit}", "{dmDocumentTitleEdit}"))) {
+			Type(locator1 = "TextInput#TITLE", value1 = "${dmDocumentTitleEdit}");
+		}
+
+		AssertClick(locator1 = "Button#PUBLISH", value1 = "Publish");
+
+		SelectFrame(locator1 = "relative=top");
+	}
+
+	macro editPGViaMG {
+		LexiconEntry.gotoEllipsisMenuItem(menuItem = "Edit");
+
+		PortletEntry.inputTitle(title = "${mgDocumentTitleEdit}");
+
+		PortletEntry.inputDescription(description = "${mgDocumentDescriptionEdit}");
+
+		PortletEntry.publish();
+
+		AssertTextEquals(
+			locator1 = "MediaGallery#IMAGE_TITLE",
+			value1 = "${mgDocumentTitleEdit}",
+			key_mgDocumentTitle = "${mgDocumentTitleEdit}"
+		);
+	}
+
+	macro editSavePG {
+		DMDocument.editCmdPG(
+			changeLog = "${changeLog}",
+			checkedOut = "${checkedOut}",
+			dmDocumentDescriptionEdit = "${dmDocumentDescriptionEdit}",
+			dmDocumentFileEdit = "${dmDocumentFileEdit}",
+			dmDocumentTagName = "${dmDocumentTagName}",
+			dmDocumentTitle = "${dmDocumentTitle}",
+			dmDocumentTitleEdit = "${dmDocumentTitleEdit}",
+			revision = "${revision}",
+			userName = "${userName}"
+		);
+
+		AssertClick(locator1 = "Button#SAVE", value1 = "Save");
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro editTags {
+		AssertTextEquals(locator1 = "Modal#HEADER", value1 = "Edit Tags");
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "Modal#BODY",
+			value1 = "These changes will be applied to &quot;${dmDocumentTitle}&quot;."
+		);
+
+		Type(locator1 = "DocumentsAndMedia#EDIT_TAGS_FIELD", value1 = "${tagName}");
+
+		SelectFrame(value1 = "relative=top");
+
+		KeyPress(locator1 = "DocumentsAndMedia#EDIT_TAGS_FIELD", value1 = "\RETURN");
+
+		Button.clickSave();
+
+		SelectFrame(value1 = "relative=top");
+
+		Alert.viewSuccessMessageText(successMessage = "Changes saved.");
+	}
+
+	macro enableActionsMenuOnPortlet {
+		Portlet.gotoPortletOptions(portletOption = "Configuration");
+
+		SelectFrame(locator1 = "DocumentsAndMedia#CONFIGURATION_IFRAME");
+
+		Check(locator1 = "Checkbox#SHOW_ACTIONS_CHECKBOX");
+
+		Check(locator1 = "Checkbox#SHOW_NAVIGATION_LINKS_CHECKBOX");
+
+		PortletEntry.save();
+
+		IFrame.closeFrame();
+	}
+
+	macro expandInfo {
+		Click(locator1 = "Icon#INFO");
+
+		AssertVisible(locator1 = "Icon#INFO_ACTIVE");
+	}
+
+	macro getDMLatestVersionURL {
+		ProductMenu.gotoPortlet(
+			category = "Content",
+			panel = "Site Administration",
+			portlet = "Documents and Media"
+		);
+
+		DMNavigator.gotoDocumentCP(dmDocumentTitle = "${dmDocumentTitle}");
+
+		DMDocument.expandInfo();
+
+		var portalURL = PropsUtil.get("portal.url");
+		var dmLatestVersionURL = selenium.getAttribute("//input[contains(@class,'lfr-input-resource')]@value");
+		var dmDocumentURL = StringUtil.extractLast("${dmLatestVersionURL}", "${portalURL}");
+
+		echo("## * Document URL: ${dmDocumentURL}");
+
+		return "${dmDocumentURL}";
+	}
+
+	macro linkImage {
+		ItemSelector.gotoItemSelectorViaAlloyEditor();
+
+		ItemSelector.addFromURL(
+			imageSourceURL = "${dmDocumentURL}",
+			navTab = "${navTab}"
+		);
+
+		AssertElementPresent(locator1 = "CKEditor#CONTENT_IMAGE_LINK_IMAGE");
+	}
+
+	macro moveToFolderCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		Click(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_VERTICAL_ELLIPSIS"
+		);
+
+		MenuItem.click(menuItem = "Move");
+
+		AssertClick(locator1 = "Button#SELECT", value1 = "Select");
+
+		SelectFrame(locator1 = "DocumentsAndMediaSelectFolder#SELECT_FOLDER_IFRAME");
+
+		if ("${dmFolderName}" == "Home") {
+			AssertClick(
+				locator1 = "Button#CHOOSE_THIS_FOLDER",
+				value1 = "Choose This Folder"
+			);
+		}
+		else {
+			var key_dmFolderName = "${dmFolderName}";
+
+			AssertClick(
+				locator1 = "DocumentsAndMedia#CHOOSE_FOLDER_BUTTON",
+				value1 = "Choose"
+			);
+		}
+
+		SelectFrame(locator1 = "relative=top");
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaEditDocument#FOLDER",
+			value1 = "${dmFolderName}"
+		);
+
+		AssertClick(locator1 = "Button#MOVE", value1 = "Move");
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro moveToFolderPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		Click(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_VERTICAL_ELLIPSIS"
+		);
+
+		MenuItem.click(menuItem = "Move");
+
+		AssertClick(locator1 = "Button#SELECT", value1 = "Select");
+
+		SelectFrame(locator1 = "IFrame#SELECT_FOLDER");
+
+		var key_dmFolderName = "${dmFolderName}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaSelectFolder#FOLDER",
+			value1 = "${dmFolderName}"
+		);
+
+		AssertClick(
+			locator1 = "DocumentsAndMediaSelectFolder#CHOOSE_BUTTON",
+			value1 = "Choose"
+		);
+
+		SelectFrameTop();
+
+		AssertClick(locator1 = "Button#MOVE", value1 = "Move");
+
+		if (isSet(dmDuplicateDocument)) {
+			Alert.viewRequestFailedToComplete();
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#ERROR_MOVE_DUPLICATE_CONTENT",
+				value1 = "The folder you selected already has an entry with this name. Please select a different folder."
+			);
+		}
+		else {
+			Alert.viewSuccessMessage();
+		}
+	}
+
+	macro moveToRecycleBinCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertElementPresent(locator1 = "DocumentsAndMedia#ICON_DOCUMENT");
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#ICON_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		MouseOver(locator1 = "DocumentsAndMedia#ICON_DOCUMENT");
+
+		AssertElementPresent(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_CHECKBOX");
+
+		Check(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_CHECKBOX");
+
+		Click(locator1 = "Icon#MOVE_TO_RECYCLE_BIN");
+
+		AssertElementPresent(locator1 = "Message#SUCCESS");
+
+		if (IsElementNotPresent(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_GENERIC")) {
+			AssertTextEquals(
+				locator1 = "Message#EMPTY_INFO",
+				value1 = "There are no documents or media files in this folder."
+			);
+		}
+	}
+
+	macro moveToSubFolderCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		Click(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Move");
+
+		AssertClick(locator1 = "Button#SELECT", value1 = "Select");
+
+		SelectFrame(locator1 = "DocumentsAndMediaSelectFolder#SELECT_FOLDER_IFRAME");
+
+		AssertClick(
+			locator1 = "DocumentsAndMediaSelectFolder#FOLDER_GENERIC",
+			value1 = "${dmFolderName}"
+		);
+
+		var key_dmFolderName = "${dmSubFolderName}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaSelectFolder#FOLDER",
+			value1 = "${dmSubFolderName}"
+		);
+
+		AssertClick(
+			locator1 = "DocumentsAndMediaSelectFolder#CHOOSE_BUTTON",
+			value1 = "Choose"
+		);
+
+		SelectFrame(locator1 = "relative=top");
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaEditDocument#FOLDER",
+			value1 = "${dmSubFolderName}"
+		);
+
+		AssertClick(locator1 = "Button#MOVE", value1 = "Move");
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro navigateHomeViaDocumentViewPG {
+		var key_breadcrumbName = "Home";
+
+		AssertClick(locator1 = "BreadcrumbPortlet#BREADCRUMB_PAGE", value1 = "Home");
+	}
+
+	macro openDocumentsAndMediaAdmin {
+		Navigator.openWithAppendToBaseURL(
+			urlAppend = "group/${siteURLKey}/~/control_panel/manage?p_p_id=com_liferay_document_library_web_portlet_DLAdminPortlet"
+		);
+	}
+
+	macro removeTag {
+		Click(locator1 = "Button#EDIT");
+
+		Panel.expandPanel(panel = "Categorization");
+
+		var key_removeTag = "${removeTag}";
+
+		Click(locator1 = "Icon#REMOVE_TAG", value1="${removeTag}");
+	}
+
+	macro revertPG {
+		DMNavigator.gotoDocumentVersion();
+
+		var key_dmDocumentVersionNumber = "Version ${dmDocumentVersionNumber}";
+
+		Click(locator1 = "DocumentsAndMedia#DOCUMENT_VERSION_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "Revert");
+
+		Alert.viewSuccessMessage();
+	}
+
+	macro saveAndCheckinEditedDocumentPG {
+		LexiconEntry.gotoEntryMenuItem(
+			menuItem = "Edit",
+			rowEntry = "${dmDocumentTitle}"
+		);
+
+		AssertClick(locator1 = "Button#SAVE_AND_CHECKIN", value1 = "Save and Check In");
+
+		if (IsElementPresent(locator1 = "Radio#MAJOR_VERSION")) {
+			if ("${revision}" == "Major Version") {
+				Click(locator1 = "Radio#MAJOR_VERSION");
+			}
+			else if ("${revision}" == "Minor Version") {
+				Click(locator1 = "Radio#MINOR_VERSION");
+			}
+
+			if (isSet(changeLog)) {
+				Type(locator1 = "TextArea#CHANGE_LOG", value1 = "${changeLog}");
+			}
+
+			PortletEntry.save();
+		}
+	}
+
+	macro selectVersion {
+		AssertClick(locator1 = "DocumentsAndMedia#SIDEBAR_DROPDOWN", value1 = "Details");
+
+		AssertClick(
+			locator1 = "MenuItem#ANY_MENU_ITEM",
+			value1 = "Versions",
+			key_menuItem = "Versions"
+		);
+	}
+
+	macro sharePG {
+		IFrame.selectModalFrame();
+
+		Type(
+			locator1 = "DocumentsAndMediaShare#INVITE_TO_COLLABORATE_INPUT",
+			value1 = "${userEmailAddress}"
+		);
+
+		if (isSet(shareable)) {
+			FormFields.enableCheckbox(fieldName = "shareable");
+		}
+		else {
+			FormFields.disableCheckbox(fieldName = "shareable");
+		}
+
+		if ("${sharingPermissions}" == "Update") {
+			FormFields.selectRadioOption(
+				fieldName = "sharingEntryPermission",
+				radioOption = "Update"
+			);
+		}
+		else if ("${sharingPermissions}" == "Comment") {
+			FormFields.selectRadioOption(
+				fieldName = "sharingEntryPermission",
+				radioOption = "Comment"
+			);
+		}
+		else {
+			FormFields.viewRadioValue(
+				fieldName = "sharingEntryPermission",
+				fieldValue = "View"
+			);
+		}
+
+		Button.clickShare();
+
+		SelectFrame(value1 = "relative=top");
+
+		Alert.viewSuccessMessageText(
+			successMessage = "The item was shared successfully."
+		);
+	}
+
+	macro tearDownCP {
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Content",
+			panel = "Site Administration",
+			portlet = "Documents and Media"
+		);
+
+		if (IsElementNotPresent(locator1 = "Message#EMPTY_INFO")) {
+			Check(locator1 = "DocumentsAndMedia#TOOLBAR_SELECT_ALL_CHECKBOX");
+
+			AssertClick.waitForDMHomeAssertTextEqualsClick(
+				locator1 = "DocumentsAndMedia#TOOLBAR_ACTIONS",
+				value1 = "Actions"
+			);
+
+			MenuItem.viewPresent(menuItem = "Move to Recycle Bin");
+
+			PortletEntry.clickMoveToRecycleBin();
+		}
+
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Recycle Bin",
+			panel = "Site Administration",
+			portlet = "Recycle Bin"
+		);
+
+		RecycleBin.emptyCP();
+	}
+
+	macro uncheckDocumentCheckboxCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		Uncheck(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_CHECKBOX");
+	}
+
+	macro viewAllPG {
+		DMDocument.viewPG(
+			categoryName = "${categoryName}",
+			dmDocumentDescription = "${dmDocumentDescription}",
+			dmDocumentFileType = "${dmDocumentFileType}",
+			dmDocumentTitle = "${dmDocumentTitle}",
+			dmDocumentType = "${dmDocumentType}",
+			tagName = "${tagName}",
+			tagNameList = "${tagNameList}"
+		);
+
+		AssertElementPresent(locator1 = "Icon#ANGLE_LEFT_BACK");
+
+		DMDocument.viewDocumentToolbarCmdPG();
+
+		DMDocument.viewDocumentAuthorCmdPG(dmDocumentAuthor = "${dmDocumentAuthor}");
+
+		if (isSet(commentBody)) {
+			var key_entryComment = "${commentBody}";
+
+			AssertTextEquals(
+				locator1 = "Comments#COMMENT_BODY_SPECIFIC",
+				value1 = "${commentBody}"
+			);
+		}
+		else {
+			DMDocument.viewDocumentNoCommentsCmdPG();
+		}
+
+		DMDocument.viewDocumentVersionNumberCmdPG(
+			dmDocumentVersionNumber = "${dmDocumentVersionNumber}"
+		);
+
+		DMDocument.viewDocumentDetailsCmdPG();
+	}
+
+	macro viewCannotAddRepository {
+		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
+
+		AssertElementNotPresent(locator1 = "HOME_MENULIST_ADD_REPOSITORY");
+	}
+
+	macro viewCategories {
+		Panel.expandPanel(panel = "Categorization");
+
+		for (var categoryName : list "${categoryNameList}") {
+			var key_categoryName = "${categoryName}";
+
+			AssertTextEquals(
+				locator1 = "AssetCategorization#CATEGORY",
+				value1 = "${categoryName}"
+			);
+		}
+	}
+
+	macro viewCheckedinCP {
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_VIEW_VERSION_NUMBER",
+			value1 = "${dmDocumentVersionNumber}"
+		);
+
+		AssertElementNotPresent(locator1 = "Message#CHECKOUT_SUCCESS");
+
+		if ("${dmRepositoryName}" == "true") {
+			AssertTextNotPresent(
+				value1 = "You now have an indefinite lock on this document. No one else can edit this document until you unlock it. This lock will never expire."
+			);
+		}
+		else {
+			AssertTextNotPresent(
+				value1 = "You now have a lock on this document. No one else can edit this document until you unlock it. This lock will automatically expire in 1 day."
+			);
+		}
+	}
+
+	macro viewCheckedoutCP {
+		if ("${dmRepositoryName}" == "true") {
+			AssertTextEquals.assertPartialText(
+				locator1 = "Message#CHECKOUT_SUCCESS",
+				value1 = "You now have an indefinite lock on this document. No one else can edit this document until you unlock it. This lock will never expire."
+			);
+		}
+		else {
+			AssertVisible(
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_VERSION_LOCKED"
+			);
+
+			AssertElementPresent(locator1 = "Message#SUCCESS");
+		}
+	}
+
+	macro viewCheckedoutPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertElementPresent(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_ICON_LOCKED");
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#ICON_DOCUMENT_WORKFLOW_STATUS",
+			value1 = "${status}"
+		);
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		AssertElementPresent(locator1 = "Message#SUCCESS");
+
+		AssertClick(locator1 = "Button#EDIT", value1 = "Edit");
+
+		AssertElementPresent(locator1 = "Message#SUCCESS");
+	}
+
+	macro viewCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		AssertElementPresent(locator1 = "Icon#INFO");
+
+		Click(locator1 = "Icon#INFO");
+
+		if ((isSet(dmDocumentSize)) && (!(contains("${dmDocumentSize}", "{dmDocumentSize}")))) {
+			var key_dmDocumentSize = "${dmDocumentSize}";
+
+			AssertVisible(locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_SIZE");
+
+			AssertTextEquals(
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_SIZE",
+				value1 = "${dmDocumentSize}"
+			);
+		}
+	}
+
+	macro viewCPStatus {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		if ("${dmDocumentStatus}" == "Approved") {
+			AssertTextEquals(
+				locator1 = "DocumentsAndMedia#ICON_DOCUMENT_WORKFLOW_STATUS",
+				value1 = "Approved"
+			);
+		}
+		else {
+			AssertTextEquals(
+				locator1 = "DocumentsAndMedia#ICON_DOCUMENT_WORKFLOW_STATUS",
+				value1 = "${dmDocumentStatus}"
+			);
+
+			AssertClick(
+				locator1 = "DocumentsAndMedia#ICON_DOCUMENT_TITLE_LINK",
+				value1 = "${dmDocumentTitle}"
+			);
+
+			AssertTextEquals(locator1 = "TextInput#TITLE", value1 = "${dmDocumentTitle}");
+		}
+	}
+
+	macro viewDefaultCP {
+		AssertElementNotPresent(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_GENERIC");
+
+		AssertTextEquals(
+			locator1 = "Message#EMPTY_INFO",
+			value1 = "There are no documents or media files in this folder."
+		);
+	}
+
+	macro viewDMMarketingBannerPG {
+		var key_assetTitle = "${assetTitle}";
+
+		AssertClick(locator1 = "AP#ASSET_ABSTRACT_TITLE", value1 = "${assetTitle}");
+
+		DMNavigator.gotoDocumentDetails();
+
+		var key_marketingSelect = "${marketingSelect}";
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "DocumentsAndMediaDocument#MARKETING_SELECT",
+			value1 = "${marketingSelect}"
+		);
+
+		var key_campaignTheme = "${campaignTheme}";
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "DocumentsAndMediaDocument#MARKETING_CAMPAIGN_THEME",
+			value1 = "${campaignTheme}"
+		);
+
+		var key_legalReview = "${legalReview}";
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "DocumentsAndMediaDocument#MARKETING_NEEDS_LEGAL_REVIEW",
+			value1 = "${legalReview}"
+		);
+
+		var key_bannerName = "${bannerName}";
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "DocumentsAndMediaDocument#MARKETING_BANNER_NAME",
+			value1 = "${bannerName}"
+		);
+
+		var key_bannerDescription = "${bannerDescription}";
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "DocumentsAndMediaDocument#MARKETING_BANNER_DESCRIPTION",
+			value1 = "${bannerDescription}"
+		);
+	}
+
+	macro viewDocumentAuthorCmdPG {
+		if (!(contains("${dmDocumentAuthor}", "{dmDocumentAuthor}"))) {
+			AssertTextEquals(
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_UPLOADED_BY",
+				value1 = "${dmDocumentAuthor}"
+			);
+		}
+		else {
+			AssertTextEquals(
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_UPLOADED_BY",
+				value1 = "Test Test"
+			);
+		}
+	}
+
+	macro viewDocumentDetailsCmdPG {
+		AssertElementPresent(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_CREATED_DATE"
+		);
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_WORKFLOW_STATUS"
+		);
+
+		var key_dmDocumentSize = "${dmDocumentSize}";
+
+		AssertElementPresent(
+			locator1 = "Button#DOWNLOAD"
+		);
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_GET_URL_OR_WEBDAV_URL"
+		);
+
+		Click(locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_DROPDOWN");
+
+		Panel.expandPanel(panel = "Automatically Extracted Metadata");
+	}
+
+	macro viewDocumentMetadataCP {
+		var key_metadataData = "${metadataData}";
+		var key_metadataLabel = "${metadataLabel}";
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_EXTRACTED_METADATA_FIELD",
+			value1 = "${metadataData}"
+		);
+	}
+
+	macro viewDocumentNoCommentsCmdPG {
+		AssertTextEquals(locator1 = "Button#SUBSCRIBE", value1 = "Subscribe");
+	}
+
+	macro viewDocumentTitleCmdPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+	}
+
+	macro viewDocumentToolbarCmdAsGuestPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		Click(locator1 = "Button#INFO");
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "Link#DOWNLOAD",
+			value1 = "Download"
+		);
+
+		AssertElementNotPresent(locator1 = "Button#EDIT");
+
+		AssertElementNotPresent(locator1 = "Button#MOVE");
+
+		AssertElementNotPresent(locator1 = "Button#CHECKOUT");
+
+		AssertElementNotPresent(locator1 = "Button#PERMISSIONS");
+
+		AssertElementNotPresent(locator1 = "Button#MOVE_TO_RECYCLE_BIN");
+	}
+
+	macro viewDocumentToolbarCmdPG {
+		AssertVisible(locator1 = "Button#DOWNLOAD", value1 = "Download");
+
+		AssertTextEquals(locator1 = "Button#DOWNLOAD", value1 = "Download");
+
+		AssertTextEquals(locator1 = "Button#EDIT", value1 = "Edit");
+
+		AssertTextEquals(locator1 = "Button#MOVE", value1 = "Move");
+
+		AssertTextEquals(locator1 = "Button#CHECKOUT", value1 = "Checkout");
+
+		AssertTextEquals(locator1 = "Button#PERMISSIONS", value1 = "Permissions");
+
+		AssertTextEquals(
+			locator1 = "Button#MOVE_TO_RECYCLE_BIN",
+			value1 = "Move to Recycle Bin"
+		);
+	}
+
+	macro viewDocumentTypePG {
+		if (IsElementNotPresent(locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_DROPDOWN")) {
+			Refresh();
+		}
+
+		if (IsElementNotPresent(locator1 = "Icon#INFO_ACTIVE")) {
+			Click(locator1 = "Button#INFO");
+		}
+
+		if (isSet(booleanValue)) {
+			var key_booleanValue = "${booleanValue}";
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "DocumentsAndMediaDocument#METADATA_PANEL_BOOLEAN",
+				value1 = "${booleanValue}"
+			);
+		}
+
+		if (isSet(selectOption)) {
+			var key_selectOption = "${selectOption}";
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "DocumentsAndMediaDocument#METADATA_PANEL_SELECT",
+				value1 = "${selectOption}"
+			);
+		}
+
+		if (isSet(radioOption)) {
+			var key_radioOption = "${radioOption}";
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "DocumentsAndMediaDocument#METADATA_PANEL_RADIO",
+				value1 = "${radioOption}"
+			);
+		}
+
+		if (isSet(textContent)) {
+			var key_textContent = "${textContent}";
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "DocumentsAndMediaDocument#METADATA_PANEL_TEXT",
+				value1 = "${textContent}"
+			);
+		}
+
+		if (isSet(numberValue)) {
+			var key_numberValue = "${numberValue}";
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "DocumentsAndMediaDocument#METADATA_PANEL_NUMBER",
+				value1 = "${numberValue}"
+			);
+		}
+
+		if (isSet(dateValue)) {
+			var key_dateValue = "${dateValue}";
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "DocumentsAndMediaDocument#METADATA_PANEL_DATE",
+				value1 = "${dateValue}"
+			);
+		}
+	}
+
+	macro viewDocumentVersionNumberCmdPG {
+		Click(locator1 = "Button#INFO");
+
+		if (!(contains("${dmDocumentVersionNumber}", "{dmDocumentVersionNumber}"))) {
+			AssertTextEquals(
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_VERSION",
+				value1 = "VERSION ${dmDocumentVersionNumber}"
+			);
+		}
+		else {
+			AssertTextEquals(
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_VERSION",
+				value1 = "VERSION 1.0"
+			);
+		}
+	}
+
+	macro viewEditCP {
+		var key_dmDocumentTitle = "${dmDocumentTitleEdit}";
+
+		AssertElementPresent(locator1 = "DocumentsAndMedia#ICON_DOCUMENT");
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#ICON_DOCUMENT_TITLE_LINK",
+			value1 = "${dmDocumentTitleEdit}"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_TITLE",
+			value1 = "${dmDocumentTitleEdit}"
+		);
+
+		if (isSet(dmDocumentVersionNumber)) {
+			DMDocument.viewDocumentVersionNumberCmdPG(dmDocumentVersionNumber = "${dmDocumentVersionNumber}");
+		}
+	}
+
+	macro viewIconLockedCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertVisible(locator1 = "DocumentsAndMedia#ICON_DOCUMENT_ICON_LOCKED");
+	}
+
+	macro viewMovedToFolderCP {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+		var key_dmFolderName = "${dmFolderName}";
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_ICON"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
+			value1 = "${dmFolderName}"
+		);
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_FOLDER_TITLE",
+			value1 = "${dmFolderName}"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#BREADCRUMB_FOLDER_NAME",
+			value1 = "${dmFolderName}"
+		);
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_ICON"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+	}
+
+	macro viewNoTag {
+		if (isSet(tagNameList)) {
+			for (var tagName : list "${tagNameList}") {
+				AssertElementNotPresent(
+					locator1 = "DocumentsAndMedia#TAG",
+					key_tagName = StringUtil.lowerCase("${tagName}")
+				);
+			}
+		}
+		else {
+			AssertElementNotPresent(
+				locator1 = "DocumentsAndMedia#TAG",
+				key_tagName = StringUtil.lowerCase("${tagName}")
+			);
+		}
+	}
+
+	macro viewOlderVersionPG {
+		DMNavigator.gotoDocumentVersion();
+
+		var key_dmDocumentVersionNumber = "Version ${dmDocumentVersionNumber}";
+
+		Click(locator1 = "DocumentsAndMedia#DOCUMENT_VERSION_VERTICAL_ELLIPSIS");
+
+		MenuItem.click(menuItem = "View");
+
+		var key_dmDocumentDescription = "${dmDocumentDescription}";
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_TITLE",
+			value1 = "${dmDocumentTitle} (Version ${dmDocumentVersionNumber})"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_DESCRIPTION",
+			value1 = "${dmDocumentDescription}"
+		);
+
+		DMDocument.viewDocumentVersionNumberCmdPG(
+			dmDocumentVersionNumber = "${dmDocumentVersionNumber}"
+		);
+	}
+
+	macro viewPG {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+		var key_dmDocumentType = "${dmDocumentType}";
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "list");
+
+		if (isSet(dmDocumentType)) {
+			AssertTextEquals(
+				locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TYPE",
+				value1 = "${dmDocumentType}"
+			);
+		}
+
+		AssertClick(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		DMDocument.viewDocumentTitleCmdPG(dmDocumentTitle = "${dmDocumentTitle}");
+
+		if ("${dmRepositoryName}" == "true") {
+			AssertElementNotPresent(
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_RATING"
+			);
+		}
+		else {
+			AssertElementPresent(
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_RATING"
+			);
+		}
+
+		if (isSet(dmDocumentDescription)) {
+			AssertTextEquals(
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_DESCRIPTION",
+				value1 = "${dmDocumentDescription}"
+			);
+		}
+
+		if ("${dmDocumentFileType}" == "Image") {
+			AssertElementPresent(
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_IMAGE_PREVIEW"
+			);
+		}
+
+		if (isSet(tagNameList)) {
+			for (var tagName : list "${tagNameList}") {
+				AssertTextEquals.assertPartialText(
+					locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_TAGS",
+					value1 = "${tagName}"
+				);
+			}
+		}
+
+		if (isSet(categoryName)) {
+			AssertTextEquals(
+				locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_CATEGORIES",
+				value1 = "Topic: ${categoryName}"
+			);
+		}
+	}
+
+	macro viewPGDetails {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertTextPresent(
+			locator1 = "DocumentsAndMedia#BREADCRUMB_HOME",
+			value1 = "Home"
+		);
+
+		Search.searchPG(portletName = "${portletName}", searchTerm = "${searchTerm}");
+
+		AssertClick.assertPartialTextClickAt(
+			locator1 = "DocumentsAndMedia#SEARCH_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_RELATED_ASSETS_TITLE",
+			value1 = "${assetTitle}"
+		);
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_THUMBNAIL"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_UPLOADED_BY",
+			value1 = "${dmDocumentUploader}"
+		);
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_RATING"
+		);
+
+		AssertTextEquals(locator1 = "Button#SUBSCRIBE", value1 = "Subscribe");
+
+		Click(locator1 = "Button#INFO");
+
+		var key_dmDocumentSize = "${dmDocumentSize}";
+		var key_dmDocumentUploader = "${dmDocumentUploader}";
+		var key_dmDocumentVersionNumber = "${dmDocumentVersionNumber}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_VERSION",
+			value1 = "VERSION ${dmDocumentVersionNumber}"
+		);
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_UPLOADER",
+			value1 = "by ${dmDocumentUploader}"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_WORKFLOW",
+			value1 = "${workflow}"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_DOWNLOAD",
+			value1 = "Download"
+		);
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_WEBDAV_URL",
+			value1 = "WebDAV URL"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_URL",
+			value1 = "Latest Version URL"
+		);
+	}
+
+	macro viewPGViaAP {
+		var key_assetContent = "${dmDocumentDescription}";
+		var key_assetTitle = "${dmDocumentTitle}";
+
+		AssertTextEquals(
+			locator1 = "AP#ASSET_ABSTRACT_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "AP#ASSET_ABSTRACT_DESCRIPTION",
+			value1 = "${dmDocumentDescription}"
+		);
+
+		if (IsElementPresent(locator1 = "Link#READ_MORE")) {
+			AssertClick.assertPartialTextClickAt(
+				locator1 = "Link#READ_MORE",
+				value1 = "Read More"
+			);
+
+			AssertTextEquals(
+				locator1 = "APAsset#ASSET_TITLE",
+				value1 = "${dmDocumentTitle}"
+			);
+
+			AssertTextEquals.assertPartialText(
+				locator1 = "APAsset#ASSET_CONTENT",
+				value1 = "${dmDocumentDescription}"
+			);
+		}
+	}
+
+	macro viewPGViaMG {
+		var key_mgDocumentTitle = "${mgDocumentTitle}";
+
+		AssertElementPresent(locator1 = "MediaGallery#ENTRY_THUMBNAIL");
+
+		AssertElementPresent(locator1 = "MediaGallery#IMAGE_TITLE");
+	}
+
+	macro viewPGViaSearch {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		DMDocument.viewDocumentTitleCmdPG(dmDocumentTitle = "${dmDocumentTitle}");
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_THUMBNAIL"
+		);
+
+		AssertElementPresent(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_RATING"
+		);
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMediaDocument#DOCUMENT_INFO_DESCRIPTION",
+			value1 = "${dmDocumentDescription}"
+		);
+	}
+
+	macro viewPGviaStagingLocalLive {
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		if ("${documentAdded}" == "true") {
+			AssertTextEquals(
+				locator1 = "DocumentsAndMedia#ICON_DOCUMENT_TITLE",
+				value1 = "${dmDocumentTitle}"
+			);
+
+			AssertClick.assertPartialTextClickAt(
+				locator1 = "Staging#LIVE_BUTTON",
+				value1 = "Live"
+			);
+
+			AssertTextNotPresent(
+				locator1 = "DocumentsAndMedia#ICON_DOCUMENT_TITLE",
+				value1 = "${dmDocumentTitle}"
+			);
+
+			AssertTextEquals(
+				locator1 = "Message#EMPTY_INFO",
+				value1 = "There are no documents or media files in this folder."
+			);
+		}
+		else if ("${documentAdded}" == "false") {
+			AssertTextEquals(
+				locator1 = "Message#EMPTY_INFO",
+				value1 = "There are no documents or media files in this folder."
+			);
+
+			AssertClick.assertPartialTextClickAt(
+				locator1 = "Staging#LIVE_BUTTON",
+				value1 = "Live"
+			);
+
+			AssertTextEquals(
+				locator1 = "Message#EMPTY_INFO",
+				value1 = "There are no documents or media files in this folder."
+			);
+		}
+	}
+
+	macro viewSearchResultsCP {
+		var key_dmRepositoryName = "${dmRepositoryName}";
+
+		if (isSet(dmRepositoryName)) {
+			AssertClick.assertTextClickAtAndPause(
+				locator1 = "DocumentsAndMedia#SEARCH_REPOSITORY_TAB",
+				value1 = "${dmRepositoryName}"
+			);
+		}
+
+		var key_dmDocumentTitle = "${dmDocumentTitle}";
+
+		AssertTextEquals(
+			locator1 = "DocumentsAndMedia#SEARCH_TITLE",
+			value1 = "${dmDocumentTitle}"
+		);
+	}
+
+	macro viewStagingDetailsPG {
+		Portlet.clickPortletPlusIconPG(portletName = "Documents and Media");
+
+		MenuItem.viewPresent(menuItem = "Folder");
+
+		MenuItem.viewPresent(menuItem = "Shortcut");
+
+		MenuItem.viewPresent(menuItem = "Repository");
+
+		MenuItem.viewPresent(menuItem = "Multiple Documents");
+
+		MenuItem.viewPresent(menuItem = "Basic Document");
+
+		MenuItem.viewPresent(menuItem = "Contract");
+
+		MenuItem.viewPresent(menuItem = "Marketing Banner");
+
+		MenuItem.viewPresent(menuItem = "Online Training");
+
+		MenuItem.viewPresent(menuItem = "Sales Presentation");
+
+		SelectFrameTop();
+
+		var key_dmDocumentTitle = "Document_1.jpeg";
+
+		Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
+
+		Click(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_VERTICAL_ELLIPSIS"
+		);
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "MenuItem#DOWNLOAD",
+			value1 = "Download"
+		);
+
+		MenuItem.viewPresent(menuItem = "Edit");
+
+		MenuItem.viewPresent(menuItem = "Move");
+
+		MenuItem.viewPresent(menuItem = "Checkout");
+
+		MenuItem.viewPresent(menuItem = "Permissions");
+
+		MenuItem.viewPresent(menuItem = "Move to Recycle Bin");
+
+		Check(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
+
+		Click(locator1 = "Icon#TOOLBAR_ELLIPSIS");
+
+		MenuItem.viewPresent(menuItem = "Checkout");
+
+		MenuItem.viewPresent(menuItem = "Checkin");
+
+		MenuItem.viewPresent(menuItem = "Move");
+
+		MenuItem.viewPresent(menuItem = "Move to Recycle Bin");
+
+		Navigator.gotoSitePage(pageName = "Staging Test Page", siteName = "Site Name");
+
+		AssertElementNotPresent(locator1 = "Portlet#ICON_PLUS_SIGN");
+
+		var key_dmDocumentTitle = "Document_1.jpeg";
+
+		Click(
+			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_VERTICAL_ELLIPSIS"
+		);
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "MenuItem#DOWNLOAD",
+			value1 = "Download"
+		);
+
+		MenuItem.viewPresent(menuItem = "Move to Recycle Bin");
+
+		Click(locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_CHECKBOX");
+
+		AssertVisible(locator1 = "Icon#DELETE");
+	}
+
+	macro viewTag {
+		Click(locator1 = "Button#INFO");
+
+		if (isSet(tagNameList)) {
+			for (var tagName : list "${tagNameList}") {
+				var tagName = StringUtil.lowerCase("${tagName}");
+				var key_tagName = "${tagName}";
+
+				AssertTextEquals(locator1 = "DocumentsAndMedia#TAG", value1 = "${tagName}");
+			}
+		}
+		else {
+			var tagName = StringUtil.lowerCase("${tagName}");
+			var key_tagName = "${tagName}";
+
+			AssertTextEquals(locator1 = "DocumentsAndMedia#TAG", value1 = "${tagName}");
+		}
+	}
+}

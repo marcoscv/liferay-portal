@@ -18,18 +18,18 @@ import com.liferay.portal.kernel.configuration.Filter;
 import com.liferay.portal.kernel.image.ImageMagick;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.security.pacl.DoPrivileged;
 import com.liferay.portal.kernel.util.NamedThreadFactory;
 import com.liferay.portal.kernel.util.OSDetector;
+import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.util.ClassLoaderUtil;
 import com.liferay.portal.util.PrefsPropsUtil;
 import com.liferay.portal.util.PropsUtil;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Future;
 
@@ -43,7 +43,6 @@ import org.im4java.process.ProcessTask;
  * @author Alexander Chow
  * @author Ivica Cardic
  */
-@DoPrivileged
 public class ImageMagickImpl implements ImageMagick {
 
 	public static ImageMagickImpl getInstance() {
@@ -175,8 +174,8 @@ public class ImageMagickImpl implements ImageMagick {
 			sb.append("previews, install ImageMagick and Ghostscript. Enable ");
 			sb.append("ImageMagick in portal-ext.properties or in the Server ");
 			sb.append("Administration section of the Control Panel at: ");
-			sb.append("http://<server>/group/control_panel/manage/-/server/");
-			sb.append("external-services");
+			sb.append("http://<server>/group/control_panel/manage/-/server");
+			sb.append("/external-services");
 
 			_log.warn(sb.toString());
 
@@ -201,21 +200,23 @@ public class ImageMagickImpl implements ImageMagick {
 	}
 
 	protected LinkedList<String> getResourceLimits() {
-		LinkedList<String> resourceLimits = new LinkedList<String>();
+		LinkedList<String> resourceLimits = new LinkedList<>();
 
 		if (_resourceLimitsProperties == null) {
 			return resourceLimits;
 		}
 
-		for (Object key : _resourceLimitsProperties.keySet()) {
-			String value = (String)_resourceLimitsProperties.get(key);
+		for (Map.Entry<Object, Object> entry :
+				_resourceLimitsProperties.entrySet()) {
+
+			String value = (String)entry.getValue();
 
 			if (Validator.isNull(value)) {
 				continue;
 			}
 
 			resourceLimits.add("-limit");
-			resourceLimits.add((String)key);
+			resourceLimits.add((String)entry.getKey());
 			resourceLimits.add(value);
 		}
 
@@ -234,16 +235,17 @@ public class ImageMagickImpl implements ImageMagick {
 				_processExecutor.setThreadFactory(
 					new NamedThreadFactory(
 						ImageMagickImpl.class.getName(), Thread.MIN_PRIORITY,
-						ClassLoaderUtil.getPortalClassLoader()));
+						PortalClassLoaderUtil.getClassLoader()));
 			}
 		}
 
 		return _processExecutor;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ImageMagickImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ImageMagickImpl.class);
 
-	private static ImageMagickImpl _instance = new ImageMagickImpl();
+	private static final ImageMagickImpl _instance = new ImageMagickImpl();
 
 	private String _globalSearchPath;
 	private volatile ProcessExecutor _processExecutor;

@@ -1,0 +1,85 @@
+definition {
+	macro viewMultipleSearchResults {
+		if (!(contains("${resultsList}", "/"))) {
+			fail("You must pass in a list with title and type separated by '/'.");
+		}
+
+		for (var titleAndType : list "${resultsList}") {
+			var searchAssetTitle = StringUtil.extractFirst("${titleAndType}", "/");
+			var searchAssetType = StringUtil.extractLast("${titleAndType}", "/");
+
+			SearchResultPortlet.viewSearchResults(
+				searchAssetTitle = "${searchAssetTitle}",
+				searchAssetType = "${searchAssetType}",
+				searchTerm = "${searchTerm}"
+			);
+		}
+	}
+
+	macro viewMultipleSearchResultsNotPresent {
+		if (!(contains("${noResultsList}", "/"))) {
+			fail("You must pass in a list with title and type separated by '/'.");
+		}
+
+		for (var titleAndType : list "${noResultsList}") {
+			var searchAssetTitle = StringUtil.extractFirst("${titleAndType}", "/");
+			var searchAssetType = StringUtil.extractLast("${titleAndType}", "/");
+
+			SearchResultPortlet.viewSearchResultNotPresent(
+				searchAssetTitle = "${searchAssetTitle}",
+				searchAssetType = "${searchAssetType}"
+			);
+		}
+	}
+
+	macro viewNoSearchResults {
+		AssertTextEquals(
+			locator1 = "Message#EMPTY_INFO",
+			value1 = "No results were found that matched the keywords: ${searchTerm}."
+		);
+	}
+
+	macro viewSearchResultNotPresent {
+		AssertElementNotPresent(
+			locator1 = "SearchResults#ASSET_ENTRY_TABLE_TYPE_SPECIFIC",
+			key_searchAssetTitle = "${searchAssetTitle}",
+			key_searchAssetType = "${searchAssetType}"
+		);
+	}
+
+	macro viewSearchResults {
+		var key_searchAssetTitle = "${searchAssetTitle}";
+		var key_searchAssetType = "${searchAssetType}";
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "SearchResults#ASSET_ENTRY_TABLE_TITLE_SPECIFIC",
+			value1 = "${searchAssetTitle}"
+		);
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "SearchResults#ASSET_ENTRY_TABLE_TYPE_SPECIFIC",
+			value1 = "${searchAssetType}"
+		);
+
+		if (isSet(entryDate)) {
+			AssertTextEquals.assertPartialText(
+				locator1 = "SearchResults#ASSET_ENTRY_TABLE_TYPE_SPECIFIC",
+				value1 = "${entryDate}"
+			);
+		}
+
+		if (isSet(searchAssetSummary)) {
+			AssertTextEquals.assertPartialText(
+				locator1 = "SearchResults#ASSET_ENTRY_TABLE_SUMMARY_SPECIFIC",
+				value1 = "${searchAssetSummary}"
+			);
+		}
+
+		if (isSet(searchTerm)) {
+			AssertTextEquals.assertPartialText(
+				locator1 = "SearchResults#RESULTS_PORTLET_SEARCH_QUERY",
+				value1 = "${searchTerm}"
+			);
+		}
+	}
+}

@@ -14,8 +14,12 @@
 
 package com.liferay.portal.service.persistence.impl;
 
-import com.liferay.portal.NoSuchResourceBlockPermissionException;
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.petra.string.StringBundler;
+
+import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -23,32 +27,26 @@ import com.liferay.portal.kernel.dao.orm.Query;
 import com.liferay.portal.kernel.dao.orm.QueryPos;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.Session;
+import com.liferay.portal.kernel.exception.NoSuchResourceBlockPermissionException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.InstanceFactory;
+import com.liferay.portal.kernel.model.ResourceBlockPermission;
+import com.liferay.portal.kernel.service.persistence.CompanyProvider;
+import com.liferay.portal.kernel.service.persistence.CompanyProviderWrapper;
+import com.liferay.portal.kernel.service.persistence.ResourceBlockPermissionPersistence;
+import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.OrderByComparator;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.MVCCModel;
-import com.liferay.portal.model.ModelListener;
-import com.liferay.portal.model.ResourceBlockPermission;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.model.impl.ResourceBlockPermissionImpl;
 import com.liferay.portal.model.impl.ResourceBlockPermissionModelImpl;
-import com.liferay.portal.service.persistence.ResourceBlockPermissionPersistence;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
+import java.lang.reflect.InvocationHandler;
+
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The persistence implementation for the resource block permission service.
@@ -59,9 +57,12 @@ import java.util.Set;
  *
  * @author Brian Wing Shun Chan
  * @see ResourceBlockPermissionPersistence
- * @see ResourceBlockPermissionUtil
+ * @see com.liferay.portal.kernel.service.persistence.ResourceBlockPermissionUtil
+ * @deprecated As of Judson (7.1.x), with no direct replacement
  * @generated
  */
+@Deprecated
+@ProviderType
 public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<ResourceBlockPermission>
 	implements ResourceBlockPermissionPersistence {
 	/*
@@ -74,39 +75,12 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		".List1";
 	public static final String FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION = FINDER_CLASS_NAME_ENTITY +
 		".List2";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_ALL = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-			ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
-			ResourceBlockPermissionImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-			ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
-			ResourceBlockPermissionImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0]);
-	public static final FinderPath FINDER_PATH_COUNT_ALL = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-			ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll", new String[0]);
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_RESOURCEBLOCKID =
-		new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-			ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
-			ResourceBlockPermissionImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByResourceBlockId",
-			new String[] {
-				Long.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_RESOURCEBLOCKID =
-		new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-			ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
-			ResourceBlockPermissionImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByResourceBlockId",
-			new String[] { Long.class.getName() },
-			ResourceBlockPermissionModelImpl.RESOURCEBLOCKID_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_RESOURCEBLOCKID = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-			ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
-			"countByResourceBlockId", new String[] { Long.class.getName() });
+	private FinderPath _finderPathWithPaginationFindAll;
+	private FinderPath _finderPathWithoutPaginationFindAll;
+	private FinderPath _finderPathCountAll;
+	private FinderPath _finderPathWithPaginationFindByResourceBlockId;
+	private FinderPath _finderPathWithoutPaginationFindByResourceBlockId;
+	private FinderPath _finderPathCountByResourceBlockId;
 
 	/**
 	 * Returns all the resource block permissions where resourceBlockId = &#63;.
@@ -125,7 +99,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * Returns a range of all the resource block permissions where resourceBlockId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param resourceBlockId the resource block ID
@@ -143,7 +117,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * Returns an ordered range of all the resource block permissions where resourceBlockId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param resourceBlockId the resource block ID
@@ -155,7 +129,30 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	@Override
 	public List<ResourceBlockPermission> findByResourceBlockId(
 		long resourceBlockId, int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<ResourceBlockPermission> orderByComparator) {
+		return findByResourceBlockId(resourceBlockId, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the resource block permissions where resourceBlockId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param resourceBlockId the resource block ID
+	 * @param start the lower bound of the range of resource block permissions
+	 * @param end the upper bound of the range of resource block permissions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching resource block permissions
+	 */
+	@Override
+	public List<ResourceBlockPermission> findByResourceBlockId(
+		long resourceBlockId, int start, int end,
+		OrderByComparator<ResourceBlockPermission> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -163,11 +160,11 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_RESOURCEBLOCKID;
+			finderPath = _finderPathWithoutPaginationFindByResourceBlockId;
 			finderArgs = new Object[] { resourceBlockId };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_RESOURCEBLOCKID;
+			finderPath = _finderPathWithPaginationFindByResourceBlockId;
 			finderArgs = new Object[] {
 					resourceBlockId,
 					
@@ -175,15 +172,19 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 				};
 		}
 
-		List<ResourceBlockPermission> list = (List<ResourceBlockPermission>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<ResourceBlockPermission> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (ResourceBlockPermission resourceBlockPermission : list) {
-				if ((resourceBlockId != resourceBlockPermission.getResourceBlockId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<ResourceBlockPermission>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (ResourceBlockPermission resourceBlockPermission : list) {
+					if ((resourceBlockId != resourceBlockPermission.getResourceBlockId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -193,7 +194,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -261,11 +262,12 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * @param resourceBlockId the resource block ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching resource block permission
-	 * @throws com.liferay.portal.NoSuchResourceBlockPermissionException if a matching resource block permission could not be found
+	 * @throws NoSuchResourceBlockPermissionException if a matching resource block permission could not be found
 	 */
 	@Override
 	public ResourceBlockPermission findByResourceBlockId_First(
-		long resourceBlockId, OrderByComparator orderByComparator)
+		long resourceBlockId,
+		OrderByComparator<ResourceBlockPermission> orderByComparator)
 		throws NoSuchResourceBlockPermissionException {
 		ResourceBlockPermission resourceBlockPermission = fetchByResourceBlockId_First(resourceBlockId,
 				orderByComparator);
@@ -281,7 +283,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		msg.append("resourceBlockId=");
 		msg.append(resourceBlockId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchResourceBlockPermissionException(msg.toString());
 	}
@@ -295,7 +297,8 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 */
 	@Override
 	public ResourceBlockPermission fetchByResourceBlockId_First(
-		long resourceBlockId, OrderByComparator orderByComparator) {
+		long resourceBlockId,
+		OrderByComparator<ResourceBlockPermission> orderByComparator) {
 		List<ResourceBlockPermission> list = findByResourceBlockId(resourceBlockId,
 				0, 1, orderByComparator);
 
@@ -312,11 +315,12 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * @param resourceBlockId the resource block ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching resource block permission
-	 * @throws com.liferay.portal.NoSuchResourceBlockPermissionException if a matching resource block permission could not be found
+	 * @throws NoSuchResourceBlockPermissionException if a matching resource block permission could not be found
 	 */
 	@Override
 	public ResourceBlockPermission findByResourceBlockId_Last(
-		long resourceBlockId, OrderByComparator orderByComparator)
+		long resourceBlockId,
+		OrderByComparator<ResourceBlockPermission> orderByComparator)
 		throws NoSuchResourceBlockPermissionException {
 		ResourceBlockPermission resourceBlockPermission = fetchByResourceBlockId_Last(resourceBlockId,
 				orderByComparator);
@@ -332,7 +336,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		msg.append("resourceBlockId=");
 		msg.append(resourceBlockId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchResourceBlockPermissionException(msg.toString());
 	}
@@ -346,7 +350,8 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 */
 	@Override
 	public ResourceBlockPermission fetchByResourceBlockId_Last(
-		long resourceBlockId, OrderByComparator orderByComparator) {
+		long resourceBlockId,
+		OrderByComparator<ResourceBlockPermission> orderByComparator) {
 		int count = countByResourceBlockId(resourceBlockId);
 
 		if (count == 0) {
@@ -370,12 +375,12 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * @param resourceBlockId the resource block ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next resource block permission
-	 * @throws com.liferay.portal.NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
+	 * @throws NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
 	 */
 	@Override
 	public ResourceBlockPermission[] findByResourceBlockId_PrevAndNext(
 		long resourceBlockPermissionId, long resourceBlockId,
-		OrderByComparator orderByComparator)
+		OrderByComparator<ResourceBlockPermission> orderByComparator)
 		throws NoSuchResourceBlockPermissionException {
 		ResourceBlockPermission resourceBlockPermission = findByPrimaryKey(resourceBlockPermissionId);
 
@@ -408,13 +413,15 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 
 	protected ResourceBlockPermission getByResourceBlockId_PrevAndNext(
 		Session session, ResourceBlockPermission resourceBlockPermission,
-		long resourceBlockId, OrderByComparator orderByComparator,
+		long resourceBlockId,
+		OrderByComparator<ResourceBlockPermission> orderByComparator,
 		boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -495,10 +502,9 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		qPos.add(resourceBlockId);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(resourceBlockPermission);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					resourceBlockPermission)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -533,7 +539,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 */
 	@Override
 	public int countByResourceBlockId(long resourceBlockId) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_RESOURCEBLOCKID;
+		FinderPath finderPath = _finderPathCountByResourceBlockId;
 
 		Object[] finderArgs = new Object[] { resourceBlockId };
 
@@ -579,27 +585,9 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 
 	private static final String _FINDER_COLUMN_RESOURCEBLOCKID_RESOURCEBLOCKID_2 =
 		"resourceBlockPermission.resourceBlockId = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_ROLEID = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-			ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
-			ResourceBlockPermissionImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByRoleId",
-			new String[] {
-				Long.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_ROLEID =
-		new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-			ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
-			ResourceBlockPermissionImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByRoleId",
-			new String[] { Long.class.getName() },
-			ResourceBlockPermissionModelImpl.ROLEID_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_ROLEID = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-			ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByRoleId",
-			new String[] { Long.class.getName() });
+	private FinderPath _finderPathWithPaginationFindByRoleId;
+	private FinderPath _finderPathWithoutPaginationFindByRoleId;
+	private FinderPath _finderPathCountByRoleId;
 
 	/**
 	 * Returns all the resource block permissions where roleId = &#63;.
@@ -616,7 +604,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * Returns a range of all the resource block permissions where roleId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param roleId the role ID
@@ -634,7 +622,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * Returns an ordered range of all the resource block permissions where roleId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param roleId the role ID
@@ -645,7 +633,28 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 */
 	@Override
 	public List<ResourceBlockPermission> findByRoleId(long roleId, int start,
-		int end, OrderByComparator orderByComparator) {
+		int end, OrderByComparator<ResourceBlockPermission> orderByComparator) {
+		return findByRoleId(roleId, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the resource block permissions where roleId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param roleId the role ID
+	 * @param start the lower bound of the range of resource block permissions
+	 * @param end the upper bound of the range of resource block permissions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching resource block permissions
+	 */
+	@Override
+	public List<ResourceBlockPermission> findByRoleId(long roleId, int start,
+		int end, OrderByComparator<ResourceBlockPermission> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -653,23 +662,27 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_ROLEID;
+			finderPath = _finderPathWithoutPaginationFindByRoleId;
 			finderArgs = new Object[] { roleId };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_ROLEID;
+			finderPath = _finderPathWithPaginationFindByRoleId;
 			finderArgs = new Object[] { roleId, start, end, orderByComparator };
 		}
 
-		List<ResourceBlockPermission> list = (List<ResourceBlockPermission>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<ResourceBlockPermission> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (ResourceBlockPermission resourceBlockPermission : list) {
-				if ((roleId != resourceBlockPermission.getRoleId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<ResourceBlockPermission>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (ResourceBlockPermission resourceBlockPermission : list) {
+					if ((roleId != resourceBlockPermission.getRoleId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -679,7 +692,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -747,11 +760,11 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * @param roleId the role ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching resource block permission
-	 * @throws com.liferay.portal.NoSuchResourceBlockPermissionException if a matching resource block permission could not be found
+	 * @throws NoSuchResourceBlockPermissionException if a matching resource block permission could not be found
 	 */
 	@Override
 	public ResourceBlockPermission findByRoleId_First(long roleId,
-		OrderByComparator orderByComparator)
+		OrderByComparator<ResourceBlockPermission> orderByComparator)
 		throws NoSuchResourceBlockPermissionException {
 		ResourceBlockPermission resourceBlockPermission = fetchByRoleId_First(roleId,
 				orderByComparator);
@@ -767,7 +780,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		msg.append("roleId=");
 		msg.append(roleId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchResourceBlockPermissionException(msg.toString());
 	}
@@ -781,7 +794,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 */
 	@Override
 	public ResourceBlockPermission fetchByRoleId_First(long roleId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<ResourceBlockPermission> orderByComparator) {
 		List<ResourceBlockPermission> list = findByRoleId(roleId, 0, 1,
 				orderByComparator);
 
@@ -798,11 +811,11 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * @param roleId the role ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching resource block permission
-	 * @throws com.liferay.portal.NoSuchResourceBlockPermissionException if a matching resource block permission could not be found
+	 * @throws NoSuchResourceBlockPermissionException if a matching resource block permission could not be found
 	 */
 	@Override
 	public ResourceBlockPermission findByRoleId_Last(long roleId,
-		OrderByComparator orderByComparator)
+		OrderByComparator<ResourceBlockPermission> orderByComparator)
 		throws NoSuchResourceBlockPermissionException {
 		ResourceBlockPermission resourceBlockPermission = fetchByRoleId_Last(roleId,
 				orderByComparator);
@@ -818,7 +831,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		msg.append("roleId=");
 		msg.append(roleId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchResourceBlockPermissionException(msg.toString());
 	}
@@ -832,7 +845,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 */
 	@Override
 	public ResourceBlockPermission fetchByRoleId_Last(long roleId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<ResourceBlockPermission> orderByComparator) {
 		int count = countByRoleId(roleId);
 
 		if (count == 0) {
@@ -856,12 +869,12 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * @param roleId the role ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next resource block permission
-	 * @throws com.liferay.portal.NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
+	 * @throws NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
 	 */
 	@Override
 	public ResourceBlockPermission[] findByRoleId_PrevAndNext(
 		long resourceBlockPermissionId, long roleId,
-		OrderByComparator orderByComparator)
+		OrderByComparator<ResourceBlockPermission> orderByComparator)
 		throws NoSuchResourceBlockPermissionException {
 		ResourceBlockPermission resourceBlockPermission = findByPrimaryKey(resourceBlockPermissionId);
 
@@ -892,12 +905,14 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 
 	protected ResourceBlockPermission getByRoleId_PrevAndNext(Session session,
 		ResourceBlockPermission resourceBlockPermission, long roleId,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<ResourceBlockPermission> orderByComparator,
+		boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -978,10 +993,9 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		qPos.add(roleId);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(resourceBlockPermission);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					resourceBlockPermission)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -1016,7 +1030,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 */
 	@Override
 	public int countByRoleId(long roleId) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_ROLEID;
+		FinderPath finderPath = _finderPathCountByRoleId;
 
 		Object[] finderArgs = new Object[] { roleId };
 
@@ -1061,25 +1075,16 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	}
 
 	private static final String _FINDER_COLUMN_ROLEID_ROLEID_2 = "resourceBlockPermission.roleId = ?";
-	public static final FinderPath FINDER_PATH_FETCH_BY_R_R = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-			ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
-			ResourceBlockPermissionImpl.class, FINDER_CLASS_NAME_ENTITY,
-			"fetchByR_R",
-			new String[] { Long.class.getName(), Long.class.getName() },
-			ResourceBlockPermissionModelImpl.RESOURCEBLOCKID_COLUMN_BITMASK |
-			ResourceBlockPermissionModelImpl.ROLEID_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_R_R = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-			ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByR_R",
-			new String[] { Long.class.getName(), Long.class.getName() });
+	private FinderPath _finderPathFetchByR_R;
+	private FinderPath _finderPathCountByR_R;
 
 	/**
-	 * Returns the resource block permission where resourceBlockId = &#63; and roleId = &#63; or throws a {@link com.liferay.portal.NoSuchResourceBlockPermissionException} if it could not be found.
+	 * Returns the resource block permission where resourceBlockId = &#63; and roleId = &#63; or throws a {@link NoSuchResourceBlockPermissionException} if it could not be found.
 	 *
 	 * @param resourceBlockId the resource block ID
 	 * @param roleId the role ID
 	 * @return the matching resource block permission
-	 * @throws com.liferay.portal.NoSuchResourceBlockPermissionException if a matching resource block permission could not be found
+	 * @throws NoSuchResourceBlockPermissionException if a matching resource block permission could not be found
 	 */
 	@Override
 	public ResourceBlockPermission findByR_R(long resourceBlockId, long roleId)
@@ -1098,10 +1103,10 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 			msg.append(", roleId=");
 			msg.append(roleId);
 
-			msg.append(StringPool.CLOSE_CURLY_BRACE);
+			msg.append("}");
 
-			if (_log.isWarnEnabled()) {
-				_log.warn(msg.toString());
+			if (_log.isDebugEnabled()) {
+				_log.debug(msg.toString());
 			}
 
 			throw new NoSuchResourceBlockPermissionException(msg.toString());
@@ -1127,7 +1132,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 *
 	 * @param resourceBlockId the resource block ID
 	 * @param roleId the role ID
-	 * @param retrieveFromCache whether to use the finder cache
+	 * @param retrieveFromCache whether to retrieve from the finder cache
 	 * @return the matching resource block permission, or <code>null</code> if a matching resource block permission could not be found
 	 */
 	@Override
@@ -1138,7 +1143,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		Object result = null;
 
 		if (retrieveFromCache) {
-			result = FinderCacheUtil.getResult(FINDER_PATH_FETCH_BY_R_R,
+			result = FinderCacheUtil.getResult(_finderPathFetchByR_R,
 					finderArgs, this);
 		}
 
@@ -1178,7 +1183,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 				List<ResourceBlockPermission> list = q.list();
 
 				if (list.isEmpty()) {
-					FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_R_R,
+					FinderCacheUtil.putResult(_finderPathFetchByR_R,
 						finderArgs, list);
 				}
 				else {
@@ -1187,17 +1192,10 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 					result = resourceBlockPermission;
 
 					cacheResult(resourceBlockPermission);
-
-					if ((resourceBlockPermission.getResourceBlockId() != resourceBlockId) ||
-							(resourceBlockPermission.getRoleId() != roleId)) {
-						FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_R_R,
-							finderArgs, resourceBlockPermission);
-					}
 				}
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_R_R,
-					finderArgs);
+				FinderCacheUtil.removeResult(_finderPathFetchByR_R, finderArgs);
 
 				throw processException(e);
 			}
@@ -1239,7 +1237,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 */
 	@Override
 	public int countByR_R(long resourceBlockId, long roleId) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_R_R;
+		FinderPath finderPath = _finderPathCountByR_R;
 
 		Object[] finderArgs = new Object[] { resourceBlockId, roleId };
 
@@ -1292,6 +1290,10 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 
 	public ResourceBlockPermissionPersistenceImpl() {
 		setModelClass(ResourceBlockPermission.class);
+
+		setModelImplClass(ResourceBlockPermissionImpl.class);
+		setModelPKClass(long.class);
+		setEntityCacheEnabled(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED);
 	}
 
 	/**
@@ -1305,7 +1307,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 			ResourceBlockPermissionImpl.class,
 			resourceBlockPermission.getPrimaryKey(), resourceBlockPermission);
 
-		FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_R_R,
+		FinderCacheUtil.putResult(_finderPathFetchByR_R,
 			new Object[] {
 				resourceBlockPermission.getResourceBlockId(),
 				resourceBlockPermission.getRoleId()
@@ -1339,15 +1341,11 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * Clears the cache for all resource block permissions.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
-		if (_HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE) {
-			CacheRegistryUtil.clear(ResourceBlockPermissionImpl.class.getName());
-		}
-
 		EntityCacheUtil.clearCache(ResourceBlockPermissionImpl.class);
 
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
@@ -1359,7 +1357,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * Clears the cache for the resource block permission.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
@@ -1371,7 +1369,8 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 
-		clearUniqueFindersCache(resourceBlockPermission);
+		clearUniqueFindersCache((ResourceBlockPermissionModelImpl)resourceBlockPermission,
+			true);
 	}
 
 	@Override
@@ -1385,62 +1384,46 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 				ResourceBlockPermissionImpl.class,
 				resourceBlockPermission.getPrimaryKey());
 
-			clearUniqueFindersCache(resourceBlockPermission);
+			clearUniqueFindersCache((ResourceBlockPermissionModelImpl)resourceBlockPermission,
+				true);
 		}
 	}
 
 	protected void cacheUniqueFindersCache(
-		ResourceBlockPermission resourceBlockPermission) {
-		if (resourceBlockPermission.isNew()) {
-			Object[] args = new Object[] {
-					resourceBlockPermission.getResourceBlockId(),
-					resourceBlockPermission.getRoleId()
-				};
+		ResourceBlockPermissionModelImpl resourceBlockPermissionModelImpl) {
+		Object[] args = new Object[] {
+				resourceBlockPermissionModelImpl.getResourceBlockId(),
+				resourceBlockPermissionModelImpl.getRoleId()
+			};
 
-			FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_R_R, args,
-				Long.valueOf(1));
-			FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_R_R, args,
-				resourceBlockPermission);
-		}
-		else {
-			ResourceBlockPermissionModelImpl resourceBlockPermissionModelImpl = (ResourceBlockPermissionModelImpl)resourceBlockPermission;
-
-			if ((resourceBlockPermissionModelImpl.getColumnBitmask() &
-					FINDER_PATH_FETCH_BY_R_R.getColumnBitmask()) != 0) {
-				Object[] args = new Object[] {
-						resourceBlockPermission.getResourceBlockId(),
-						resourceBlockPermission.getRoleId()
-					};
-
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_BY_R_R, args,
-					Long.valueOf(1));
-				FinderCacheUtil.putResult(FINDER_PATH_FETCH_BY_R_R, args,
-					resourceBlockPermission);
-			}
-		}
+		FinderCacheUtil.putResult(_finderPathCountByR_R, args, Long.valueOf(1),
+			false);
+		FinderCacheUtil.putResult(_finderPathFetchByR_R, args,
+			resourceBlockPermissionModelImpl, false);
 	}
 
 	protected void clearUniqueFindersCache(
-		ResourceBlockPermission resourceBlockPermission) {
-		ResourceBlockPermissionModelImpl resourceBlockPermissionModelImpl = (ResourceBlockPermissionModelImpl)resourceBlockPermission;
+		ResourceBlockPermissionModelImpl resourceBlockPermissionModelImpl,
+		boolean clearCurrent) {
+		if (clearCurrent) {
+			Object[] args = new Object[] {
+					resourceBlockPermissionModelImpl.getResourceBlockId(),
+					resourceBlockPermissionModelImpl.getRoleId()
+				};
 
-		Object[] args = new Object[] {
-				resourceBlockPermission.getResourceBlockId(),
-				resourceBlockPermission.getRoleId()
-			};
-
-		FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_R_R, args);
-		FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_R_R, args);
+			FinderCacheUtil.removeResult(_finderPathCountByR_R, args);
+			FinderCacheUtil.removeResult(_finderPathFetchByR_R, args);
+		}
 
 		if ((resourceBlockPermissionModelImpl.getColumnBitmask() &
-				FINDER_PATH_FETCH_BY_R_R.getColumnBitmask()) != 0) {
-			args = new Object[] {
+				_finderPathFetchByR_R.getColumnBitmask()) != 0) {
+			Object[] args = new Object[] {
 					resourceBlockPermissionModelImpl.getOriginalResourceBlockId(),
 					resourceBlockPermissionModelImpl.getOriginalRoleId()
 				};
 
-			FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_R_R, args);
-			FinderCacheUtil.removeResult(FINDER_PATH_FETCH_BY_R_R, args);
+			FinderCacheUtil.removeResult(_finderPathCountByR_R, args);
+			FinderCacheUtil.removeResult(_finderPathFetchByR_R, args);
 		}
 	}
 
@@ -1457,6 +1440,8 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		resourceBlockPermission.setNew(true);
 		resourceBlockPermission.setPrimaryKey(resourceBlockPermissionId);
 
+		resourceBlockPermission.setCompanyId(companyProvider.getCompanyId());
+
 		return resourceBlockPermission;
 	}
 
@@ -1465,7 +1450,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 *
 	 * @param resourceBlockPermissionId the primary key of the resource block permission
 	 * @return the resource block permission that was removed
-	 * @throws com.liferay.portal.NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
+	 * @throws NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
 	 */
 	@Override
 	public ResourceBlockPermission remove(long resourceBlockPermissionId)
@@ -1478,7 +1463,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 *
 	 * @param primaryKey the primary key of the resource block permission
 	 * @return the resource block permission that was removed
-	 * @throws com.liferay.portal.NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
+	 * @throws NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
 	 */
 	@Override
 	public ResourceBlockPermission remove(Serializable primaryKey)
@@ -1492,8 +1477,8 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 					primaryKey);
 
 			if (resourceBlockPermission == null) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+				if (_log.isDebugEnabled()) {
+					_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 				}
 
 				throw new NoSuchResourceBlockPermissionException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -1516,8 +1501,6 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	@Override
 	protected ResourceBlockPermission removeImpl(
 		ResourceBlockPermission resourceBlockPermission) {
-		resourceBlockPermission = toUnwrappedModel(resourceBlockPermission);
-
 		Session session = null;
 
 		try {
@@ -1548,10 +1531,24 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 
 	@Override
 	public ResourceBlockPermission updateImpl(
-		com.liferay.portal.model.ResourceBlockPermission resourceBlockPermission) {
-		resourceBlockPermission = toUnwrappedModel(resourceBlockPermission);
-
+		ResourceBlockPermission resourceBlockPermission) {
 		boolean isNew = resourceBlockPermission.isNew();
+
+		if (!(resourceBlockPermission instanceof ResourceBlockPermissionModelImpl)) {
+			InvocationHandler invocationHandler = null;
+
+			if (ProxyUtil.isProxyClass(resourceBlockPermission.getClass())) {
+				invocationHandler = ProxyUtil.getInvocationHandler(resourceBlockPermission);
+
+				throw new IllegalArgumentException(
+					"Implement ModelWrapper in resourceBlockPermission proxy " +
+					invocationHandler.getClass());
+			}
+
+			throw new IllegalArgumentException(
+				"Implement ModelWrapper in custom ResourceBlockPermission implementation " +
+				resourceBlockPermission.getClass());
+		}
 
 		ResourceBlockPermissionModelImpl resourceBlockPermissionModelImpl = (ResourceBlockPermissionModelImpl)resourceBlockPermission;
 
@@ -1566,7 +1563,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 				resourceBlockPermission.setNew(false);
 			}
 			else {
-				session.merge(resourceBlockPermission);
+				resourceBlockPermission = (ResourceBlockPermission)session.merge(resourceBlockPermission);
 			}
 		}
 		catch (Exception e) {
@@ -1578,46 +1575,66 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 
-		if (isNew || !ResourceBlockPermissionModelImpl.COLUMN_BITMASK_ENABLED) {
+		if (!ResourceBlockPermissionModelImpl.COLUMN_BITMASK_ENABLED) {
 			FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		}
+		else
+		 if (isNew) {
+			Object[] args = new Object[] {
+					resourceBlockPermissionModelImpl.getResourceBlockId()
+				};
+
+			FinderCacheUtil.removeResult(_finderPathCountByResourceBlockId, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByResourceBlockId,
+				args);
+
+			args = new Object[] { resourceBlockPermissionModelImpl.getRoleId() };
+
+			FinderCacheUtil.removeResult(_finderPathCountByRoleId, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByRoleId,
+				args);
+
+			FinderCacheUtil.removeResult(_finderPathCountAll, FINDER_ARGS_EMPTY);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindAll,
+				FINDER_ARGS_EMPTY);
 		}
 
 		else {
 			if ((resourceBlockPermissionModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_RESOURCEBLOCKID.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByResourceBlockId.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						resourceBlockPermissionModelImpl.getOriginalResourceBlockId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_RESOURCEBLOCKID,
+				FinderCacheUtil.removeResult(_finderPathCountByResourceBlockId,
 					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_RESOURCEBLOCKID,
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByResourceBlockId,
 					args);
 
 				args = new Object[] {
 						resourceBlockPermissionModelImpl.getResourceBlockId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_RESOURCEBLOCKID,
+				FinderCacheUtil.removeResult(_finderPathCountByResourceBlockId,
 					args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_RESOURCEBLOCKID,
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByResourceBlockId,
 					args);
 			}
 
 			if ((resourceBlockPermissionModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_ROLEID.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByRoleId.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						resourceBlockPermissionModelImpl.getOriginalRoleId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_ROLEID, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_ROLEID,
+				FinderCacheUtil.removeResult(_finderPathCountByRoleId, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByRoleId,
 					args);
 
 				args = new Object[] { resourceBlockPermissionModelImpl.getRoleId() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_ROLEID, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_ROLEID,
+				FinderCacheUtil.removeResult(_finderPathCountByRoleId, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByRoleId,
 					args);
 			}
 		}
@@ -1627,40 +1644,20 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 			resourceBlockPermission.getPrimaryKey(), resourceBlockPermission,
 			false);
 
-		clearUniqueFindersCache(resourceBlockPermission);
-		cacheUniqueFindersCache(resourceBlockPermission);
+		clearUniqueFindersCache(resourceBlockPermissionModelImpl, false);
+		cacheUniqueFindersCache(resourceBlockPermissionModelImpl);
 
 		resourceBlockPermission.resetOriginalValues();
 
 		return resourceBlockPermission;
 	}
 
-	protected ResourceBlockPermission toUnwrappedModel(
-		ResourceBlockPermission resourceBlockPermission) {
-		if (resourceBlockPermission instanceof ResourceBlockPermissionImpl) {
-			return resourceBlockPermission;
-		}
-
-		ResourceBlockPermissionImpl resourceBlockPermissionImpl = new ResourceBlockPermissionImpl();
-
-		resourceBlockPermissionImpl.setNew(resourceBlockPermission.isNew());
-		resourceBlockPermissionImpl.setPrimaryKey(resourceBlockPermission.getPrimaryKey());
-
-		resourceBlockPermissionImpl.setMvccVersion(resourceBlockPermission.getMvccVersion());
-		resourceBlockPermissionImpl.setResourceBlockPermissionId(resourceBlockPermission.getResourceBlockPermissionId());
-		resourceBlockPermissionImpl.setResourceBlockId(resourceBlockPermission.getResourceBlockId());
-		resourceBlockPermissionImpl.setRoleId(resourceBlockPermission.getRoleId());
-		resourceBlockPermissionImpl.setActionIds(resourceBlockPermission.getActionIds());
-
-		return resourceBlockPermissionImpl;
-	}
-
 	/**
-	 * Returns the resource block permission with the primary key or throws a {@link com.liferay.portal.NoSuchModelException} if it could not be found.
+	 * Returns the resource block permission with the primary key or throws a {@link com.liferay.portal.kernel.exception.NoSuchModelException} if it could not be found.
 	 *
 	 * @param primaryKey the primary key of the resource block permission
 	 * @return the resource block permission
-	 * @throws com.liferay.portal.NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
+	 * @throws NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
 	 */
 	@Override
 	public ResourceBlockPermission findByPrimaryKey(Serializable primaryKey)
@@ -1668,8 +1665,8 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		ResourceBlockPermission resourceBlockPermission = fetchByPrimaryKey(primaryKey);
 
 		if (resourceBlockPermission == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+			if (_log.isDebugEnabled()) {
+				_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 			}
 
 			throw new NoSuchResourceBlockPermissionException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -1680,64 +1677,17 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	}
 
 	/**
-	 * Returns the resource block permission with the primary key or throws a {@link com.liferay.portal.NoSuchResourceBlockPermissionException} if it could not be found.
+	 * Returns the resource block permission with the primary key or throws a {@link NoSuchResourceBlockPermissionException} if it could not be found.
 	 *
 	 * @param resourceBlockPermissionId the primary key of the resource block permission
 	 * @return the resource block permission
-	 * @throws com.liferay.portal.NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
+	 * @throws NoSuchResourceBlockPermissionException if a resource block permission with the primary key could not be found
 	 */
 	@Override
 	public ResourceBlockPermission findByPrimaryKey(
 		long resourceBlockPermissionId)
 		throws NoSuchResourceBlockPermissionException {
 		return findByPrimaryKey((Serializable)resourceBlockPermissionId);
-	}
-
-	/**
-	 * Returns the resource block permission with the primary key or returns <code>null</code> if it could not be found.
-	 *
-	 * @param primaryKey the primary key of the resource block permission
-	 * @return the resource block permission, or <code>null</code> if a resource block permission with the primary key could not be found
-	 */
-	@Override
-	public ResourceBlockPermission fetchByPrimaryKey(Serializable primaryKey) {
-		ResourceBlockPermission resourceBlockPermission = (ResourceBlockPermission)EntityCacheUtil.getResult(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-				ResourceBlockPermissionImpl.class, primaryKey);
-
-		if (resourceBlockPermission == _nullResourceBlockPermission) {
-			return null;
-		}
-
-		if (resourceBlockPermission == null) {
-			Session session = null;
-
-			try {
-				session = openSession();
-
-				resourceBlockPermission = (ResourceBlockPermission)session.get(ResourceBlockPermissionImpl.class,
-						primaryKey);
-
-				if (resourceBlockPermission != null) {
-					cacheResult(resourceBlockPermission);
-				}
-				else {
-					EntityCacheUtil.putResult(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-						ResourceBlockPermissionImpl.class, primaryKey,
-						_nullResourceBlockPermission);
-				}
-			}
-			catch (Exception e) {
-				EntityCacheUtil.removeResult(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-					ResourceBlockPermissionImpl.class, primaryKey);
-
-				throw processException(e);
-			}
-			finally {
-				closeSession(session);
-			}
-		}
-
-		return resourceBlockPermission;
 	}
 
 	/**
@@ -1750,100 +1700,6 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	public ResourceBlockPermission fetchByPrimaryKey(
 		long resourceBlockPermissionId) {
 		return fetchByPrimaryKey((Serializable)resourceBlockPermissionId);
-	}
-
-	@Override
-	public Map<Serializable, ResourceBlockPermission> fetchByPrimaryKeys(
-		Set<Serializable> primaryKeys) {
-		if (primaryKeys.isEmpty()) {
-			return Collections.emptyMap();
-		}
-
-		Map<Serializable, ResourceBlockPermission> map = new HashMap<Serializable, ResourceBlockPermission>();
-
-		if (primaryKeys.size() == 1) {
-			Iterator<Serializable> iterator = primaryKeys.iterator();
-
-			Serializable primaryKey = iterator.next();
-
-			ResourceBlockPermission resourceBlockPermission = fetchByPrimaryKey(primaryKey);
-
-			if (resourceBlockPermission != null) {
-				map.put(primaryKey, resourceBlockPermission);
-			}
-
-			return map;
-		}
-
-		Set<Serializable> uncachedPrimaryKeys = null;
-
-		for (Serializable primaryKey : primaryKeys) {
-			ResourceBlockPermission resourceBlockPermission = (ResourceBlockPermission)EntityCacheUtil.getResult(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-					ResourceBlockPermissionImpl.class, primaryKey);
-
-			if (resourceBlockPermission == null) {
-				if (uncachedPrimaryKeys == null) {
-					uncachedPrimaryKeys = new HashSet<Serializable>();
-				}
-
-				uncachedPrimaryKeys.add(primaryKey);
-			}
-			else {
-				map.put(primaryKey, resourceBlockPermission);
-			}
-		}
-
-		if (uncachedPrimaryKeys == null) {
-			return map;
-		}
-
-		StringBundler query = new StringBundler((uncachedPrimaryKeys.size() * 2) +
-				1);
-
-		query.append(_SQL_SELECT_RESOURCEBLOCKPERMISSION_WHERE_PKS_IN);
-
-		for (Serializable primaryKey : uncachedPrimaryKeys) {
-			query.append(String.valueOf(primaryKey));
-
-			query.append(StringPool.COMMA);
-		}
-
-		query.setIndex(query.index() - 1);
-
-		query.append(StringPool.CLOSE_PARENTHESIS);
-
-		String sql = query.toString();
-
-		Session session = null;
-
-		try {
-			session = openSession();
-
-			Query q = session.createQuery(sql);
-
-			for (ResourceBlockPermission resourceBlockPermission : (List<ResourceBlockPermission>)q.list()) {
-				map.put(resourceBlockPermission.getPrimaryKeyObj(),
-					resourceBlockPermission);
-
-				cacheResult(resourceBlockPermission);
-
-				uncachedPrimaryKeys.remove(resourceBlockPermission.getPrimaryKeyObj());
-			}
-
-			for (Serializable primaryKey : uncachedPrimaryKeys) {
-				EntityCacheUtil.putResult(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
-					ResourceBlockPermissionImpl.class, primaryKey,
-					_nullResourceBlockPermission);
-			}
-		}
-		catch (Exception e) {
-			throw processException(e);
-		}
-		finally {
-			closeSession(session);
-		}
-
-		return map;
 	}
 
 	/**
@@ -1860,7 +1716,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * Returns a range of all the resource block permissions.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of resource block permissions
@@ -1876,7 +1732,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 * Returns an ordered range of all the resource block permissions.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portal.model.impl.ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of resource block permissions
@@ -1886,7 +1742,27 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 */
 	@Override
 	public List<ResourceBlockPermission> findAll(int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<ResourceBlockPermission> orderByComparator) {
+		return findAll(start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the resource block permissions.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ResourceBlockPermissionModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param start the lower bound of the range of resource block permissions
+	 * @param end the upper bound of the range of resource block permissions (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of resource block permissions
+	 */
+	@Override
+	public List<ResourceBlockPermission> findAll(int start, int end,
+		OrderByComparator<ResourceBlockPermission> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1894,16 +1770,20 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL;
+			finderPath = _finderPathWithoutPaginationFindAll;
 			finderArgs = FINDER_ARGS_EMPTY;
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_ALL;
+			finderPath = _finderPathWithPaginationFindAll;
 			finderArgs = new Object[] { start, end, orderByComparator };
 		}
 
-		List<ResourceBlockPermission> list = (List<ResourceBlockPermission>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<ResourceBlockPermission> list = null;
+
+		if (retrieveFromCache) {
+			list = (List<ResourceBlockPermission>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
+		}
 
 		if (list == null) {
 			StringBundler query = null;
@@ -1911,7 +1791,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 
 			if (orderByComparator != null) {
 				query = new StringBundler(2 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 
 				query.append(_SQL_SELECT_RESOURCEBLOCKPERMISSION);
 
@@ -1983,7 +1863,7 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)FinderCacheUtil.getResult(FINDER_PATH_COUNT_ALL,
+		Long count = (Long)FinderCacheUtil.getResult(_finderPathCountAll,
 				FINDER_ARGS_EMPTY, this);
 
 		if (count == null) {
@@ -1996,11 +1876,11 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_ALL,
+				FinderCacheUtil.putResult(_finderPathCountAll,
 					FINDER_ARGS_EMPTY, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_ALL,
+				FinderCacheUtil.removeResult(_finderPathCountAll,
 					FINDER_ARGS_EMPTY);
 
 				throw processException(e);
@@ -2013,29 +1893,106 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		return count.intValue();
 	}
 
+	@Override
+	protected EntityCache getEntityCache() {
+		return EntityCacheUtil.getEntityCache();
+	}
+
+	@Override
+	protected String getPKDBName() {
+		return "resourceBlockPermissionId";
+	}
+
+	@Override
+	protected String getSelectSQL() {
+		return _SQL_SELECT_RESOURCEBLOCKPERMISSION;
+	}
+
+	@Override
+	protected Map<String, Integer> getTableColumnsMap() {
+		return ResourceBlockPermissionModelImpl.TABLE_COLUMNS_MAP;
+	}
+
 	/**
 	 * Initializes the resource block permission persistence.
 	 */
 	public void afterPropertiesSet() {
-		String[] listenerClassNames = StringUtil.split(GetterUtil.getString(
-					com.liferay.portal.util.PropsUtil.get(
-						"value.object.listener.com.liferay.portal.model.ResourceBlockPermission")));
+		_finderPathWithPaginationFindAll = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
+				ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
+				ResourceBlockPermissionImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
 
-		if (listenerClassNames.length > 0) {
-			try {
-				List<ModelListener<ResourceBlockPermission>> listenersList = new ArrayList<ModelListener<ResourceBlockPermission>>();
+		_finderPathWithoutPaginationFindAll = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
+				ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
+				ResourceBlockPermissionImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
+				new String[0]);
 
-				for (String listenerClassName : listenerClassNames) {
-					listenersList.add((ModelListener<ResourceBlockPermission>)InstanceFactory.newInstance(
-							getClassLoader(), listenerClassName));
-				}
+		_finderPathCountAll = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
+				ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
+				Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
+				"countAll", new String[0]);
 
-				listeners = listenersList.toArray(new ModelListener[listenersList.size()]);
-			}
-			catch (Exception e) {
-				_log.error(e);
-			}
-		}
+		_finderPathWithPaginationFindByResourceBlockId = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
+				ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
+				ResourceBlockPermissionImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION,
+				"findByResourceBlockId",
+				new String[] {
+					Long.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByResourceBlockId = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
+				ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
+				ResourceBlockPermissionImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
+				"findByResourceBlockId", new String[] { Long.class.getName() },
+				ResourceBlockPermissionModelImpl.RESOURCEBLOCKID_COLUMN_BITMASK);
+
+		_finderPathCountByResourceBlockId = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
+				ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
+				Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
+				"countByResourceBlockId", new String[] { Long.class.getName() });
+
+		_finderPathWithPaginationFindByRoleId = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
+				ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
+				ResourceBlockPermissionImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByRoleId",
+				new String[] {
+					Long.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByRoleId = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
+				ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
+				ResourceBlockPermissionImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByRoleId",
+				new String[] { Long.class.getName() },
+				ResourceBlockPermissionModelImpl.ROLEID_COLUMN_BITMASK);
+
+		_finderPathCountByRoleId = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
+				ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
+				Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
+				"countByRoleId", new String[] { Long.class.getName() });
+
+		_finderPathFetchByR_R = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
+				ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
+				ResourceBlockPermissionImpl.class, FINDER_CLASS_NAME_ENTITY,
+				"fetchByR_R",
+				new String[] { Long.class.getName(), Long.class.getName() },
+				ResourceBlockPermissionModelImpl.RESOURCEBLOCKID_COLUMN_BITMASK |
+				ResourceBlockPermissionModelImpl.ROLEID_COLUMN_BITMASK);
+
+		_finderPathCountByR_R = new FinderPath(ResourceBlockPermissionModelImpl.ENTITY_CACHE_ENABLED,
+				ResourceBlockPermissionModelImpl.FINDER_CACHE_ENABLED,
+				Long.class, FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION,
+				"countByR_R",
+				new String[] { Long.class.getName(), Long.class.getName() });
 	}
 
 	public void destroy() {
@@ -2045,46 +2002,14 @@ public class ResourceBlockPermissionPersistenceImpl extends BasePersistenceImpl<
 		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
+	@BeanReference(type = CompanyProviderWrapper.class)
+	protected CompanyProvider companyProvider;
 	private static final String _SQL_SELECT_RESOURCEBLOCKPERMISSION = "SELECT resourceBlockPermission FROM ResourceBlockPermission resourceBlockPermission";
-	private static final String _SQL_SELECT_RESOURCEBLOCKPERMISSION_WHERE_PKS_IN =
-		"SELECT resourceBlockPermission FROM ResourceBlockPermission resourceBlockPermission WHERE resourceBlockPermissionId IN (";
 	private static final String _SQL_SELECT_RESOURCEBLOCKPERMISSION_WHERE = "SELECT resourceBlockPermission FROM ResourceBlockPermission resourceBlockPermission WHERE ";
 	private static final String _SQL_COUNT_RESOURCEBLOCKPERMISSION = "SELECT COUNT(resourceBlockPermission) FROM ResourceBlockPermission resourceBlockPermission";
 	private static final String _SQL_COUNT_RESOURCEBLOCKPERMISSION_WHERE = "SELECT COUNT(resourceBlockPermission) FROM ResourceBlockPermission resourceBlockPermission WHERE ";
 	private static final String _ORDER_BY_ENTITY_ALIAS = "resourceBlockPermission.";
 	private static final String _NO_SUCH_ENTITY_WITH_PRIMARY_KEY = "No ResourceBlockPermission exists with the primary key ";
 	private static final String _NO_SUCH_ENTITY_WITH_KEY = "No ResourceBlockPermission exists with the key {";
-	private static final boolean _HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE = com.liferay.portal.util.PropsValues.HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE;
-	private static Log _log = LogFactoryUtil.getLog(ResourceBlockPermissionPersistenceImpl.class);
-	private static ResourceBlockPermission _nullResourceBlockPermission = new ResourceBlockPermissionImpl() {
-			@Override
-			public Object clone() {
-				return this;
-			}
-
-			@Override
-			public CacheModel<ResourceBlockPermission> toCacheModel() {
-				return _nullResourceBlockPermissionCacheModel;
-			}
-		};
-
-	private static CacheModel<ResourceBlockPermission> _nullResourceBlockPermissionCacheModel =
-		new NullCacheModel();
-
-	private static class NullCacheModel implements CacheModel<ResourceBlockPermission>,
-		MVCCModel {
-		@Override
-		public long getMvccVersion() {
-			return 0;
-		}
-
-		@Override
-		public void setMvccVersion(long mvccVersion) {
-		}
-
-		@Override
-		public ResourceBlockPermission toEntityModel() {
-			return _nullResourceBlockPermission;
-		}
-	}
+	private static final Log _log = LogFactoryUtil.getLog(ResourceBlockPermissionPersistenceImpl.class);
 }

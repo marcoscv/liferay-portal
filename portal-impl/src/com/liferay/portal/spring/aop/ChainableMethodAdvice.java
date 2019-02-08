@@ -14,79 +14,75 @@
 
 package com.liferay.portal.spring.aop;
 
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+
+import java.util.Map;
 
 /**
  * @author Shuyang Zhou
  * @author Brian Wing Shun Chan
  */
-public abstract class ChainableMethodAdvice implements MethodInterceptor {
+public abstract class ChainableMethodAdvice {
 
-	public void afterReturning(MethodInvocation methodInvocation, Object result)
+	public void afterReturning(
+			AopMethodInvocation aopMethodInvocation, Object[] arguments,
+			Object result)
 		throws Throwable {
 	}
 
 	public void afterThrowing(
-			MethodInvocation methodInvocation, Throwable throwable)
+			AopMethodInvocation aopMethodInvocation, Object[] arguments,
+			Throwable throwable)
 		throws Throwable {
 	}
 
-	public Object before(MethodInvocation methodInvocation) throws Throwable {
+	public Object before(
+			AopMethodInvocation aopMethodInvocation, Object[] arguments)
+		throws Throwable {
+
 		return null;
 	}
 
-	public void duringFinally(MethodInvocation methodInvocation) {
+	public abstract Object createMethodContext(
+		Class<?> targetClass, Method method,
+		Map<Class<? extends Annotation>, Annotation> annotations);
+
+	public void duringFinally(
+		AopMethodInvocation aopMethodInvocation, Object[] arguments) {
 	}
 
-	@Override
-	public Object invoke(MethodInvocation methodInvocation) throws Throwable {
-		Object returnValue = before(methodInvocation);
+	public Object invoke(
+			AopMethodInvocation aopMethodInvocation, Object[] arguments)
+		throws Throwable {
+
+		Object returnValue = before(aopMethodInvocation, arguments);
 
 		if (returnValue != null) {
 			if (returnValue == nullResult) {
 				return null;
 			}
-			else {
-				return returnValue;
-			}
+
+			return returnValue;
 		}
 
 		try {
-			returnValue = methodInvocation.proceed();
+			returnValue = aopMethodInvocation.proceed(arguments);
 
-			afterReturning(methodInvocation, returnValue);
+			afterReturning(aopMethodInvocation, arguments, returnValue);
 		}
 		catch (Throwable throwable) {
-			afterThrowing(methodInvocation, throwable);
+			afterThrowing(aopMethodInvocation, arguments, throwable);
 
 			throw throwable;
 		}
 		finally {
-			duringFinally(methodInvocation);
+			duringFinally(aopMethodInvocation, arguments);
 		}
 
 		return returnValue;
 	}
 
-	public void setNextMethodInterceptor(
-		MethodInterceptor nextMethodInterceptor) {
-
-		this.nextMethodInterceptor = nextMethodInterceptor;
-	}
-
-	protected void setServiceBeanAopCacheManager(
-		ServiceBeanAopCacheManager serviceBeanAopCacheManager) {
-
-		if (this.serviceBeanAopCacheManager != null) {
-			return;
-		}
-
-		this.serviceBeanAopCacheManager = serviceBeanAopCacheManager;
-	}
-
-	protected MethodInterceptor nextMethodInterceptor;
-	protected Object nullResult = new Object();
-	protected ServiceBeanAopCacheManager serviceBeanAopCacheManager;
+	protected static Object nullResult = new Object();
 
 }

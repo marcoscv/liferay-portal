@@ -1,0 +1,30 @@
+{
+	"csfConfig": {
+		"path:**/edit_site_navigation_menu.jsp": {
+			"js": {
+				"lint": {
+					"globals": {
+						"siteNavigationMenuEditorModule": true,
+						"siteNavigationMenuItemDOMHandlerModule": true
+					}
+				}
+			}
+		}
+	},
+	"dependencies": {
+		"metal-dom": "^2.0.0",
+		"metal-drag-drop": "~3.0.1",
+		"metal-position": "^2.1.0",
+		"metal-state": "^2.13.2"
+	},
+	"devDependencies": {
+		"liferay-npm-scripts": "1.2.0"
+	},
+	"name": "site-navigation-admin-web",
+	"scripts": {
+		"build": "liferay-npm-scripts build --bundler",
+		"csf": "liferay-npm-scripts lint",
+		"format": "liferay-npm-scripts format"
+	},
+	"version": "2.0.0"
+}

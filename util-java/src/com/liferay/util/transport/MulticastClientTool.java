@@ -52,6 +52,7 @@ public class MulticastClientTool {
 
 		Integer port = (Integer)argsMap.get("port");
 		String host = (String)argsMap.get("host");
+
 		Boolean gzipData = (Boolean)argsMap.get("gzip");
 		Boolean shortData = (Boolean)argsMap.get("short");
 
@@ -75,7 +76,7 @@ public class MulticastClientTool {
 	}
 
 	private Map<String, Object> _getArgsMap(String[] args) throws Exception {
-		Map<String, Object> argsMap = new HashMap<String, Object>();
+		Map<String, Object> argsMap = new HashMap<>();
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-g")) {
@@ -90,7 +91,7 @@ public class MulticastClientTool {
 				i++;
 			}
 			else if (args[i].equals("-p")) {
-				argsMap.put("port", new Integer(args[i + 1]));
+				argsMap.put("port", Integer.valueOf(args[i + 1]));
 
 				i++;
 			}

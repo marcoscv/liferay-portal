@@ -19,14 +19,15 @@ import com.liferay.portal.kernel.deploy.hot.HotDeployEvent;
 import com.liferay.portal.kernel.deploy.hot.HotDeployException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Theme;
+import com.liferay.portal.kernel.service.ThemeLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.FileTimestampUtil;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateResourceLoaderUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
-import com.liferay.portal.model.Theme;
-import com.liferay.portal.service.ThemeLocalServiceUtil;
-import com.liferay.portal.util.ClassLoaderUtil;
-import com.liferay.portal.util.WebKeys;
+import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
+import com.liferay.portal.kernel.util.StringBundler;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,10 +51,7 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 		}
 		catch (Throwable t) {
 			throwHotDeployException(
-				hotDeployEvent,
-				"Error registering themes for " +
-					hotDeployEvent.getServletContextName(),
-				t);
+				hotDeployEvent, "Error registering themes for ", t);
 		}
 	}
 
@@ -66,10 +64,7 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 		}
 		catch (Throwable t) {
 			throwHotDeployException(
-				hotDeployEvent,
-				"Error unregistering themes for " +
-					hotDeployEvent.getServletContextName(),
-				t);
+				hotDeployEvent, "Error unregistering themes for ", t);
 		}
 	}
 
@@ -84,7 +79,7 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 			_log.debug("Invoking deploy for " + servletContextName);
 		}
 
-		String[] xmls = new String[] {
+		String[] xmls = {
 			HttpUtil.URLtoString(
 				servletContext.getResource(
 					"/WEB-INF/liferay-look-and-feel.xml"))
@@ -94,8 +89,8 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 			return;
 		}
 
-		if (_log.isInfoEnabled()) {
-			_log.info("Registering themes for " + servletContextName);
+		if (_log.isDebugEnabled()) {
+			_log.debug("Registering themes for " + servletContextName);
 		}
 
 		FileTimestampUtil.reset();
@@ -116,8 +111,9 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 			}
 			else {
 				_log.info(
-					themes.size() + " themes for " + servletContextName +
-						" are available for use");
+					StringBundler.concat(
+						String.valueOf(themes.size()), " themes for ",
+						servletContextName, " are available for use"));
 			}
 		}
 	}
@@ -136,8 +132,8 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 		List<Theme> themes = _themes.remove(servletContextName);
 
 		if (themes != null) {
-			if (_log.isInfoEnabled()) {
-				_log.info("Unregistering themes for " + servletContextName);
+			if (_log.isDebugEnabled()) {
+				_log.debug("Unregistering themes for " + servletContextName);
 			}
 
 			try {
@@ -153,18 +149,21 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 
 		// LEP-2057
 
-		ClassLoader contextClassLoader =
-			ClassLoaderUtil.getContextClassLoader();
+		Thread currentThread = Thread.currentThread();
+
+		ClassLoader contextClassLoader = currentThread.getContextClassLoader();
 
 		try {
-			ClassLoaderUtil.setContextClassLoader(
-				ClassLoaderUtil.getPortalClassLoader());
+			currentThread.setContextClassLoader(
+				PortalClassLoaderUtil.getClassLoader());
 
+			TemplateResourceLoaderUtil.clearCache(
+				TemplateConstants.LANG_TYPE_FTL);
 			TemplateResourceLoaderUtil.clearCache(
 				TemplateConstants.LANG_TYPE_VM);
 		}
 		finally {
-			ClassLoaderUtil.setContextClassLoader(contextClassLoader);
+			currentThread.setContextClassLoader(contextClassLoader);
 		}
 
 		if (_log.isInfoEnabled()) {
@@ -174,16 +173,16 @@ public class ThemeHotDeployListener extends BaseHotDeployListener {
 			}
 			else {
 				_log.info(
-					themes.size() + " themes for " + servletContextName +
-						" were unregistered");
+					StringBundler.concat(
+						String.valueOf(themes.size()), " themes for ",
+						servletContextName, " were unregistered"));
 			}
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ThemeHotDeployListener.class);
 
-	private static Map<String, List<Theme>> _themes =
-		new HashMap<String, List<Theme>>();
+	private static final Map<String, List<Theme>> _themes = new HashMap<>();
 
 }

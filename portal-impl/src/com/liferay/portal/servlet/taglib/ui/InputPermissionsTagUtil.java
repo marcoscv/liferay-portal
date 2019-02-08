@@ -16,8 +16,8 @@ package com.liferay.portal.servlet.taglib.ui;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.servlet.PortalIncludeUtil;
-import com.liferay.portal.security.permission.ResourceActionsUtil;
+import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
+import com.liferay.taglib.util.PortalIncludeUtil;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ import javax.servlet.jsp.PageContext;
 
 /**
  * @author     Brian Chan
- * @deprecated As of 6.2.0, replaced by {@link
+ * @deprecated As of Newton (6.2.x), replaced by {@link
  *             com.liferay.taglib.ui.InputPermissionsTag}
  */
 @Deprecated
@@ -59,11 +59,6 @@ public class InputPermissionsTagUtil {
 						modelName);
 
 				request.setAttribute(
-					"liferay-ui:input-permissions:modelName", modelName);
-				request.setAttribute(
-					"liferay-ui:input-permissions:supportedActions",
-					supportedActions);
-				request.setAttribute(
 					"liferay-ui:input-permissions:groupDefaultActions",
 					groupDefaultActions);
 				request.setAttribute(
@@ -72,6 +67,11 @@ public class InputPermissionsTagUtil {
 				request.setAttribute(
 					"liferay-ui:input-permissions:guestUnsupportedActions",
 					guestUnsupportedActions);
+				request.setAttribute(
+					"liferay-ui:input-permissions:modelName", modelName);
+				request.setAttribute(
+					"liferay-ui:input-permissions:supportedActions",
+					supportedActions);
 			}
 
 			PortalIncludeUtil.include(pageContext, page);
@@ -83,7 +83,7 @@ public class InputPermissionsTagUtil {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		InputPermissionsTagUtil.class);
 
 }

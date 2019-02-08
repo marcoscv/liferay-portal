@@ -39,10 +39,7 @@ public class ThemeLoaderHotDeployListener extends BaseHotDeployListener {
 		}
 		catch (Throwable t) {
 			throwHotDeployException(
-				hotDeployEvent,
-				"Error registering theme loader for " +
-					hotDeployEvent.getServletContextName(),
-				t);
+				hotDeployEvent, "Error registering theme loader for ", t);
 		}
 	}
 
@@ -55,10 +52,7 @@ public class ThemeLoaderHotDeployListener extends BaseHotDeployListener {
 		}
 		catch (Throwable t) {
 			throwHotDeployException(
-				hotDeployEvent,
-				"Error unregistering theme loader for " +
-					hotDeployEvent.getServletContextName(),
-				t);
+				hotDeployEvent, "Error unregistering theme loader for ", t);
 		}
 	}
 
@@ -73,7 +67,7 @@ public class ThemeLoaderHotDeployListener extends BaseHotDeployListener {
 			_log.debug("Invoking deploy for " + servletContextName);
 		}
 
-		String[] xmls = new String[] {
+		String[] xmls = {
 			HttpUtil.URLtoString(
 				servletContext.getResource("/WEB-INF/liferay-theme-loader.xml"))
 		};
@@ -82,8 +76,8 @@ public class ThemeLoaderHotDeployListener extends BaseHotDeployListener {
 			return;
 		}
 
-		if (_log.isInfoEnabled()) {
-			_log.info("Registering theme loader for " + servletContextName);
+		if (_log.isDebugEnabled()) {
+			_log.debug("Registering theme loader for " + servletContextName);
 		}
 
 		ThemeLoaderFactory.init(servletContextName, servletContext, xmls);
@@ -106,8 +100,8 @@ public class ThemeLoaderHotDeployListener extends BaseHotDeployListener {
 			return;
 		}
 
-		if (_log.isInfoEnabled()) {
-			_log.info("Unregistering theme loader for " + servletContextName);
+		if (_log.isDebugEnabled()) {
+			_log.debug("Unregistering theme loader for " + servletContextName);
 		}
 
 		ServletContextPool.remove(servletContextName);
@@ -119,7 +113,7 @@ public class ThemeLoaderHotDeployListener extends BaseHotDeployListener {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ThemeLoaderHotDeployListener.class);
 
 }

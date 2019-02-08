@@ -58,9 +58,8 @@ public class QNameImpl implements QName {
 		if (namespace == null) {
 			return null;
 		}
-		else {
-			return new NamespaceImpl(namespace);
-		}
+
+		return new NamespaceImpl(namespace);
 	}
 
 	@Override
@@ -92,6 +91,6 @@ public class QNameImpl implements QName {
 		return _qName.toString();
 	}
 
-	private org.dom4j.QName _qName;
+	private final org.dom4j.QName _qName;
 
 }

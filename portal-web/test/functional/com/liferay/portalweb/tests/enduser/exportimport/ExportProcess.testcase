@@ -1,0 +1,64 @@
+@component-name = "portal-staging"
+definition {
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Export/Import Framework";
+
+	setUp {
+		TestCase.setUpPortalInstance();
+
+		User.firstLoginPG();
+	}
+
+	tearDown {
+		var testPortalInstance = PropsUtil.get("test.portal.instance");
+
+		if ("${testPortalInstance}" == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			Site.tearDownCP();
+		}
+	}
+
+	@priority = "4"
+	test DeleteCustomExportProcess {
+		Navigator.openURL();
+
+		LAR.exportSiteCP(larFileName = "CustomExport");
+
+		LexiconEntry.gotoEntryMenuItem(menuItem = "Clear", rowEntry = "CustomExport");
+	}
+
+	@priority = "4"
+	test DeletePortletExportProcess {
+		Navigator.openURL();
+
+		ProductMenu.gotoPortlet(
+			category = "Content",
+			panel = "Site Administration",
+			portlet = "Documents and Media"
+		);
+
+		LAR.configureExportSiteCP(larFileName = "DMExport");
+
+		LAR.exportSuccess();
+
+		LexiconEntry.gotoEntryMenuItem(menuItem = "Clear", rowEntry = "DMExport");
+	}
+
+	@priority = "3"
+	test ViewExportProcess {
+		Navigator.openURL();
+
+		LAR.exportSiteCP(larFileName = "CustomExport");
+
+		Refresh();
+
+		LexiconEntry.changeExportDisplayStyle(displayStyle = "table");
+
+		ManagementBar.setFilterAndOrder(filterBy = "Completed");
+
+		ManagementBar.toggleViewOrder(order = "Descending");
+	}
+}

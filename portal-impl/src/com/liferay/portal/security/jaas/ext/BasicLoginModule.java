@@ -14,14 +14,14 @@
 
 package com.liferay.portal.security.jaas.ext;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.security.jaas.PortalPrincipal;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.model.Company;
+import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.security.jaas.JAASHelper;
-import com.liferay.portal.service.CompanyLocalServiceUtil;
-import com.liferay.portal.service.UserLocalServiceUtil;
 
 import java.io.IOException;
 
@@ -51,7 +51,6 @@ public class BasicLoginModule implements LoginModule {
 	}
 
 	@Override
-	@SuppressWarnings("unused")
 	public boolean commit() throws LoginException {
 		Principal principal = getPrincipal();
 
@@ -64,9 +63,8 @@ public class BasicLoginModule implements LoginModule {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	@Override
@@ -97,9 +95,8 @@ public class BasicLoginModule implements LoginModule {
 
 			return true;
 		}
-		else {
-			throw new LoginException();
-		}
+
+		throw new LoginException();
 	}
 
 	@Override
@@ -165,7 +162,6 @@ public class BasicLoginModule implements LoginModule {
 		return _password;
 	}
 
-	@SuppressWarnings("unused")
 	protected Principal getPortalPrincipal(String name) throws LoginException {
 		return new PortalPrincipal(name);
 	}
@@ -186,7 +182,8 @@ public class BasicLoginModule implements LoginModule {
 		_principal = principal;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(BasicLoginModule.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		BasicLoginModule.class);
 
 	private CallbackHandler _callbackHandler;
 	private String _password;

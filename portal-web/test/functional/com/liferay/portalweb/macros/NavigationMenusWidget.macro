@@ -1,0 +1,41 @@
+definition {
+	macro chooseMenu {
+		Click(locator1 = "Radio#CHOOSE_MENU");
+
+		Click(locator1 = "Button#SELECT");
+
+		SelectFrame(value1 = "relative=top");
+
+		SelectFrame(locator1 = "IFrame#DIALOG");
+
+		Click(
+			locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_NAME",
+			key_rowEntry = "${menuName}"
+		);
+
+		SelectFrame(value1 = "relative=top");
+
+		SelectFrame(locator1 = "IFrame#DIALOG");
+
+		AssertTextEquals(
+			locator1 = "NavigationMenusWidget#CHOOSE_MENU_SELECTED_MENU_NAME",
+			value1 = "${menuName}"
+		);
+	}
+
+	macro gotoNavigationMenuWidgetConfig {
+		Portlet.gotoPortletOptions(
+			portletName = "Navigation Menu",
+			portletOption = "Configuration"
+		);
+
+		IFrame.selectModalFrame();
+	}
+
+	macro selectNavigation {
+		Select(
+			locator1 = "NavigationMenusWidget#SELECT_NAVIGATION",
+			value1 = "${menuType}"
+		);
+	}
+}

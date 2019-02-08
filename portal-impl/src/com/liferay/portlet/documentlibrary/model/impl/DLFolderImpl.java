@@ -14,18 +14,20 @@
 
 package com.liferay.portlet.documentlibrary.model.impl;
 
+import com.liferay.document.library.kernel.exception.NoSuchFolderException;
+import com.liferay.document.library.kernel.model.DLFolder;
+import com.liferay.document.library.kernel.model.DLFolderConstants;
+import com.liferay.document.library.kernel.service.DLFolderLocalServiceUtil;
+import com.liferay.document.library.kernel.service.DLFolderServiceUtil;
+import com.liferay.exportimport.kernel.lar.StagedModelType;
+import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.lar.StagedModelType;
-import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Repository;
+import com.liferay.portal.kernel.service.RepositoryLocalServiceUtil;
 import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.model.Repository;
-import com.liferay.portal.service.RepositoryLocalServiceUtil;
-import com.liferay.portlet.documentlibrary.NoSuchFolderException;
-import com.liferay.portlet.documentlibrary.model.DLFolder;
-import com.liferay.portlet.documentlibrary.model.DLFolderConstants;
-import com.liferay.portlet.documentlibrary.service.DLFolderLocalServiceUtil;
-import com.liferay.portlet.documentlibrary.service.DLFolderServiceUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,12 +37,9 @@ import java.util.List;
  */
 public class DLFolderImpl extends DLFolderBaseImpl {
 
-	public DLFolderImpl() {
-	}
-
 	@Override
 	public List<Long> getAncestorFolderIds() throws PortalException {
-		List<Long> ancestorFolderIds = new ArrayList<Long>();
+		List<Long> ancestorFolderIds = new ArrayList<>();
 
 		DLFolder folder = this;
 
@@ -64,7 +63,7 @@ public class DLFolderImpl extends DLFolderBaseImpl {
 
 	@Override
 	public List<DLFolder> getAncestors() throws PortalException {
-		List<DLFolder> ancestors = new ArrayList<DLFolder>();
+		List<DLFolder> ancestors = new ArrayList<>();
 
 		DLFolder folder = this;
 
@@ -129,13 +128,7 @@ public class DLFolderImpl extends DLFolderBaseImpl {
 
 	@Override
 	public boolean hasInheritableLock() {
-		try {
-			return DLFolderServiceUtil.hasInheritableLock(getFolderId());
-		}
-		catch (Exception e) {
-		}
-
-		return false;
+		return DLFolderLocalServiceUtil.hasInheritableLock(getFolderId());
 	}
 
 	@Override
@@ -152,8 +145,14 @@ public class DLFolderImpl extends DLFolderBaseImpl {
 	@Override
 	public boolean isInHiddenFolder() {
 		try {
+			long repositoryId = getRepositoryId();
+
+			if (getGroupId() == repositoryId) {
+				return false;
+			}
+
 			Repository repository = RepositoryLocalServiceUtil.getRepository(
-				getRepositoryId());
+				repositoryId);
 
 			long dlFolderId = repository.getDlFolderId();
 
@@ -161,7 +160,10 @@ public class DLFolderImpl extends DLFolderBaseImpl {
 
 			return dlFolder.isHidden();
 		}
-		catch (Exception e) {
+		catch (PortalException pe) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(pe, pe);
+			}
 		}
 
 		return false;
@@ -169,13 +171,7 @@ public class DLFolderImpl extends DLFolderBaseImpl {
 
 	@Override
 	public boolean isLocked() {
-		try {
-			return DLFolderServiceUtil.isFolderLocked(getFolderId());
-		}
-		catch (Exception e) {
-		}
-
-		return false;
+		return DLFolderServiceUtil.isFolderLocked(getFolderId());
 	}
 
 	@Override
@@ -186,5 +182,7 @@ public class DLFolderImpl extends DLFolderBaseImpl {
 
 		return false;
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(DLFolderImpl.class);
 
 }

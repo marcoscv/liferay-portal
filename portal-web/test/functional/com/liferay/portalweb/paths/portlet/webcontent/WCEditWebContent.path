@@ -1,0 +1,121 @@
+<html>
+<head>
+<title>WCEditWebContent</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">WCEditWebContent</td></tr>
+</thead>
+<tbody>
+<tr>
+	<td>ARTICLE_ID</td>
+	<td>//span[@class='workflow-id']/span[@class='workflow-value']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>WEB_CONTENT_ID</td>
+	<td>//input[contains(@id,'JournalPortlet_newArticleId')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>VERSION</td>
+	<td>//span[@class='workflow-version']/span[@class='workflow-value']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SELECTED_IMAGE</td>
+	<td>//input[contains(@id,'JournalPortlet_Image')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SELECTED_STRUCTURE</td>
+	<td>//div[contains(@class,'article-structure')]//a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SELECT_STRUCTURE</td>
+	<td>//button[contains(.,'Select')]/span</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SELECTED_TEMPLATE</td>
+	<td>//span[contains(@id,'templateNameLabel')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>EDIT_TEMPLATE</td>
+	<td>//a[contains(@id,'editDDMTemplate')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SELECT_TEMPLATE</td>
+	<td>//button[contains(@id,'selectDDMTemplate')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>USE_SMALL_IMAGE_CHECKBOX</td>
+	<td>//input[@type='checkbox' and contains(@id,'useSmallImage')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SMALL_IMAGE_URL</td>
+	<td>//input[@type='radio'and contains(@id,'smallImageType_1')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SMALL_IMAGE_URL_INPUT</td>
+	<td>//div[contains(@class,'input-String-wrapper')]/input[contains(@id,'URL')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>USER_SEGMENT_DETAIL_TITLE</td>
+	<td>//label[contains(.,'${key_userSegmentDetailTitle}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>AUDIO_BUTTON</td>
+	<td>//a[contains(@title,'Audio')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>VIDEO_BUTTON</td>
+	<td>//a[@title='Video']</td>
+	<td></td>
+</tr>
+<tr>
+	<td></td>
+	<td></td>
+	<td></td>
+</tr>
+<!--VIEW_HISTORY-->
+<tr>
+	<td>VIEW_HISTORY_VERSION_CHECKBOX</td>
+	<td>//tr[contains(.,'${key_webContentTitle}')]/td//input</td>
+	<td></td>
+</tr>
+<tr>
+	<td>VIEW_HISTORY_VERSION_TITLE</td>
+	<td>//tr[contains(.,'${key_webContentTitle}')]/td[3]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>VIEW_HISTORY_VERSION_STATUS</td>
+	<td>//tr[contains(.,'${key_webContentTitle}')]/td[5]</td>
+	<td></td>
+</tr>
+<tr>
+	<td></td>
+	<td></td>
+	<td></td>
+</tr>
+<!--DISPLAY_PAGE-->
+<tr>
+	<td>DISPLAY_PAGE_SELECTION</td>
+	<td>//span[contains(@id,'displayPageNameInput')]</td>
+	<td></td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

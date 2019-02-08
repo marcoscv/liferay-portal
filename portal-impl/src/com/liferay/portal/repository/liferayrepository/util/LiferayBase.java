@@ -14,19 +14,21 @@
 
 package com.liferay.portal.repository.liferayrepository.util;
 
+import com.liferay.document.library.kernel.model.DLFileEntry;
+import com.liferay.document.library.kernel.model.DLFileVersion;
+import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.repository.model.Folder;
-import com.liferay.portlet.documentlibrary.model.DLFileEntry;
-import com.liferay.portlet.documentlibrary.model.DLFileVersion;
-import com.liferay.portlet.documentlibrary.model.DLFolder;
+import com.liferay.portal.kernel.repository.model.RepositoryEntry;
 import com.liferay.portlet.documentlibrary.util.RepositoryModelUtil;
 
 import java.util.List;
 
 /**
  * @author     Alexander Chow
- * @deprecated As of 7.0.0, replaced by {@link RepositoryModelUtil}
+ * @deprecated As of Wilberforce (7.0.x), replaced by {@link
+ *             RepositoryModelUtil}
  */
 @Deprecated
 public abstract class LiferayBase {
@@ -35,10 +37,10 @@ public abstract class LiferayBase {
 		return RepositoryModelUtil.toFileEntries(dlFileEntries);
 	}
 
-	public List<Object> toFileEntriesAndFolders(
+	public List<RepositoryEntry> toFileEntriesAndFolders(
 		List<Object> dlFileEntriesAndDLFolders) {
 
-		return RepositoryModelUtil.toFileEntriesAndFolders(
+		return RepositoryModelUtil.toRepositoryEntries(
 			dlFileEntriesAndDLFolders);
 	}
 

@@ -1,0 +1,845 @@
+definition {
+	var rowNumber = "1";
+
+	macro addRepeatableField {
+		Click(
+			locator1 = "FormFields#FIELD_ADD_SPECIFIC",
+			key_fieldName = "${fieldName}",
+			key_repeatableFieldNumber = "${repeatableFieldNumber}"
+		);
+	}
+
+	macro changeFieldType {
+		Click(locator1 = "FormFields#CHANGE_FIELD_TYPE_BUTTON");
+
+		MenuItem.click(menuItem = "${selectOption}");
+	}
+
+	macro deleteGridOptionsRow {
+		Click(
+			locator1 = "FormFields#GRID_OPTIONS_OPTION_DELETE_ROW_BUTTON",
+			key_gridField = "${gridField}",
+			key_rowNumber = "${rowNumber}"
+		);
+	}
+
+	macro deleteOptionsRow {
+		var key_rowNumber = "${rowNumber}";
+
+		Click(locator1 = "FormFields#OPTIONS_DELETE_ROW_BUTTON");
+	}
+
+	macro disableCheckbox {
+		if (IsChecked(locator1 = "FormFields#CHECKBOX", key_fieldName = "${fieldName}")) {
+			Click(locator1 = "FormFields#CHECKBOX_LABEL", key_fieldName = "${fieldName}");
+		}
+
+		FormFields.viewCheckboxNotChecked(fieldName = "${fieldName}");
+	}
+
+	macro disableSwitcher {
+		Click(locator1 = "FormFields#SWITCHER", key_fieldName = "${fieldName}");
+
+		FormFields.viewCheckboxNotChecked(fieldName = "${fieldName}");
+	}
+
+	macro duplicateField {
+		Click(locator1 = "Form#SIDEBAR_ELLIPSIS");
+
+		AssertClick(
+			locator1 = "Form#SIDEBAR_MENUITEM_DUPLICATE_FIELD",
+			value1 = "Duplicate Field"
+		);
+	}
+
+	macro editBlankMultiTextFieldWithEnterKey {
+		KeyPress(
+			locator1 = "FormFields#TEXT_MULTILINE_FIELD",
+			value1 = "\RETURN",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro editCaptchaTextVerification {
+		Type(
+			locator1 = "FormFields#CAPTCHA_TEXT_VERIFICATION",
+			value1 = "${fieldValue}"
+		);
+	}
+
+	macro editDate {
+		Type(
+			locator1 = "FormFields#DATE_FIELD",
+			value1 = "${fieldValue}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro editFieldName {
+		var key_fieldValue = "${fieldValue}";
+
+		Type.clickAtType(
+			locator1 = "FormFields#FIELD_NAME_EDIT",
+			value1 = "${fieldValue}"
+		);
+	}
+
+	macro editGridOptions {
+		var key_gridField = "${gridField}";
+		var key_rowNumber = "${rowNumber}";
+
+		Type(
+			locator1 = "FormFields#GRID_OPTIONS_OPTION_VALUE_FIELD",
+			value1 = "${optionValue}"
+		);
+
+		AssertElementPresent(locator1 = "FormFields#GRID_OPTIONS_OPTION_NAME_FIELD");
+	}
+
+	macro editHelpText {
+		Type(
+			locator1 = "FormFields#TEXT_FIELD",
+			value1 = "${fieldHelpText}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro editOptionsRow {
+		var key_rowNumber = "${rowNumber}";
+
+		Type(
+			locator1 = "FormFields#OPTIONS_OPTION_VALUE_FIELD",
+			value1 = "${optionValue}"
+		);
+
+		AssertElementPresent(locator1 = "FormFields#OPTIONS_OPTION_NAME_FIELD");
+	}
+
+	macro editOptionsRowNameField {
+		var key_rowNumber = "${rowNumber}";
+
+		Type.clickAtType(
+			locator1 = "FormFields#OPTIONS_OPTION_NAME_FIELD_EDIT",
+			value1 = "${optionValue}"
+		);
+	}
+
+	macro editParagraphBody {
+		Type.clickAtType(
+			locator1 = "FormFields#PARAGRAPH_BODY_TEXT_FIELD",
+			value1 = "${fieldValue}"
+		);
+	}
+
+	macro editPassword {
+		var key_fieldName = "${fieldName}";
+
+		Type(locator1 = "FormFields#PASSWORD_FIELD", value1 = "${fieldValue}");
+	}
+
+	macro editRepeatableTextMultiline {
+		Type(
+			locator1 = "FormFields#REPEATABLE_TEXT_MULTILINE_FIELD",
+			value1 = "${fieldValue}",
+			key_fieldName = "${fieldName}",
+			key_repeatableFieldNumber = "${repeatableFieldNumber}"
+		);
+	}
+
+	macro editRepeatingText {
+		var key_fieldName = "${fieldName}";
+
+		Type(locator1 = "FormFields#TEXT_FIELD", value1 = "${fieldValue}");
+
+		AssertElementPresent(locator1 = "FormFields#TEXT_FIELD_2");
+
+		Type(locator1 = "FormFields#TEXT_FIELD_2", value1 = "${fieldValueRepeat}");
+	}
+
+	macro editText {
+		Type(
+			locator1 = "FormFields#TEXT_FIELD",
+			value1 = "${fieldValue}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro editTextAlt {
+		Type(
+			locator1 = "FormFields#TEXT_FIELD_ALT",
+			value1 = "${fieldValue}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro editTextMultiline {
+		Type(
+			locator1 = "FormFields#TEXT_MULTILINE_FIELD",
+			value1 = "${fieldValue}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro editTextWithBackspace {
+		var key_fieldName = "${fieldName}";
+
+		DoubleClick(locator1 = "FormFields#TEXT_FIELD");
+
+		KeyPress(locator1 = "FormFields#TEXT_FIELD", value1 = "\BACK_SPACE");
+	}
+
+	macro editValidation {
+		Click(locator1 = "FormFields#VALIDATION_ARGUMENT");
+
+		AssertClick(
+			locator1 = "FormFields#VALIDATION_ARGUMENT_OPTION",
+			value1 = "${validationArgument}",
+			key_validationArgument = "${validationArgument}"
+		);
+
+		Type(locator1 = "FormFields#VALIDATION_INPUT", value1 = "${validationInput}");
+
+		Type(
+			locator1 = "FormFields#VALIDATION_ERROR_MESSAGE",
+			value1 = "${validationErrorMessage}"
+		);
+	}
+
+	macro enableCheckbox {
+		if (IsNotChecked.isNotCheckedNotVisible(locator1 = "FormFields#CHECKBOX", key_fieldName = "${fieldName}")) {
+			Click(locator1 = "FormFields#CHECKBOX_LABEL", key_fieldName = "${fieldName}");
+		}
+
+		FormFields.viewCheckboxChecked(fieldName = "${fieldName}");
+	}
+
+	macro enableSwitcher {
+		Click(locator1 = "FormFields#SWITCHER", key_fieldName = "${fieldName}");
+
+		FormFields.viewSwitcherChecked(fieldName = "${fieldName}");
+	}
+
+	macro getFieldName {
+		Pause(locator1 = "3000");
+
+		var fieldName = selenium.getElementValue("FormFields#FIELD_NAME_EDIT");
+
+		return "${fieldName}";
+	}
+
+	macro moveGridOptionsRow {
+		DragAndDrop(
+			locator1 = "FormFields#GRID_OPTIONS_DRAG_ICON_1",
+			locator2 = "FormFields#GRID_OPTIONS_DRAG_ICON_2",
+			value1 = "",
+			key_gridField = "${gridField}",
+			key_rowNumber1 = "${rowNumberStart}",
+			key_rowNumber2 = "${rowNumberEnd}"
+		);
+	}
+
+	macro moveOptionsRow {
+		var key_rowNumber1 = "${rowNumberStart}";
+		var key_rowNumber2 = "${rowNumberEnd}";
+
+		Click(locator1 = "FormFields#OPTIONS_DRAG_ICON_1");
+
+		DragAndDrop.dragAndDropToObject(
+			locator1 = "FormFields#OPTIONS_DRAG_ICON_1",
+			locator2 = "FormFields#OPTIONS_DRAG_ICON_2",
+			value1 = ""
+		);
+	}
+
+	macro removeSelectOption {
+		var key_fieldName = "${fieldName}";
+		var key_selectOption = "${selectOption}";
+
+		MouseOver(locator1 = "FormFields#SELECT_FIELD_MULTIPLE_OPTION");
+
+		Click(locator1 = "FormFields#SELECT_FIELD_MULTIPLE_OPTION_REMOVE");
+
+		AssertNotVisible(
+			locator1 = "FormFields#SELECT_FIELD_MULTIPLE_OPTION",
+			value1 = "${selectOption}"
+		);
+	}
+
+	macro removeSelectOptionViaDropdown {
+		Click(locator1 = "FormFields#SELECT_FIELD", key_fieldName = "${fieldName}");
+
+		FormFields.disableCheckbox(fieldName = "${selectOption}");
+
+		Click(locator1 = "FormFields#SELECT_FIELD", key_fieldName = "${fieldName}");
+
+		AssertNotVisible(
+			locator1 = "FormFields#SELECT_FIELD_MULTIPLE_OPTION",
+			value1 = "${selectOption}",
+			key_fieldName = "${fieldName}",
+			key_selectOption = "${selectOption}"
+		);
+	}
+
+	macro selectAutoCompleteOption {
+		var key_autocompleteOption = "${autocompleteOption}";
+
+		Click(locator1 = "FormFields#AUTOCOMPLETE_OPTION");
+	}
+
+	macro selectCheckboxOption {
+		Click(
+			locator1 = "FormFields#CHECKBOX_OPTION_LABEL",
+			key_checkboxOption = "${checkboxOption}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro selectDataProviderOutputType {
+		ScrollWebElementIntoView(locator1 = "Button#SAVE");
+
+		Click(locator1 = "Form#DATA_PROVIDER_OUTPUT_PARAMETER_TYPE_FIELD");
+
+		var key_outputParameterType = "${outputParameterType}";
+
+		AssertClick(
+			locator1 = "Form#DATA_PROVIDER_OUTPUT_PARAMETER_TYPE_FIELD_OPTIONS_LIST",
+			value1 = "${outputParameterType}"
+		);
+	}
+
+	macro selectDataProviderPermission {
+		if (IsElementNotPresent(locator1 = "Form#DATA_PROVIDER_PERMISSIONS_VIEWABLE_BY_SELECT")) {
+			Click(locator1 = "Form#DATA_PROVIDER_PERMISSIONS_PARAMETER_PANEL");
+
+			AssertElementPresent(
+				locator1 = "Form#DATA_PROVIDER_PERMISSIONS_VIEWABLE_BY_SELECT"
+			);
+		}
+
+		Select(
+			locator1 = "Form#DATA_PROVIDER_PERMISSIONS_VIEWABLE_BY_SELECT",
+			value1 = "${selectOption}"
+		);
+	}
+
+	macro selectGridRadioOption {
+		var key_categoryColumnName = "${categoryColumnName}";
+		var key_optionRowName = "${optionRowName}";
+
+		Click(locator1 = "FormFields#GRID_RADIO_OPTIONS");
+	}
+
+	macro selectRadioOption {
+		Click(
+			locator1 = "FormFields#RADIO_OPTION_LABEL",
+			key_fieldName = "${fieldName}",
+			key_radioOption = "${radioOption}"
+		);
+	}
+
+	macro selectSelectOption {
+		var key_fieldName = "${fieldName}";
+		var key_selectOption = "${selectOption}";
+
+		Click(locator1 = "FormFields#SELECT_FIELD", value1 = "${selectOption}");
+
+		if (("${fieldName}" == "ddmDataProviderInstanceId") || ("${fieldName}" == "ddmDataProviderInstanceOutput")) {
+			AssertClick(
+				locator1 = "FormFields#SELECT_FIELD_DATA_PROVIDER_LIST",
+				value1 = "${selectOption}"
+			);
+		}
+		else {
+			AssertClick(
+				locator1 = "FormFields#SELECT_FIELD_OPTIONS_LIST",
+				value1 = "${selectOption}"
+			);
+		}
+	}
+
+	macro selectSelectWithMultipleOptions {
+		var key_fieldName = "${fieldName}";
+
+		Click(locator1 = "FormFields#SELECT_FIELD");
+
+		for (var selectOption : list "${selectOptionsList}") {
+			FormFields.enableCheckbox(fieldName = "${selectOption}");
+		}
+
+		FormFields.viewSelectMultipleOptions(
+			fieldName = "Select",
+			selectOptionsList = "${selectOptionsList}"
+		);
+
+		Click(locator1 = "FormFields#SELECT_FIELD");
+	}
+
+	macro selectSwitcherOption {
+		var key_fieldName = "${fieldName}";
+		var key_switcherOption = "${switcherOption}";
+		var key_switcherOption = StringUtil.replace("${switcherOption}", " ", "");
+
+		Click(locator1 = "FormFields#SWITCHER_OPTION");
+	}
+
+	macro selectTextFieldLineOption {
+		FormFields.selectRadioOption(
+			fieldName = "displayStyle",
+			radioOption = "${textFieldLineOption}"
+		);
+	}
+
+	macro viewCaptchaField {
+		AssertElementPresent.assertVisible(locator1 = "FormFields#CAPTCHA_FIELD");
+
+		AssertElementPresent.assertVisible(
+			locator1 = "FormFields#CAPTCHA_FIELD_REFRESH"
+		);
+
+		AssertTextEquals.assertPartialText(
+			locator1 = "FormFields#CAPTCHA_LABEL",
+			value1 = "Text Verification"
+		);
+
+		AssertElementPresent.assertVisible(
+			locator1 = "FormFields#CAPTCHA_TEXT_VERIFICATION"
+		);
+	}
+
+	macro viewCheckboxChecked {
+		AssertChecked.assertCheckedNotVisible(
+			locator1 = "FormFields#CHECKBOX",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewCheckboxLabel {
+		AssertTextEquals.assertText(
+			locator1 = "FormFields#CHECKBOX_LABEL",
+			value1 = "${fieldLabel}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewCheckboxNotChecked {
+		AssertNotChecked.assertNotCheckedNotVisible(
+			locator1 = "FormFields#CHECKBOX",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewDateField {
+		FormFields.viewDateLabel(
+			fieldLabel = "${fieldLabel}",
+			fieldName = "${fieldName}"
+		);
+
+		AssertElementPresent.assertVisible(
+			locator1 = "FormFields#DATE_FIELD",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewDateFieldNotPresent {
+		var key_fieldLabel = "${fieldLabel}";
+		var key_fieldName = "${fieldName}";
+
+		if (IsElementPresent(locator1 = "FormFields#DATE_FIELD")) {
+			AssertNotVisible(locator1 = "FormFields#LABEL");
+
+			AssertNotVisible(locator1 = "FormFields#DATE_FIELD");
+		}
+		else {
+			AssertElementNotPresent(locator1 = "FormFields#LABEL");
+
+			AssertElementNotPresent(locator1 = "FormFields#DATE_FIELD");
+		}
+	}
+
+	macro viewDateLabel {
+		AssertTextEquals.assertText(
+			locator1 = "FormFields#LABEL",
+			value1 = "${fieldLabel}",
+			key_fieldLabel = "${fieldLabel}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewDateValue {
+		AssertTextEquals(
+			locator1 = "FormFields#DATE_FIELD",
+			value1 = "${fieldValue}",
+			key_fieldLabel = "${fieldLabel}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewDeletedSelectOptionsRowFieldValue {
+		var key_rowNumber = "${rowNumber}";
+
+		AssertTextNotPresent(
+			locator1 = "FormFields#SELECT_OPTIONS_OPTION_VALUE_FIELD_VISIBLE",
+			value1 = "${fieldValue}"
+		);
+	}
+
+	macro viewFieldHelpText {
+		AssertTextEquals(
+			locator1 = "FormFields#HELP_TEXT",
+			value1 = "${fieldHelpText}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewFieldLabel {
+		var key_fieldName = "${fieldName}";
+
+		AssertTextEquals(locator1 = "FormFields#TEXT_FIELD", value1 = "${fieldValue}");
+	}
+
+	macro viewFieldName {
+		AssertTextEquals(
+			locator1 = "FormFields#FIELD_NAME_EDIT",
+			value1 = "${fieldName}"
+		);
+	}
+
+	macro viewFieldValidationErrorMessage {
+		var key_fieldName = "${fieldName}";
+
+		if (IsElementNotPresent(locator1 = "Message#ERROR_SPECIFIC_FORM_FIELD_REQUIRED")) {
+			Click(locator1 = "FormPortlet#FORM_CONTAINER");
+		}
+
+		AssertTextEquals(
+			locator1 = "Message#ERROR_SPECIFIC_FORM_FIELD_REQUIRED",
+			value1 = "${fieldValidationErrorMessage}"
+		);
+	}
+
+	macro viewGridOptionNotPresent {
+		FormFields.viewGridOptionsFieldValue(
+			fieldValue = "",
+			key_gridField = "${gridField}",
+			key_rowNumber = "${rowNumber}"
+		);
+	}
+
+	macro viewGridOptionsFieldValue {
+		AssertTextEquals(
+			locator1 = "FormFields#GRID_OPTIONS_OPTION_VALUE_FIELD",
+			value1 = "${fieldValue}",
+			key_gridField = "${gridField}",
+			key_rowNumber = "${rowNumber}"
+		);
+	}
+
+	macro viewMultilineTextValue {
+		AssertTextEquals(
+			locator1 = "FormFields#TEXT_MULTILINE_FIELD",
+			value1 = "${fieldValue}",
+			key_fieldName = "${fieldName}",
+			key_fieldValue = "${fieldValue}"
+		);
+	}
+
+	macro viewOptionsRowFieldName {
+		AssertTextEquals(
+			locator1 = "FormFields#OPTIONS_OPTION_NAME_FIELD_EDIT",
+			value1 = "${fieldName}",
+			key_rowNumber = "${rowNumber}"
+		);
+	}
+
+	macro viewOptionsRowFieldValue {
+		var key_rowNumber = "${rowNumber}";
+
+		if (IsVisible(locator1 = "FormFields#OPTIONS_OPTION_VALUE_FIELD")) {
+			AssertTextEquals(
+				locator1 = "FormFields#OPTIONS_OPTION_VALUE_FIELD",
+				value1 = "${fieldValue}"
+			);
+		}
+		else {
+			AssertTextEquals(
+				locator1 = "FormFields#OPTIONS_OPTION_VALUE_FIELD_VISIBLE",
+				value1 = "${fieldValue}"
+			);
+		}
+	}
+
+	macro viewParagraphField {
+		if (!(isSet(fieldName))) {
+			var key_fieldName = "${fieldTitle}";
+			var key_fieldName = StringUtil.replace("${fieldTitle}", " ", "");
+		}
+		else {
+			var key_fieldName = "${fieldName}";
+		}
+
+		if ("${fieldTitle}" == "") {
+			AssertElementNotPresent(locator1 = "FormFields#PARAGRAPH_TITLE");
+		}
+		else {
+			AssertTextEquals(
+				locator1 = "FormFields#PARAGRAPH_TITLE",
+				value1 = "${fieldTitle}"
+			);
+		}
+
+		AssertTextEquals(
+			locator1 = "FormFields#PARAGRAPH_BODY_TEXT_CONTENT",
+			value1 = "${fieldValue}"
+		);
+	}
+
+	macro viewRadioLabel {
+		AssertTextEquals.assertText(
+			locator1 = "Form#FIELD_LABEL",
+			value1 = "${fieldLabel}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewRadioValue {
+		var fieldValue = StringUtil.replace("${fieldValue}", " ", "");
+		var key_fieldName = "${fieldName}";
+		var key_radioOption = "${fieldValue}";
+
+		AssertElementPresent(locator1 = "FormFields#RADIO_OPTION_CHECKED");
+	}
+
+	macro viewRepeatableFieldHelpText {
+		AssertTextEquals(
+			locator1 = "FormFields#REPEATABLE_HELP_TEXT",
+			value1 = "${fieldHelpText}",
+			key_fieldName = "${fieldName}",
+			key_repeatableFieldNumber = "${repeatableFieldNumber}"
+		);
+	}
+
+	macro viewRepeatableTextFieldLabel {
+		var key_fieldLabel = "${fieldLabel}";
+		var key_fieldName = "${fieldName}";
+
+		AssertTextEquals.assertText(
+			locator1 = "FormFields#LABEL",
+			value1 = "${fieldLabel}"
+		);
+
+		AssertTextEquals.assertText(
+			locator1 = "FormFields#TEXT_LABEL_2",
+			value1 = "${fieldLabel}"
+		);
+	}
+
+	macro viewRepeatableTextMultilineField {
+		FormFields.viewRepeatableTextMultilineLabel(
+			fieldLabel = "${fieldLabel}",
+			fieldName = "${fieldName}",
+			repeatableFieldNumber = "${repeatableFieldNumber}"
+		);
+
+		if (isSet(fieldHelpText)) {
+			FormFields.viewRepeatableFieldHelpText(
+				fieldHelpText = "${fieldHelpText}",
+				fieldName = "${fieldName}",
+				repeatableFieldNumber = "${repeatableFieldNumber}"
+			);
+		}
+
+		AssertElementPresent.assertVisible(
+			locator1 = "FormFields#REPEATABLE_TEXT_MULTILINE_FIELD",
+			key_fieldName = "${fieldName}",
+			key_repeatableFieldNumber = "${repeatableFieldNumber}"
+		);
+	}
+
+	macro viewRepeatableTextMultilineLabel {
+		AssertTextEquals.assertText(
+			locator1 = "FormFields#REPEATABLE_TEXT_MULTILINE_LABEL",
+			value1 = "${fieldLabel}",
+			key_fieldLabel = "${fieldLabel}",
+			key_fieldName = "${fieldName}",
+			key_repeatableFieldNumber = "${repeatableFieldNumber}"
+		);
+	}
+
+	macro viewRepeatableTextMultilineValue {
+		AssertTextEquals(
+			locator1 = "FormFields#REPEATABLE_TEXT_MULTILINE_FIELD",
+			value1 = "${fieldValue}",
+			key_fieldName = "${fieldName}",
+			key_repeatableFieldNumber = "${repeatableFieldNumber}"
+		);
+	}
+
+	macro viewRequiredAsterisk {
+		AssertElementPresent.assertVisible(locator1 = "Icon#ASTERISK");
+	}
+
+	macro viewRequiredAsteriskNotPresent {
+		AssertElementNotPresent(locator1 = "Icon#ASTERISK");
+	}
+
+	macro viewSelectLabel {
+		AssertTextEquals.assertText(
+			locator1 = "Form#FIELD_LABEL",
+			value1 = "${fieldLabel}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewSelectMultipleOptions {
+		var key_fieldName = "${fieldName}";
+
+		for (var selectOption : list "${selectOptionsList}") {
+			AssertTextEquals.assertPartialText(
+				locator1 = "FormFields#SELECT_FIELD",
+				value1 = "${selectOption}"
+			);
+		}
+	}
+
+	macro viewSelectOption {
+		AssertTextEquals.assertPartialText(
+			locator1 = "FormFields#SELECT_FIELD",
+			value1 = "${selectOption}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewSelectOptionsList {
+		var key_fieldName = "${fieldName}";
+
+		Click(locator1 = "FormFields#SELECT_FIELD");
+
+		var key_selectOption = "${selectOption}";
+
+		AssertElementPresent(locator1 = "FormFields#SELECT_FIELD_OPTIONS_LIST");
+	}
+
+	macro viewSelectOptionsRowFieldValue {
+		var key_rowNumber = "${rowNumber}";
+
+		AssertTextEquals(
+			locator1 = "FormFields#SELECT_OPTIONS_OPTION_VALUE_FIELD_VISIBLE",
+			value1 = "${fieldValue}"
+		);
+	}
+
+	macro viewSelectValue {
+		AssertElementPresent(
+			locator1 = "FormFields#SELECT_FIELD",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewSwitcher {
+		var key_fieldName = "${fieldName}";
+
+		AssertElementPresent(locator1 = "FormFields#SWITCHER");
+	}
+
+	macro viewSwitcherChecked {
+		FormFields.viewCheckboxChecked(fieldName = "${fieldName}");
+	}
+
+	macro viewSwitcherLabel {
+		AssertTextEquals.assertText(
+			locator1 = "FormFields#LABEL",
+			value1 = "${fieldLabel}",
+			key_fieldLabel = "${fieldLabel}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewSwitcherLabelNotPresent {
+		var key_fieldName = "${fieldName}";
+
+		AssertTextNotPresent(locator1 = "FormFields#LABEL", value1 = "${fieldLabel}");
+	}
+
+	macro viewTextField {
+		FormFields.viewTextLabel(
+			fieldLabel = "${fieldLabel}",
+			fieldName = "${fieldName}"
+		);
+
+		if (isSet(fieldHelpText)) {
+			FormFields.viewFieldHelpText(
+				fieldHelpText = "${fieldHelpText}",
+				fieldName = "${fieldName}"
+			);
+		}
+
+		AssertElementPresent.assertVisible(
+			locator1 = "FormFields#TEXT_FIELD",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewTextFieldNotVisible {
+		var key_fieldLabel = "${fieldLabel}";
+		var key_fieldName = "${fieldName}";
+
+		AssertNotVisible(locator1 = "FormFields#LABEL");
+
+		AssertNotVisible(locator1 = "FormFields#TEXT_FIELD");
+	}
+
+	macro viewTextLabel {
+		AssertTextEquals.assertText(
+			locator1 = "FormFields#LABEL",
+			value1 = "${fieldLabel}",
+			key_fieldLabel = "${fieldLabel}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewTextMultilineValue {
+		AssertTextEquals(
+			locator1 = "FormFields#TEXT_MULTILINE_FIELD",
+			value1 = "${fieldValue}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewTextValue {
+		AssertTextEquals(
+			locator1 = "FormFields#TEXT_FIELD",
+			value1 = "${fieldValue}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewTextValueAlt {
+		AssertTextEquals(
+			locator1 = "FormFields#TEXT_FIELD_ALT",
+			value1 = "${fieldValue}",
+			key_fieldName = "${fieldName}"
+		);
+	}
+
+	macro viewUploadField {
+		FormFields.viewUploadLabel(
+			fieldLabel = "${fieldLabel}",
+			fieldName = "${fieldName}"
+		);
+
+		var key_fieldLabel = "${fieldLabel}";
+		var key_fieldName = "${fieldName}";
+
+		AssertElementPresent.assertVisible(locator1 = "FormFields#UPLOAD_FIELD");
+	}
+
+	macro viewUploadLabel {
+		var key_fieldLabel = "${fieldLabel}";
+		var key_fieldName = "${fieldName}";
+
+		AssertTextEquals.assertText(
+			locator1 = "Form#FIELD_LABEL",
+			value1 = "${fieldLabel}"
+		);
+	}
+}

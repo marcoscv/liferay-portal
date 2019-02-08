@@ -14,8 +14,8 @@
 
 package com.liferay.portlet;
 
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
 
 import java.io.Serializable;
 
@@ -90,8 +90,8 @@ public class Preference implements Cloneable, Serializable {
 		return sb.toString();
 	}
 
-	private String _name;
-	private boolean _readOnly;
+	private final String _name;
+	private final boolean _readOnly;
 	private String[] _values;
 
 }

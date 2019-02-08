@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<suppressions>
+	<checkstyle>
+		<suppress checks="ConstantNameCheck" files="apio-architect-sample/src/test/java/com/liferay/apio/architect/sample/internal/converter/DemoDataUtil\.java" />
+		<suppress checks="MissingModifierCheck" files="apio-architect-impl/src/test/java/com/liferay/apio/architect/internal/annotation/representor/ActionRouterTypeExtractorTest\.java" />
+		<suppress checks="ParsePrimitiveTypeCheck" files="apio-architect-uri-mapper-impl/src/main/java/com/liferay/apio/architect/uri/mapper/internal/PathLongIdentifierMapper\.java" />
+		<suppress checks="VariableNameCheck" files="apio-architect-api/src/main/java/com/liferay/apio/architect/routes/.*" />
+		<suppress checks="VariableNameCheck" files="apio-architect-impl/src/main/java/com/liferay/apio/architect/internal/routes/.*" />
+	</checkstyle>
+	<source-check>
+		<suppress checks="BNDExportsCheck" files="apio-architect-test-fragment/bnd\.bnd" />
+		<suppress checks="JavaDeprecatedJavadocCheck" files=".*" />
+		<suppress checks="JavaIllegalImportsCheck" files="apio-architect-impl/src/main/java/com/liferay/apio/architect/internal/.*" />
+		<suppress checks="JavaModuleInternalImportsCheck" files="apio-architect-impl/src/main/java/com/liferay/apio/architect/internal/wiring/osgi/manager/base/BaseManager\.java" />
+		<suppress checks="JavaModuleInternalImportsCheck" files="apio-architect-impl/src/main/java/com/liferay/apio/architect/internal/wiring/osgi/manager/documentation/contributor/CustomDocumentationManager\.java" />
+		<suppress checks="JavaMultiPlusConcatCheck" files="apio-architect-api/src/main/java/com/liferay/apio/architect/resource/Resource\.java" />
+		<suppress checks="JavaMultiPlusConcatCheck" files="apio-architect-impl/src/main/java/com/liferay/apio/architect/internal/form/FormUtil\.java" />
+		<suppress checks="JavaStaticImportsCheck" files=".*" />
+		<suppress checks="StringMethodsCheck" files=".*" />
+	</source-check>
+</suppressions>

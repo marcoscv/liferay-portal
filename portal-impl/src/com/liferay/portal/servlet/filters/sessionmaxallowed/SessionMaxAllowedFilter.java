@@ -15,9 +15,9 @@
 package com.liferay.portal.servlet.filters.sessionmaxallowed;
 
 import com.liferay.portal.kernel.servlet.TryFinallyFilter;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.servlet.filters.BasePortalFilter;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.portal.util.WebKeys;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -32,7 +32,7 @@ public class SessionMaxAllowedFilter
 	@Override
 	public void doFilterFinally(
 		HttpServletRequest request, HttpServletResponse response,
-		Object ojbect) {
+		Object object) {
 
 		if (PropsValues.SESSION_MAX_ALLOWED > 0) {
 			HttpSession session = request.getSession();

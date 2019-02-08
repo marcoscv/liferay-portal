@@ -14,164 +14,182 @@
 
 package com.liferay.portal.spring.transaction;
 
-import com.liferay.portal.cache.transactional.TransactionalPortalCacheHelper;
-import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
-import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.spring.hibernate.LastSessionRecorderUtil;
-
-import org.aopalliance.intercept.MethodInvocation;
+import com.liferay.petra.function.UnsafeSupplier;
+import com.liferay.portal.kernel.transaction.TransactionLifecycleManager;
 
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.TransactionSystemException;
-import org.springframework.transaction.interceptor.TransactionAttribute;
 
 /**
  * @author Michael C. Han
  * @author Shuyang Zhou
  */
-public class DefaultTransactionExecutor extends BaseTransactionExecutor {
+public class DefaultTransactionExecutor
+	implements TransactionExecutor, TransactionHandler {
+
+	public DefaultTransactionExecutor(
+		PlatformTransactionManager platformTransactionManager) {
+
+		_platformTransactionManager = platformTransactionManager;
+	}
 
 	@Override
-	public Object execute(
-			PlatformTransactionManager platformTransactionManager,
-			TransactionAttribute transactionAttribute,
-			MethodInvocation methodInvocation)
+	public void commit(
+		TransactionAttributeAdapter transactionAttributeAdapter,
+		TransactionStatusAdapter transactionStatusAdapter) {
+
+		_commit(
+			_platformTransactionManager, transactionAttributeAdapter,
+			transactionStatusAdapter, null);
+	}
+
+	@Override
+	public <T> T execute(
+			TransactionAttributeAdapter transactionAttributeAdapter,
+			UnsafeSupplier<T, Throwable> unsafeSupplier)
 		throws Throwable {
 
-		TransactionStatus transactionStatus =
-			platformTransactionManager.getTransaction(transactionAttribute);
+		return _execute(
+			_platformTransactionManager, transactionAttributeAdapter,
+			unsafeSupplier);
+	}
 
-		boolean newTransaction = transactionStatus.isNewTransaction();
+	@Override
+	public PlatformTransactionManager getPlatformTransactionManager() {
+		return _platformTransactionManager;
+	}
 
-		if (newTransaction) {
-			TransactionalPortalCacheHelper.begin();
+	@Override
+	public void rollback(
+			Throwable throwable,
+			TransactionAttributeAdapter transactionAttributeAdapter,
+			TransactionStatusAdapter transactionStatusAdapter)
+		throws Throwable {
 
-			TransactionCommitCallbackUtil.pushCallbackList();
-		}
+		throw _rollback(
+			_platformTransactionManager, throwable, transactionAttributeAdapter,
+			transactionStatusAdapter);
+	}
 
-		Object returnValue = null;
+	@Override
+	public TransactionStatusAdapter start(
+		TransactionAttributeAdapter transactionAttributeAdapter) {
+
+		return _start(_platformTransactionManager, transactionAttributeAdapter);
+	}
+
+	private void _commit(
+		PlatformTransactionManager platformTransactionManager,
+		TransactionAttributeAdapter transactionAttributeAdapter,
+		TransactionStatusAdapter transactionStatusAdapter,
+		Throwable applicationThrowable) {
+
+		Throwable throwable = null;
 
 		try {
-			if (newTransaction) {
-				LastSessionRecorderUtil.syncLastSessionState();
+			platformTransactionManager.commit(
+				transactionStatusAdapter.getTransactionStatus());
+		}
+		catch (Throwable t) {
+			if (applicationThrowable != null) {
+				t.addSuppressed(applicationThrowable);
 			}
 
-			returnValue = methodInvocation.proceed();
+			throwable = t;
+
+			throw t;
+		}
+		finally {
+			if (throwable != null) {
+				TransactionLifecycleManager.fireTransactionRollbackedEvent(
+					transactionAttributeAdapter, transactionStatusAdapter,
+					throwable);
+			}
+			else {
+				TransactionLifecycleManager.fireTransactionCommittedEvent(
+					transactionAttributeAdapter, transactionStatusAdapter);
+			}
+
+			TransactionExecutorThreadLocal.popTransactionExecutor();
+		}
+	}
+
+	private <T> T _execute(
+			PlatformTransactionManager platformTransactionManager,
+			TransactionAttributeAdapter transactionAttributeAdapter,
+			UnsafeSupplier<T, Throwable> unsafeSupplier)
+		throws Throwable {
+
+		TransactionStatusAdapter transactionStatusAdapter = _start(
+			platformTransactionManager, transactionAttributeAdapter);
+
+		T returnValue = null;
+
+		try {
+			returnValue = unsafeSupplier.get();
 		}
 		catch (Throwable throwable) {
-			processThrowable(
-				platformTransactionManager, throwable, transactionAttribute,
-				transactionStatus);
+			throw _rollback(
+				platformTransactionManager, throwable,
+				transactionAttributeAdapter, transactionStatusAdapter);
 		}
 
-		processCommit(platformTransactionManager, transactionStatus);
+		_commit(
+			platformTransactionManager, transactionAttributeAdapter,
+			transactionStatusAdapter, null);
 
 		return returnValue;
 	}
 
-	protected void processCommit(
+	private Throwable _rollback(
 		PlatformTransactionManager platformTransactionManager,
-		TransactionStatus transactionStatus) {
+		Throwable throwable,
+		TransactionAttributeAdapter transactionAttributeAdapter,
+		TransactionStatusAdapter transactionStatusAdapter) {
 
-		boolean hasError = false;
-
-		try {
-			platformTransactionManager.commit(transactionStatus);
-		}
-		catch (TransactionSystemException tse) {
-			_log.error(
-				"Application exception overridden by commit exception", tse);
-
-			hasError = true;
-
-			throw tse;
-		}
-		catch (RuntimeException re) {
-			_log.error(
-				"Application exception overridden by commit exception", re);
-
-			hasError = true;
-
-			throw re;
-		}
-		catch (Error e) {
-			_log.error("Application exception overridden by commit error", e);
-
-			hasError = true;
-
-			throw e;
-		}
-		finally {
-			if (transactionStatus.isNewTransaction()) {
-				if (hasError) {
-					TransactionalPortalCacheHelper.rollback();
-
-					TransactionCommitCallbackUtil.popCallbackList();
-
-					EntityCacheUtil.clearLocalCache();
-					FinderCacheUtil.clearLocalCache();
-				}
-				else {
-					TransactionalPortalCacheHelper.commit();
-
-					invokeCallbacks();
-				}
-			}
-		}
-	}
-
-	protected void processThrowable(
-			PlatformTransactionManager platformTransactionManager,
-			Throwable throwable, TransactionAttribute transactionAttribute,
-			TransactionStatus transactionStatus)
-		throws Throwable {
-
-		if (transactionAttribute.rollbackOn(throwable)) {
+		if (transactionAttributeAdapter.rollbackOn(throwable)) {
 			try {
-				platformTransactionManager.rollback(transactionStatus);
+				platformTransactionManager.rollback(
+					transactionStatusAdapter.getTransactionStatus());
 			}
-			catch (TransactionSystemException tse) {
-				_log.error(
-					"Application exception overridden by rollback exception",
-					tse);
+			catch (Throwable t) {
+				t.addSuppressed(throwable);
 
-				throw tse;
-			}
-			catch (RuntimeException re) {
-				_log.error(
-					"Application exception overridden by rollback exception",
-					re);
-
-				throw re;
-			}
-			catch (Error e) {
-				_log.error(
-					"Application exception overridden by rollback error", e);
-
-				throw e;
+				throw t;
 			}
 			finally {
-				if (transactionStatus.isNewTransaction()) {
-					TransactionalPortalCacheHelper.rollback();
+				TransactionLifecycleManager.fireTransactionRollbackedEvent(
+					transactionAttributeAdapter, transactionStatusAdapter,
+					throwable);
 
-					TransactionCommitCallbackUtil.popCallbackList();
-
-					EntityCacheUtil.clearLocalCache();
-					FinderCacheUtil.clearLocalCache();
-				}
+				TransactionExecutorThreadLocal.popTransactionExecutor();
 			}
 		}
 		else {
-			processCommit(platformTransactionManager, transactionStatus);
+			_commit(
+				platformTransactionManager, transactionAttributeAdapter,
+				transactionStatusAdapter, throwable);
 		}
 
-		throw throwable;
+		return throwable;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
-		DefaultTransactionExecutor.class);
+	private TransactionStatusAdapter _start(
+		PlatformTransactionManager platformTransactionManager,
+		TransactionAttributeAdapter transactionAttributeAdapter) {
+
+		TransactionStatusAdapter transactionStatusAdapter =
+			new TransactionStatusAdapter(
+				platformTransactionManager.getTransaction(
+					transactionAttributeAdapter));
+
+		TransactionExecutorThreadLocal.pushTransactionExecutor(this);
+
+		TransactionLifecycleManager.fireTransactionCreatedEvent(
+			transactionAttributeAdapter, transactionStatusAdapter);
+
+		return transactionStatusAdapter;
+	}
+
+	private final PlatformTransactionManager _platformTransactionManager;
 
 }

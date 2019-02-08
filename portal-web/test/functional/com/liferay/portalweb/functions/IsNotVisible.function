@@ -1,0 +1,10 @@
+@default = "isNotVisible"
+definition {
+	function isNotVisible {
+		WaitForSPARefresh();
+
+		selenium.waitForElementPresent();
+
+		selenium.isNotVisible();
+	}
+}

@@ -1,0 +1,19 @@
+{
+	"dependencies": {
+		"metal": "^2.13.2",
+		"metal-component": "^2.13.2",
+		"metal-debounce": "^2.0.0",
+		"metal-promise": "^2.0.1",
+		"metal-soy": "^2.13.2"
+	},
+	"devDependencies": {
+		"liferay-npm-scripts": "1.2.0"
+	},
+	"name": "frontend-image-editor-capability-brightness",
+	"scripts": {
+		"build": "liferay-npm-scripts build --soy --bundler",
+		"csf": "liferay-npm-scripts lint",
+		"format": "liferay-npm-scripts format"
+	},
+	"version": "3.0.0"
+}

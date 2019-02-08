@@ -1,0 +1,118 @@
+$background-color-default: #FFF;
+$background-color-selected: #F0F5FF;
+$border-color-selected: #65B6F0;
+$border-color: #DEE2E6;
+$color-default: #6B6C7E;
+$color-disabled: #A7A9BC;
+$color-selected: #272833;
+$navigation-color: #869CAD;
+$spacer: 1rem;
+
+.select-category-filter {
+	background: $background-color-default;
+	border-bottom: 1px solid $border-color;
+	margin-bottom: $spacer * 1.5;
+	padding: $spacer * 0.75;
+}
+
+.category-tree {
+	.card {
+		color: $color-default;
+		margin-bottom: 0;
+
+		&:focus {
+			box-shadow: inset 0 0 0 2px $border-color-selected;
+			outline: none;
+		}
+
+		&:hover {
+			background-color: #F7F8F9;
+		}
+	}
+
+	.card-row-padded {
+		padding: $spacer * 0.25;
+	}
+
+	.selected .card {
+		background-color: $background-color-selected;
+		color: $color-selected;
+	}
+
+	.disabled .card {
+		cursor: not-allowed;
+		opacity: 0.4;
+	}
+
+	.treeview-node {
+		margin-bottom: 0.5rem;
+		position: relative;
+	}
+
+	.treeview-node-main {
+		float: none;
+		margin-bottom: $spacer;
+		padding-left: $spacer;
+		position: relative;
+
+		&:not(.disabled) {
+			cursor: pointer;
+		}
+	}
+
+	.treeview-nodes {
+		border-left: 2px solid $navigation-color;
+		list-style: none;
+		margin-left: $spacer;
+		padding-left: 0;
+
+		.treeview-nodes {
+			border-left-style: dashed;
+			border-left-width: 1px;
+		}
+	}
+
+	.treeview-node-toggler {
+		background-color: $navigation-color;
+		border-radius: 3px;
+		display: inline-block;
+		height: 14px;
+		left: 0;
+		margin-left: -8px;
+		margin-top: -8px;
+		position: absolute;
+		text-align: center;
+		top: 50%;
+		width: 14px;
+
+		&:before {
+			color: #FFF;
+			content: '+';
+			display: block;
+			line-height: 11px;
+
+			.win & {
+				line-height: 14px;
+			}
+		}
+	}
+
+	.treeview-node-wrapper > .treeview-nodes {
+		display: none;
+	}
+
+	.expanded {
+		> .treeview-node-main > .treeview-node-toggler:before {
+			content: '-';
+			font-size: 21px;
+
+			.win & {
+				line-height: 11px;
+			}
+		}
+
+		> .treeview-nodes {
+			display: block;
+		}
+	}
+}

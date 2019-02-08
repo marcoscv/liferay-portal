@@ -14,12 +14,10 @@
 
 package com.liferay.taglib.ui;
 
-import com.liferay.portal.kernel.servlet.PortalIncludeUtil;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.security.permission.ResourceActionsUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.taglib.util.IncludeTag;
-
-import java.util.List;
+import com.liferay.taglib.util.PortalIncludeUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
@@ -28,7 +26,6 @@ import javax.servlet.jsp.PageContext;
 /**
  * @author Brian Wing Shun Chan
  * @author Wilson S. Man
- * @see    com.liferay.portal.servlet.taglib.ui.InputPermissionsTagUtil
  */
 public class InputPermissionsTag extends IncludeTag {
 
@@ -48,35 +45,21 @@ public class InputPermissionsTag extends IncludeTag {
 			(HttpServletRequest)pageContext.getRequest();
 
 		request.setAttribute("liferay-ui:input-permissions:formName", formName);
-
-		if (modelName != null) {
-			List<String> supportedActions =
-				ResourceActionsUtil.getModelResourceActions(modelName);
-			List<String> groupDefaultActions =
-				ResourceActionsUtil.getModelResourceGroupDefaultActions(
-					modelName);
-			List<String> guestDefaultActions =
-				ResourceActionsUtil.getModelResourceGuestDefaultActions(
-					modelName);
-			List<String> guestUnsupportedActions =
-				ResourceActionsUtil.getModelResourceGuestUnsupportedActions(
-					modelName);
-
-			request.setAttribute(
-				"liferay-ui:input-permissions:modelName", modelName);
-			request.setAttribute(
-				"liferay-ui:input-permissions:supportedActions",
-				supportedActions);
-			request.setAttribute(
-				"liferay-ui:input-permissions:groupDefaultActions",
-				groupDefaultActions);
-			request.setAttribute(
-				"liferay-ui:input-permissions:guestDefaultActions",
-				guestDefaultActions);
-			request.setAttribute(
-				"liferay-ui:input-permissions:guestUnsupportedActions",
-				guestUnsupportedActions);
-		}
+		request.setAttribute(
+			"liferay-ui:input-permissions:groupDefaultActions",
+			ResourceActionsUtil.getModelResourceGroupDefaultActions(modelName));
+		request.setAttribute(
+			"liferay-ui:input-permissions:guestDefaultActions",
+			ResourceActionsUtil.getModelResourceGuestDefaultActions(modelName));
+		request.setAttribute(
+			"liferay-ui:input-permissions:guestUnsupportedActions",
+			ResourceActionsUtil.getModelResourceGuestUnsupportedActions(
+				modelName));
+		request.setAttribute(
+			"liferay-ui:input-permissions:modelName", modelName);
+		request.setAttribute(
+			"liferay-ui:input-permissions:supportedActions",
+			ResourceActionsUtil.getModelResourceActions(modelName));
 
 		PortalIncludeUtil.include(pageContext, page);
 

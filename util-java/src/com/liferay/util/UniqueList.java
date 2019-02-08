@@ -19,7 +19,7 @@ import java.util.Collection;
 /**
  * @author     Brian Wing Shun Chan
  * @author     Shuyang Zhou
- * @deprecated As of 6.2.0, replaced by {@link
+ * @deprecated As of Newton (6.2.x), replaced by {@link
  *             com.liferay.portal.kernel.util.UniqueList}
  */
 @Deprecated
@@ -27,7 +27,6 @@ public class UniqueList<E>
 	extends com.liferay.portal.kernel.util.UniqueList<E> {
 
 	public UniqueList() {
-		super();
 	}
 
 	public UniqueList(Collection<E> c) {

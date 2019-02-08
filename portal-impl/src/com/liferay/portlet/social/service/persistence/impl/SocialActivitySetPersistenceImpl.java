@@ -14,7 +14,12 @@
 
 package com.liferay.portlet.social.service.persistence.impl;
 
-import com.liferay.portal.kernel.cache.CacheRegistryUtil;
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.petra.string.StringBundler;
+
+import com.liferay.portal.kernel.bean.BeanReference;
+import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderPath;
@@ -24,30 +29,25 @@ import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.InstanceFactory;
+import com.liferay.portal.kernel.service.persistence.CompanyProvider;
+import com.liferay.portal.kernel.service.persistence.CompanyProviderWrapper;
+import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
-import com.liferay.portal.kernel.util.StringBundler;
-import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.model.CacheModel;
-import com.liferay.portal.model.ModelListener;
-import com.liferay.portal.service.persistence.impl.BasePersistenceImpl;
 
-import com.liferay.portlet.social.NoSuchActivitySetException;
-import com.liferay.portlet.social.model.SocialActivitySet;
 import com.liferay.portlet.social.model.impl.SocialActivitySetImpl;
 import com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl;
-import com.liferay.portlet.social.service.persistence.SocialActivitySetPersistence;
+
+import com.liferay.social.kernel.exception.NoSuchActivitySetException;
+import com.liferay.social.kernel.model.SocialActivitySet;
+import com.liferay.social.kernel.service.persistence.SocialActivitySetPersistence;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
+import java.lang.reflect.InvocationHandler;
+
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,9 +61,10 @@ import java.util.Set;
  *
  * @author Brian Wing Shun Chan
  * @see SocialActivitySetPersistence
- * @see SocialActivitySetUtil
+ * @see com.liferay.social.kernel.service.persistence.SocialActivitySetUtil
  * @generated
  */
+@ProviderType
 public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<SocialActivitySet>
 	implements SocialActivitySetPersistence {
 	/*
@@ -76,39 +77,12 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		".List1";
 	public static final String FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION = FINDER_CLASS_NAME_ENTITY +
 		".List2";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_ALL = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll", new String[0]);
-	public static final FinderPath FINDER_PATH_COUNT_ALL = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll", new String[0]);
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_GROUPID = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByGroupId",
-			new String[] {
-				Long.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_GROUPID =
-		new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByGroupId",
-			new String[] { Long.class.getName() },
-			SocialActivitySetModelImpl.GROUPID_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_GROUPID = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByGroupId",
-			new String[] { Long.class.getName() });
+	private FinderPath _finderPathWithPaginationFindAll;
+	private FinderPath _finderPathWithoutPaginationFindAll;
+	private FinderPath _finderPathCountAll;
+	private FinderPath _finderPathWithPaginationFindByGroupId;
+	private FinderPath _finderPathWithoutPaginationFindByGroupId;
+	private FinderPath _finderPathCountByGroupId;
 
 	/**
 	 * Returns all the social activity sets where groupId = &#63;.
@@ -125,7 +99,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns a range of all the social activity sets where groupId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param groupId the group ID
@@ -143,7 +117,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns an ordered range of all the social activity sets where groupId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param groupId the group ID
@@ -154,7 +128,28 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public List<SocialActivitySet> findByGroupId(long groupId, int start,
-		int end, OrderByComparator orderByComparator) {
+		int end, OrderByComparator<SocialActivitySet> orderByComparator) {
+		return findByGroupId(groupId, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the social activity sets where groupId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param groupId the group ID
+	 * @param start the lower bound of the range of social activity sets
+	 * @param end the upper bound of the range of social activity sets (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching social activity sets
+	 */
+	@Override
+	public List<SocialActivitySet> findByGroupId(long groupId, int start,
+		int end, OrderByComparator<SocialActivitySet> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -162,23 +157,27 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_GROUPID;
+			finderPath = _finderPathWithoutPaginationFindByGroupId;
 			finderArgs = new Object[] { groupId };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_GROUPID;
+			finderPath = _finderPathWithPaginationFindByGroupId;
 			finderArgs = new Object[] { groupId, start, end, orderByComparator };
 		}
 
-		List<SocialActivitySet> list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<SocialActivitySet> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (SocialActivitySet socialActivitySet : list) {
-				if ((groupId != socialActivitySet.getGroupId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (SocialActivitySet socialActivitySet : list) {
+					if ((groupId != socialActivitySet.getGroupId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -188,7 +187,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -256,11 +255,12 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param groupId the group ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByGroupId_First(long groupId,
-		OrderByComparator orderByComparator) throws NoSuchActivitySetException {
+		OrderByComparator<SocialActivitySet> orderByComparator)
+		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByGroupId_First(groupId,
 				orderByComparator);
 
@@ -275,7 +275,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append("groupId=");
 		msg.append(groupId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -289,7 +289,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public SocialActivitySet fetchByGroupId_First(long groupId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<SocialActivitySet> orderByComparator) {
 		List<SocialActivitySet> list = findByGroupId(groupId, 0, 1,
 				orderByComparator);
 
@@ -306,11 +306,12 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param groupId the group ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByGroupId_Last(long groupId,
-		OrderByComparator orderByComparator) throws NoSuchActivitySetException {
+		OrderByComparator<SocialActivitySet> orderByComparator)
+		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByGroupId_Last(groupId,
 				orderByComparator);
 
@@ -325,7 +326,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append("groupId=");
 		msg.append(groupId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -339,7 +340,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public SocialActivitySet fetchByGroupId_Last(long groupId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<SocialActivitySet> orderByComparator) {
 		int count = countByGroupId(groupId);
 
 		if (count == 0) {
@@ -363,11 +364,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param groupId the group ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a social activity set with the primary key could not be found
+	 * @throws NoSuchActivitySetException if a social activity set with the primary key could not be found
 	 */
 	@Override
 	public SocialActivitySet[] findByGroupId_PrevAndNext(long activitySetId,
-		long groupId, OrderByComparator orderByComparator)
+		long groupId, OrderByComparator<SocialActivitySet> orderByComparator)
 		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = findByPrimaryKey(activitySetId);
 
@@ -398,12 +399,13 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 	protected SocialActivitySet getByGroupId_PrevAndNext(Session session,
 		SocialActivitySet socialActivitySet, long groupId,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<SocialActivitySet> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -484,10 +486,9 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		qPos.add(groupId);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(socialActivitySet);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					socialActivitySet)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -522,7 +523,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public int countByGroupId(long groupId) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_GROUPID;
+		FinderPath finderPath = _finderPathCountByGroupId;
 
 		Object[] finderArgs = new Object[] { groupId };
 
@@ -567,28 +568,9 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	}
 
 	private static final String _FINDER_COLUMN_GROUPID_GROUPID_2 = "socialActivitySet.groupId = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_USERID = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUserId",
-			new String[] {
-				Long.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_USERID =
-		new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUserId",
-			new String[] { Long.class.getName() },
-			SocialActivitySetModelImpl.USERID_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_USERID = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUserId",
-			new String[] { Long.class.getName() });
+	private FinderPath _finderPathWithPaginationFindByUserId;
+	private FinderPath _finderPathWithoutPaginationFindByUserId;
+	private FinderPath _finderPathCountByUserId;
 
 	/**
 	 * Returns all the social activity sets where userId = &#63;.
@@ -605,7 +587,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns a range of all the social activity sets where userId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param userId the user ID
@@ -622,7 +604,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns an ordered range of all the social activity sets where userId = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param userId the user ID
@@ -633,7 +615,28 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public List<SocialActivitySet> findByUserId(long userId, int start,
-		int end, OrderByComparator orderByComparator) {
+		int end, OrderByComparator<SocialActivitySet> orderByComparator) {
+		return findByUserId(userId, start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the social activity sets where userId = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param userId the user ID
+	 * @param start the lower bound of the range of social activity sets
+	 * @param end the upper bound of the range of social activity sets (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching social activity sets
+	 */
+	@Override
+	public List<SocialActivitySet> findByUserId(long userId, int start,
+		int end, OrderByComparator<SocialActivitySet> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -641,23 +644,27 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_USERID;
+			finderPath = _finderPathWithoutPaginationFindByUserId;
 			finderArgs = new Object[] { userId };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_USERID;
+			finderPath = _finderPathWithPaginationFindByUserId;
 			finderArgs = new Object[] { userId, start, end, orderByComparator };
 		}
 
-		List<SocialActivitySet> list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<SocialActivitySet> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (SocialActivitySet socialActivitySet : list) {
-				if ((userId != socialActivitySet.getUserId())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (SocialActivitySet socialActivitySet : list) {
+					if ((userId != socialActivitySet.getUserId())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -667,7 +674,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 			if (orderByComparator != null) {
 				query = new StringBundler(3 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(3);
@@ -735,11 +742,12 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param userId the user ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByUserId_First(long userId,
-		OrderByComparator orderByComparator) throws NoSuchActivitySetException {
+		OrderByComparator<SocialActivitySet> orderByComparator)
+		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByUserId_First(userId,
 				orderByComparator);
 
@@ -754,7 +762,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append("userId=");
 		msg.append(userId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -768,7 +776,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public SocialActivitySet fetchByUserId_First(long userId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<SocialActivitySet> orderByComparator) {
 		List<SocialActivitySet> list = findByUserId(userId, 0, 1,
 				orderByComparator);
 
@@ -785,11 +793,12 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param userId the user ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByUserId_Last(long userId,
-		OrderByComparator orderByComparator) throws NoSuchActivitySetException {
+		OrderByComparator<SocialActivitySet> orderByComparator)
+		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByUserId_Last(userId,
 				orderByComparator);
 
@@ -804,7 +813,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append("userId=");
 		msg.append(userId);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -818,7 +827,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public SocialActivitySet fetchByUserId_Last(long userId,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<SocialActivitySet> orderByComparator) {
 		int count = countByUserId(userId);
 
 		if (count == 0) {
@@ -842,11 +851,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param userId the user ID
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a social activity set with the primary key could not be found
+	 * @throws NoSuchActivitySetException if a social activity set with the primary key could not be found
 	 */
 	@Override
 	public SocialActivitySet[] findByUserId_PrevAndNext(long activitySetId,
-		long userId, OrderByComparator orderByComparator)
+		long userId, OrderByComparator<SocialActivitySet> orderByComparator)
 		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = findByPrimaryKey(activitySetId);
 
@@ -877,12 +886,13 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 	protected SocialActivitySet getByUserId_PrevAndNext(Session session,
 		SocialActivitySet socialActivitySet, long userId,
-		OrderByComparator orderByComparator, boolean previous) {
+		OrderByComparator<SocialActivitySet> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(4 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
 			query = new StringBundler(3);
@@ -963,10 +973,9 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		qPos.add(userId);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(socialActivitySet);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					socialActivitySet)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -1001,7 +1010,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public int countByUserId(long userId) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_USERID;
+		FinderPath finderPath = _finderPathCountByUserId;
 
 		Object[] finderArgs = new Object[] { userId };
 
@@ -1046,36 +1055,9 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	}
 
 	private static final String _FINDER_COLUMN_USERID_USERID_2 = "socialActivitySet.userId = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_G_U_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByG_U_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(),
-				Integer.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_U_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByG_U_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(),
-				Integer.class.getName()
-			},
-			SocialActivitySetModelImpl.GROUPID_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.USERID_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.TYPE_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_G_U_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByG_U_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(),
-				Integer.class.getName()
-			});
+	private FinderPath _finderPathWithPaginationFindByG_U_T;
+	private FinderPath _finderPathWithoutPaginationFindByG_U_T;
+	private FinderPath _finderPathCountByG_U_T;
 
 	/**
 	 * Returns all the social activity sets where groupId = &#63; and userId = &#63; and type = &#63;.
@@ -1096,7 +1078,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns a range of all the social activity sets where groupId = &#63; and userId = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param groupId the group ID
@@ -1116,7 +1098,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns an ordered range of all the social activity sets where groupId = &#63; and userId = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param groupId the group ID
@@ -1129,7 +1111,33 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public List<SocialActivitySet> findByG_U_T(long groupId, long userId,
-		int type, int start, int end, OrderByComparator orderByComparator) {
+		int type, int start, int end,
+		OrderByComparator<SocialActivitySet> orderByComparator) {
+		return findByG_U_T(groupId, userId, type, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the social activity sets where groupId = &#63; and userId = &#63; and type = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param groupId the group ID
+	 * @param userId the user ID
+	 * @param type the type
+	 * @param start the lower bound of the range of social activity sets
+	 * @param end the upper bound of the range of social activity sets (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching social activity sets
+	 */
+	@Override
+	public List<SocialActivitySet> findByG_U_T(long groupId, long userId,
+		int type, int start, int end,
+		OrderByComparator<SocialActivitySet> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1137,11 +1145,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_U_T;
+			finderPath = _finderPathWithoutPaginationFindByG_U_T;
 			finderArgs = new Object[] { groupId, userId, type };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_G_U_T;
+			finderPath = _finderPathWithPaginationFindByG_U_T;
 			finderArgs = new Object[] {
 					groupId, userId, type,
 					
@@ -1149,17 +1157,21 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 				};
 		}
 
-		List<SocialActivitySet> list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<SocialActivitySet> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (SocialActivitySet socialActivitySet : list) {
-				if ((groupId != socialActivitySet.getGroupId()) ||
-						(userId != socialActivitySet.getUserId()) ||
-						(type != socialActivitySet.getType())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (SocialActivitySet socialActivitySet : list) {
+					if ((groupId != socialActivitySet.getGroupId()) ||
+							(userId != socialActivitySet.getUserId()) ||
+							(type != socialActivitySet.getType())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -1169,7 +1181,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 			if (orderByComparator != null) {
 				query = new StringBundler(5 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(5);
@@ -1247,11 +1259,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByG_U_T_First(long groupId, long userId,
-		int type, OrderByComparator orderByComparator)
+		int type, OrderByComparator<SocialActivitySet> orderByComparator)
 		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByG_U_T_First(groupId,
 				userId, type, orderByComparator);
@@ -1273,7 +1285,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -1289,7 +1301,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public SocialActivitySet fetchByG_U_T_First(long groupId, long userId,
-		int type, OrderByComparator orderByComparator) {
+		int type, OrderByComparator<SocialActivitySet> orderByComparator) {
 		List<SocialActivitySet> list = findByG_U_T(groupId, userId, type, 0, 1,
 				orderByComparator);
 
@@ -1308,11 +1320,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByG_U_T_Last(long groupId, long userId,
-		int type, OrderByComparator orderByComparator)
+		int type, OrderByComparator<SocialActivitySet> orderByComparator)
 		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByG_U_T_Last(groupId,
 				userId, type, orderByComparator);
@@ -1334,7 +1346,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -1350,7 +1362,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public SocialActivitySet fetchByG_U_T_Last(long groupId, long userId,
-		int type, OrderByComparator orderByComparator) {
+		int type, OrderByComparator<SocialActivitySet> orderByComparator) {
 		int count = countByG_U_T(groupId, userId, type);
 
 		if (count == 0) {
@@ -1376,11 +1388,12 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a social activity set with the primary key could not be found
+	 * @throws NoSuchActivitySetException if a social activity set with the primary key could not be found
 	 */
 	@Override
 	public SocialActivitySet[] findByG_U_T_PrevAndNext(long activitySetId,
-		long groupId, long userId, int type, OrderByComparator orderByComparator)
+		long groupId, long userId, int type,
+		OrderByComparator<SocialActivitySet> orderByComparator)
 		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = findByPrimaryKey(activitySetId);
 
@@ -1411,15 +1424,17 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 	protected SocialActivitySet getByG_U_T_PrevAndNext(Session session,
 		SocialActivitySet socialActivitySet, long groupId, long userId,
-		int type, OrderByComparator orderByComparator, boolean previous) {
+		int type, OrderByComparator<SocialActivitySet> orderByComparator,
+		boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
 			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(5);
 		}
 
 		query.append(_SQL_SELECT_SOCIALACTIVITYSET_WHERE);
@@ -1505,10 +1520,9 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		qPos.add(type);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(socialActivitySet);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					socialActivitySet)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -1547,7 +1561,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public int countByG_U_T(long groupId, long userId, int type) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_G_U_T;
+		FinderPath finderPath = _finderPathCountByG_U_T;
 
 		Object[] finderArgs = new Object[] { groupId, userId, type };
 
@@ -1602,42 +1616,15 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	private static final String _FINDER_COLUMN_G_U_T_GROUPID_2 = "socialActivitySet.groupId = ? AND ";
 	private static final String _FINDER_COLUMN_G_U_T_USERID_2 = "socialActivitySet.userId = ? AND ";
 	private static final String _FINDER_COLUMN_G_U_T_TYPE_2 = "socialActivitySet.type = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_C_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByC_C_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(),
-				Integer.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_C_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByC_C_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(),
-				Integer.class.getName()
-			},
-			SocialActivitySetModelImpl.CLASSNAMEID_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.CLASSPK_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.TYPE_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_C_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByC_C_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(),
-				Integer.class.getName()
-			});
+	private FinderPath _finderPathWithPaginationFindByC_C_T;
+	private FinderPath _finderPathWithoutPaginationFindByC_C_T;
+	private FinderPath _finderPathCountByC_C_T;
 
 	/**
 	 * Returns all the social activity sets where classNameId = &#63; and classPK = &#63; and type = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @return the matching social activity sets
 	 */
@@ -1652,11 +1639,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns a range of all the social activity sets where classNameId = &#63; and classPK = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param start the lower bound of the range of social activity sets
 	 * @param end the upper bound of the range of social activity sets (not inclusive)
@@ -1672,11 +1659,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns an ordered range of all the social activity sets where classNameId = &#63; and classPK = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param start the lower bound of the range of social activity sets
 	 * @param end the upper bound of the range of social activity sets (not inclusive)
@@ -1685,7 +1672,33 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public List<SocialActivitySet> findByC_C_T(long classNameId, long classPK,
-		int type, int start, int end, OrderByComparator orderByComparator) {
+		int type, int start, int end,
+		OrderByComparator<SocialActivitySet> orderByComparator) {
+		return findByC_C_T(classNameId, classPK, type, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the social activity sets where classNameId = &#63; and classPK = &#63; and type = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param type the type
+	 * @param start the lower bound of the range of social activity sets
+	 * @param end the upper bound of the range of social activity sets (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching social activity sets
+	 */
+	@Override
+	public List<SocialActivitySet> findByC_C_T(long classNameId, long classPK,
+		int type, int start, int end,
+		OrderByComparator<SocialActivitySet> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -1693,11 +1706,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_C_C_T;
+			finderPath = _finderPathWithoutPaginationFindByC_C_T;
 			finderArgs = new Object[] { classNameId, classPK, type };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_C_C_T;
+			finderPath = _finderPathWithPaginationFindByC_C_T;
 			finderArgs = new Object[] {
 					classNameId, classPK, type,
 					
@@ -1705,17 +1718,21 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 				};
 		}
 
-		List<SocialActivitySet> list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<SocialActivitySet> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (SocialActivitySet socialActivitySet : list) {
-				if ((classNameId != socialActivitySet.getClassNameId()) ||
-						(classPK != socialActivitySet.getClassPK()) ||
-						(type != socialActivitySet.getType())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (SocialActivitySet socialActivitySet : list) {
+					if ((classNameId != socialActivitySet.getClassNameId()) ||
+							(classPK != socialActivitySet.getClassPK()) ||
+							(type != socialActivitySet.getType())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -1725,7 +1742,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 			if (orderByComparator != null) {
 				query = new StringBundler(5 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(5);
@@ -1799,15 +1816,15 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns the first social activity set in the ordered set where classNameId = &#63; and classPK = &#63; and type = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByC_C_T_First(long classNameId, long classPK,
-		int type, OrderByComparator orderByComparator)
+		int type, OrderByComparator<SocialActivitySet> orderByComparator)
 		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByC_C_T_First(classNameId,
 				classPK, type, orderByComparator);
@@ -1829,7 +1846,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -1838,14 +1855,14 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns the first social activity set in the ordered set where classNameId = &#63; and classPK = &#63; and type = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching social activity set, or <code>null</code> if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet fetchByC_C_T_First(long classNameId, long classPK,
-		int type, OrderByComparator orderByComparator) {
+		int type, OrderByComparator<SocialActivitySet> orderByComparator) {
 		List<SocialActivitySet> list = findByC_C_T(classNameId, classPK, type,
 				0, 1, orderByComparator);
 
@@ -1860,15 +1877,15 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns the last social activity set in the ordered set where classNameId = &#63; and classPK = &#63; and type = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByC_C_T_Last(long classNameId, long classPK,
-		int type, OrderByComparator orderByComparator)
+		int type, OrderByComparator<SocialActivitySet> orderByComparator)
 		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByC_C_T_Last(classNameId,
 				classPK, type, orderByComparator);
@@ -1890,7 +1907,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -1899,14 +1916,14 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns the last social activity set in the ordered set where classNameId = &#63; and classPK = &#63; and type = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching social activity set, or <code>null</code> if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet fetchByC_C_T_Last(long classNameId, long classPK,
-		int type, OrderByComparator orderByComparator) {
+		int type, OrderByComparator<SocialActivitySet> orderByComparator) {
 		int count = countByC_C_T(classNameId, classPK, type);
 
 		if (count == 0) {
@@ -1928,16 +1945,17 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 *
 	 * @param activitySetId the primary key of the current social activity set
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a social activity set with the primary key could not be found
+	 * @throws NoSuchActivitySetException if a social activity set with the primary key could not be found
 	 */
 	@Override
 	public SocialActivitySet[] findByC_C_T_PrevAndNext(long activitySetId,
 		long classNameId, long classPK, int type,
-		OrderByComparator orderByComparator) throws NoSuchActivitySetException {
+		OrderByComparator<SocialActivitySet> orderByComparator)
+		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = findByPrimaryKey(activitySetId);
 
 		Session session = null;
@@ -1967,15 +1985,17 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 	protected SocialActivitySet getByC_C_T_PrevAndNext(Session session,
 		SocialActivitySet socialActivitySet, long classNameId, long classPK,
-		int type, OrderByComparator orderByComparator, boolean previous) {
+		int type, OrderByComparator<SocialActivitySet> orderByComparator,
+		boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
 			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(5);
 		}
 
 		query.append(_SQL_SELECT_SOCIALACTIVITYSET_WHERE);
@@ -2061,10 +2081,9 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		qPos.add(type);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(socialActivitySet);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					socialActivitySet)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -2082,7 +2101,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Removes all the social activity sets where classNameId = &#63; and classPK = &#63; and type = &#63; from the database.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 */
 	@Override
@@ -2097,13 +2116,13 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns the number of social activity sets where classNameId = &#63; and classPK = &#63; and type = &#63;.
 	 *
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @return the number of matching social activity sets
 	 */
 	@Override
 	public int countByC_C_T(long classNameId, long classPK, int type) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_C_C_T;
+		FinderPath finderPath = _finderPathCountByC_C_T;
 
 		Object[] finderArgs = new Object[] { classNameId, classPK, type };
 
@@ -2158,38 +2177,9 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	private static final String _FINDER_COLUMN_C_C_T_CLASSNAMEID_2 = "socialActivitySet.classNameId = ? AND ";
 	private static final String _FINDER_COLUMN_C_C_T_CLASSPK_2 = "socialActivitySet.classPK = ? AND ";
 	private static final String _FINDER_COLUMN_C_C_T_TYPE_2 = "socialActivitySet.type = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_G_U_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByG_U_C_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(), Long.class.getName(),
-				Integer.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_U_C_T =
-		new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByG_U_C_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(), Long.class.getName(),
-				Integer.class.getName()
-			},
-			SocialActivitySetModelImpl.GROUPID_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.USERID_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.CLASSNAMEID_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.TYPE_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_G_U_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByG_U_C_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(), Long.class.getName(),
-				Integer.class.getName()
-			});
+	private FinderPath _finderPathWithPaginationFindByG_U_C_T;
+	private FinderPath _finderPathWithoutPaginationFindByG_U_C_T;
+	private FinderPath _finderPathCountByG_U_C_T;
 
 	/**
 	 * Returns all the social activity sets where groupId = &#63; and userId = &#63; and classNameId = &#63; and type = &#63;.
@@ -2211,7 +2201,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns a range of all the social activity sets where groupId = &#63; and userId = &#63; and classNameId = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param groupId the group ID
@@ -2233,7 +2223,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns an ordered range of all the social activity sets where groupId = &#63; and userId = &#63; and classNameId = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param groupId the group ID
@@ -2248,7 +2238,33 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	@Override
 	public List<SocialActivitySet> findByG_U_C_T(long groupId, long userId,
 		long classNameId, int type, int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<SocialActivitySet> orderByComparator) {
+		return findByG_U_C_T(groupId, userId, classNameId, type, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the social activity sets where groupId = &#63; and userId = &#63; and classNameId = &#63; and type = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param groupId the group ID
+	 * @param userId the user ID
+	 * @param classNameId the class name ID
+	 * @param type the type
+	 * @param start the lower bound of the range of social activity sets
+	 * @param end the upper bound of the range of social activity sets (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching social activity sets
+	 */
+	@Override
+	public List<SocialActivitySet> findByG_U_C_T(long groupId, long userId,
+		long classNameId, int type, int start, int end,
+		OrderByComparator<SocialActivitySet> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -2256,11 +2272,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_U_C_T;
+			finderPath = _finderPathWithoutPaginationFindByG_U_C_T;
 			finderArgs = new Object[] { groupId, userId, classNameId, type };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_G_U_C_T;
+			finderPath = _finderPathWithPaginationFindByG_U_C_T;
 			finderArgs = new Object[] {
 					groupId, userId, classNameId, type,
 					
@@ -2268,18 +2284,22 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 				};
 		}
 
-		List<SocialActivitySet> list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<SocialActivitySet> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (SocialActivitySet socialActivitySet : list) {
-				if ((groupId != socialActivitySet.getGroupId()) ||
-						(userId != socialActivitySet.getUserId()) ||
-						(classNameId != socialActivitySet.getClassNameId()) ||
-						(type != socialActivitySet.getType())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (SocialActivitySet socialActivitySet : list) {
+					if ((groupId != socialActivitySet.getGroupId()) ||
+							(userId != socialActivitySet.getUserId()) ||
+							(classNameId != socialActivitySet.getClassNameId()) ||
+							(type != socialActivitySet.getType())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -2289,7 +2309,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 			if (orderByComparator != null) {
 				query = new StringBundler(6 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(6);
@@ -2372,11 +2392,12 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByG_U_C_T_First(long groupId, long userId,
-		long classNameId, int type, OrderByComparator orderByComparator)
+		long classNameId, int type,
+		OrderByComparator<SocialActivitySet> orderByComparator)
 		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByG_U_C_T_First(groupId,
 				userId, classNameId, type, orderByComparator);
@@ -2401,7 +2422,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -2418,7 +2439,8 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public SocialActivitySet fetchByG_U_C_T_First(long groupId, long userId,
-		long classNameId, int type, OrderByComparator orderByComparator) {
+		long classNameId, int type,
+		OrderByComparator<SocialActivitySet> orderByComparator) {
 		List<SocialActivitySet> list = findByG_U_C_T(groupId, userId,
 				classNameId, type, 0, 1, orderByComparator);
 
@@ -2438,11 +2460,12 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByG_U_C_T_Last(long groupId, long userId,
-		long classNameId, int type, OrderByComparator orderByComparator)
+		long classNameId, int type,
+		OrderByComparator<SocialActivitySet> orderByComparator)
 		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByG_U_C_T_Last(groupId,
 				userId, classNameId, type, orderByComparator);
@@ -2467,7 +2490,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -2484,7 +2507,8 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public SocialActivitySet fetchByG_U_C_T_Last(long groupId, long userId,
-		long classNameId, int type, OrderByComparator orderByComparator) {
+		long classNameId, int type,
+		OrderByComparator<SocialActivitySet> orderByComparator) {
 		int count = countByG_U_C_T(groupId, userId, classNameId, type);
 
 		if (count == 0) {
@@ -2511,12 +2535,13 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a social activity set with the primary key could not be found
+	 * @throws NoSuchActivitySetException if a social activity set with the primary key could not be found
 	 */
 	@Override
 	public SocialActivitySet[] findByG_U_C_T_PrevAndNext(long activitySetId,
 		long groupId, long userId, long classNameId, int type,
-		OrderByComparator orderByComparator) throws NoSuchActivitySetException {
+		OrderByComparator<SocialActivitySet> orderByComparator)
+		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = findByPrimaryKey(activitySetId);
 
 		Session session = null;
@@ -2546,16 +2571,17 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 	protected SocialActivitySet getByG_U_C_T_PrevAndNext(Session session,
 		SocialActivitySet socialActivitySet, long groupId, long userId,
-		long classNameId, int type, OrderByComparator orderByComparator,
-		boolean previous) {
+		long classNameId, int type,
+		OrderByComparator<SocialActivitySet> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(7 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(6);
 		}
 
 		query.append(_SQL_SELECT_SOCIALACTIVITYSET_WHERE);
@@ -2645,10 +2671,9 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		qPos.add(type);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(socialActivitySet);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					socialActivitySet)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -2692,7 +2717,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	@Override
 	public int countByG_U_C_T(long groupId, long userId, long classNameId,
 		int type) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_G_U_C_T;
+		FinderPath finderPath = _finderPathCountByG_U_C_T;
 
 		Object[] finderArgs = new Object[] { groupId, userId, classNameId, type };
 
@@ -2752,45 +2777,16 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	private static final String _FINDER_COLUMN_G_U_C_T_USERID_2 = "socialActivitySet.userId = ? AND ";
 	private static final String _FINDER_COLUMN_G_U_C_T_CLASSNAMEID_2 = "socialActivitySet.classNameId = ? AND ";
 	private static final String _FINDER_COLUMN_G_U_C_T_TYPE_2 = "socialActivitySet.type = ?";
-	public static final FinderPath FINDER_PATH_WITH_PAGINATION_FIND_BY_U_C_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByU_C_C_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(), Long.class.getName(),
-				Integer.class.getName(),
-				
-			Integer.class.getName(), Integer.class.getName(),
-				OrderByComparator.class.getName()
-			});
-	public static final FinderPath FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_U_C_C_T =
-		new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
-			SocialActivitySetImpl.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByU_C_C_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(), Long.class.getName(),
-				Integer.class.getName()
-			},
-			SocialActivitySetModelImpl.USERID_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.CLASSNAMEID_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.CLASSPK_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.TYPE_COLUMN_BITMASK |
-			SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
-	public static final FinderPath FINDER_PATH_COUNT_BY_U_C_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-			SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
-			FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByU_C_C_T",
-			new String[] {
-				Long.class.getName(), Long.class.getName(), Long.class.getName(),
-				Integer.class.getName()
-			});
+	private FinderPath _finderPathWithPaginationFindByU_C_C_T;
+	private FinderPath _finderPathWithoutPaginationFindByU_C_C_T;
+	private FinderPath _finderPathCountByU_C_C_T;
 
 	/**
 	 * Returns all the social activity sets where userId = &#63; and classNameId = &#63; and classPK = &#63; and type = &#63;.
 	 *
 	 * @param userId the user ID
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @return the matching social activity sets
 	 */
@@ -2805,12 +2801,12 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns a range of all the social activity sets where userId = &#63; and classNameId = &#63; and classPK = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param userId the user ID
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param start the lower bound of the range of social activity sets
 	 * @param end the upper bound of the range of social activity sets (not inclusive)
@@ -2827,12 +2823,12 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns an ordered range of all the social activity sets where userId = &#63; and classNameId = &#63; and classPK = &#63; and type = &#63;.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param userId the user ID
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param start the lower bound of the range of social activity sets
 	 * @param end the upper bound of the range of social activity sets (not inclusive)
@@ -2842,7 +2838,33 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	@Override
 	public List<SocialActivitySet> findByU_C_C_T(long userId, long classNameId,
 		long classPK, int type, int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<SocialActivitySet> orderByComparator) {
+		return findByU_C_C_T(userId, classNameId, classPK, type, start, end,
+			orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the social activity sets where userId = &#63; and classNameId = &#63; and classPK = &#63; and type = &#63;.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param userId the user ID
+	 * @param classNameId the class name ID
+	 * @param classPK the class pk
+	 * @param type the type
+	 * @param start the lower bound of the range of social activity sets
+	 * @param end the upper bound of the range of social activity sets (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of matching social activity sets
+	 */
+	@Override
+	public List<SocialActivitySet> findByU_C_C_T(long userId, long classNameId,
+		long classPK, int type, int start, int end,
+		OrderByComparator<SocialActivitySet> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -2850,11 +2872,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_U_C_C_T;
+			finderPath = _finderPathWithoutPaginationFindByU_C_C_T;
 			finderArgs = new Object[] { userId, classNameId, classPK, type };
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_BY_U_C_C_T;
+			finderPath = _finderPathWithPaginationFindByU_C_C_T;
 			finderArgs = new Object[] {
 					userId, classNameId, classPK, type,
 					
@@ -2862,18 +2884,22 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 				};
 		}
 
-		List<SocialActivitySet> list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<SocialActivitySet> list = null;
 
-		if ((list != null) && !list.isEmpty()) {
-			for (SocialActivitySet socialActivitySet : list) {
-				if ((userId != socialActivitySet.getUserId()) ||
-						(classNameId != socialActivitySet.getClassNameId()) ||
-						(classPK != socialActivitySet.getClassPK()) ||
-						(type != socialActivitySet.getType())) {
-					list = null;
+		if (retrieveFromCache) {
+			list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
 
-					break;
+			if ((list != null) && !list.isEmpty()) {
+				for (SocialActivitySet socialActivitySet : list) {
+					if ((userId != socialActivitySet.getUserId()) ||
+							(classNameId != socialActivitySet.getClassNameId()) ||
+							(classPK != socialActivitySet.getClassPK()) ||
+							(type != socialActivitySet.getType())) {
+						list = null;
+
+						break;
+					}
 				}
 			}
 		}
@@ -2883,7 +2909,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 			if (orderByComparator != null) {
 				query = new StringBundler(6 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 			}
 			else {
 				query = new StringBundler(6);
@@ -2962,15 +2988,16 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 *
 	 * @param userId the user ID
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByU_C_C_T_First(long userId, long classNameId,
-		long classPK, int type, OrderByComparator orderByComparator)
+		long classPK, int type,
+		OrderByComparator<SocialActivitySet> orderByComparator)
 		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByU_C_C_T_First(userId,
 				classNameId, classPK, type, orderByComparator);
@@ -2995,7 +3022,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -3005,7 +3032,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 *
 	 * @param userId the user ID
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the first matching social activity set, or <code>null</code> if a matching social activity set could not be found
@@ -3013,7 +3040,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	@Override
 	public SocialActivitySet fetchByU_C_C_T_First(long userId,
 		long classNameId, long classPK, int type,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<SocialActivitySet> orderByComparator) {
 		List<SocialActivitySet> list = findByU_C_C_T(userId, classNameId,
 				classPK, type, 0, 1, orderByComparator);
 
@@ -3029,15 +3056,16 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 *
 	 * @param userId the user ID
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a matching social activity set could not be found
+	 * @throws NoSuchActivitySetException if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet findByU_C_C_T_Last(long userId, long classNameId,
-		long classPK, int type, OrderByComparator orderByComparator)
+		long classPK, int type,
+		OrderByComparator<SocialActivitySet> orderByComparator)
 		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = fetchByU_C_C_T_Last(userId,
 				classNameId, classPK, type, orderByComparator);
@@ -3062,7 +3090,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		msg.append(", type=");
 		msg.append(type);
 
-		msg.append(StringPool.CLOSE_CURLY_BRACE);
+		msg.append("}");
 
 		throw new NoSuchActivitySetException(msg.toString());
 	}
@@ -3072,14 +3100,15 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 *
 	 * @param userId the user ID
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the last matching social activity set, or <code>null</code> if a matching social activity set could not be found
 	 */
 	@Override
 	public SocialActivitySet fetchByU_C_C_T_Last(long userId, long classNameId,
-		long classPK, int type, OrderByComparator orderByComparator) {
+		long classPK, int type,
+		OrderByComparator<SocialActivitySet> orderByComparator) {
 		int count = countByU_C_C_T(userId, classNameId, classPK, type);
 
 		if (count == 0) {
@@ -3102,16 +3131,17 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * @param activitySetId the primary key of the current social activity set
 	 * @param userId the user ID
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	 * @return the previous, current, and next social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a social activity set with the primary key could not be found
+	 * @throws NoSuchActivitySetException if a social activity set with the primary key could not be found
 	 */
 	@Override
 	public SocialActivitySet[] findByU_C_C_T_PrevAndNext(long activitySetId,
 		long userId, long classNameId, long classPK, int type,
-		OrderByComparator orderByComparator) throws NoSuchActivitySetException {
+		OrderByComparator<SocialActivitySet> orderByComparator)
+		throws NoSuchActivitySetException {
 		SocialActivitySet socialActivitySet = findByPrimaryKey(activitySetId);
 
 		Session session = null;
@@ -3141,16 +3171,17 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 	protected SocialActivitySet getByU_C_C_T_PrevAndNext(Session session,
 		SocialActivitySet socialActivitySet, long userId, long classNameId,
-		long classPK, int type, OrderByComparator orderByComparator,
-		boolean previous) {
+		long classPK, int type,
+		OrderByComparator<SocialActivitySet> orderByComparator, boolean previous) {
 		StringBundler query = null;
 
 		if (orderByComparator != null) {
-			query = new StringBundler(6 +
-					(orderByComparator.getOrderByFields().length * 6));
+			query = new StringBundler(7 +
+					(orderByComparator.getOrderByConditionFields().length * 3) +
+					(orderByComparator.getOrderByFields().length * 3));
 		}
 		else {
-			query = new StringBundler(3);
+			query = new StringBundler(6);
 		}
 
 		query.append(_SQL_SELECT_SOCIALACTIVITYSET_WHERE);
@@ -3240,10 +3271,9 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		qPos.add(type);
 
 		if (orderByComparator != null) {
-			Object[] values = orderByComparator.getOrderByConditionValues(socialActivitySet);
-
-			for (Object value : values) {
-				qPos.add(value);
+			for (Object orderByConditionValue : orderByComparator.getOrderByConditionValues(
+					socialActivitySet)) {
+				qPos.add(orderByConditionValue);
 			}
 		}
 
@@ -3262,7 +3292,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 *
 	 * @param userId the user ID
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 */
 	@Override
@@ -3280,14 +3310,14 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 *
 	 * @param userId the user ID
 	 * @param classNameId the class name ID
-	 * @param classPK the class p k
+	 * @param classPK the class pk
 	 * @param type the type
 	 * @return the number of matching social activity sets
 	 */
 	@Override
 	public int countByU_C_C_T(long userId, long classNameId, long classPK,
 		int type) {
-		FinderPath finderPath = FINDER_PATH_COUNT_BY_U_C_C_T;
+		FinderPath finderPath = _finderPathCountByU_C_C_T;
 
 		Object[] finderArgs = new Object[] { userId, classNameId, classPK, type };
 
@@ -3350,6 +3380,10 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 	public SocialActivitySetPersistenceImpl() {
 		setModelClass(SocialActivitySet.class);
+
+		setModelImplClass(SocialActivitySetImpl.class);
+		setModelPKClass(long.class);
+		setEntityCacheEnabled(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED);
 	}
 
 	/**
@@ -3390,15 +3424,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Clears the cache for all social activity sets.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
 	public void clearCache() {
-		if (_HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE) {
-			CacheRegistryUtil.clear(SocialActivitySetImpl.class.getName());
-		}
-
 		EntityCacheUtil.clearCache(SocialActivitySetImpl.class);
 
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_ENTITY);
@@ -3410,7 +3440,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Clears the cache for the social activity set.
 	 *
 	 * <p>
-	 * The {@link com.liferay.portal.kernel.dao.orm.EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
+	 * The {@link EntityCache} and {@link com.liferay.portal.kernel.dao.orm.FinderCache} are both cleared by this method.
 	 * </p>
 	 */
 	@Override
@@ -3446,6 +3476,8 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		socialActivitySet.setNew(true);
 		socialActivitySet.setPrimaryKey(activitySetId);
 
+		socialActivitySet.setCompanyId(companyProvider.getCompanyId());
+
 		return socialActivitySet;
 	}
 
@@ -3454,7 +3486,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 *
 	 * @param activitySetId the primary key of the social activity set
 	 * @return the social activity set that was removed
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a social activity set with the primary key could not be found
+	 * @throws NoSuchActivitySetException if a social activity set with the primary key could not be found
 	 */
 	@Override
 	public SocialActivitySet remove(long activitySetId)
@@ -3467,7 +3499,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 *
 	 * @param primaryKey the primary key of the social activity set
 	 * @return the social activity set that was removed
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a social activity set with the primary key could not be found
+	 * @throws NoSuchActivitySetException if a social activity set with the primary key could not be found
 	 */
 	@Override
 	public SocialActivitySet remove(Serializable primaryKey)
@@ -3481,8 +3513,8 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 					primaryKey);
 
 			if (socialActivitySet == null) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+				if (_log.isDebugEnabled()) {
+					_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 				}
 
 				throw new NoSuchActivitySetException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -3504,8 +3536,6 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 	@Override
 	protected SocialActivitySet removeImpl(SocialActivitySet socialActivitySet) {
-		socialActivitySet = toUnwrappedModel(socialActivitySet);
-
 		Session session = null;
 
 		try {
@@ -3535,11 +3565,24 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	}
 
 	@Override
-	public SocialActivitySet updateImpl(
-		com.liferay.portlet.social.model.SocialActivitySet socialActivitySet) {
-		socialActivitySet = toUnwrappedModel(socialActivitySet);
-
+	public SocialActivitySet updateImpl(SocialActivitySet socialActivitySet) {
 		boolean isNew = socialActivitySet.isNew();
+
+		if (!(socialActivitySet instanceof SocialActivitySetModelImpl)) {
+			InvocationHandler invocationHandler = null;
+
+			if (ProxyUtil.isProxyClass(socialActivitySet.getClass())) {
+				invocationHandler = ProxyUtil.getInvocationHandler(socialActivitySet);
+
+				throw new IllegalArgumentException(
+					"Implement ModelWrapper in socialActivitySet proxy " +
+					invocationHandler.getClass());
+			}
+
+			throw new IllegalArgumentException(
+				"Implement ModelWrapper in custom SocialActivitySet implementation " +
+				socialActivitySet.getClass());
+		}
 
 		SocialActivitySetModelImpl socialActivitySetModelImpl = (SocialActivitySetModelImpl)socialActivitySet;
 
@@ -3554,7 +3597,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 				socialActivitySet.setNew(false);
 			}
 			else {
-				session.merge(socialActivitySet);
+				socialActivitySet = (SocialActivitySet)session.merge(socialActivitySet);
 			}
 		}
 		catch (Exception e) {
@@ -3566,55 +3609,115 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 		FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITH_PAGINATION);
 
-		if (isNew || !SocialActivitySetModelImpl.COLUMN_BITMASK_ENABLED) {
+		if (!SocialActivitySetModelImpl.COLUMN_BITMASK_ENABLED) {
 			FinderCacheUtil.clearCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
+		}
+		else
+		 if (isNew) {
+			Object[] args = new Object[] { socialActivitySetModelImpl.getGroupId() };
+
+			FinderCacheUtil.removeResult(_finderPathCountByGroupId, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByGroupId,
+				args);
+
+			args = new Object[] { socialActivitySetModelImpl.getUserId() };
+
+			FinderCacheUtil.removeResult(_finderPathCountByUserId, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByUserId,
+				args);
+
+			args = new Object[] {
+					socialActivitySetModelImpl.getGroupId(),
+					socialActivitySetModelImpl.getUserId(),
+					socialActivitySetModelImpl.getType()
+				};
+
+			FinderCacheUtil.removeResult(_finderPathCountByG_U_T, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByG_U_T,
+				args);
+
+			args = new Object[] {
+					socialActivitySetModelImpl.getClassNameId(),
+					socialActivitySetModelImpl.getClassPK(),
+					socialActivitySetModelImpl.getType()
+				};
+
+			FinderCacheUtil.removeResult(_finderPathCountByC_C_T, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByC_C_T,
+				args);
+
+			args = new Object[] {
+					socialActivitySetModelImpl.getGroupId(),
+					socialActivitySetModelImpl.getUserId(),
+					socialActivitySetModelImpl.getClassNameId(),
+					socialActivitySetModelImpl.getType()
+				};
+
+			FinderCacheUtil.removeResult(_finderPathCountByG_U_C_T, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByG_U_C_T,
+				args);
+
+			args = new Object[] {
+					socialActivitySetModelImpl.getUserId(),
+					socialActivitySetModelImpl.getClassNameId(),
+					socialActivitySetModelImpl.getClassPK(),
+					socialActivitySetModelImpl.getType()
+				};
+
+			FinderCacheUtil.removeResult(_finderPathCountByU_C_C_T, args);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByU_C_C_T,
+				args);
+
+			FinderCacheUtil.removeResult(_finderPathCountAll, FINDER_ARGS_EMPTY);
+			FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindAll,
+				FINDER_ARGS_EMPTY);
 		}
 
 		else {
 			if ((socialActivitySetModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_GROUPID.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByGroupId.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						socialActivitySetModelImpl.getOriginalGroupId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_GROUPID, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_GROUPID,
+				FinderCacheUtil.removeResult(_finderPathCountByGroupId, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByGroupId,
 					args);
 
 				args = new Object[] { socialActivitySetModelImpl.getGroupId() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_GROUPID, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_GROUPID,
+				FinderCacheUtil.removeResult(_finderPathCountByGroupId, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByGroupId,
 					args);
 			}
 
 			if ((socialActivitySetModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_USERID.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByUserId.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						socialActivitySetModelImpl.getOriginalUserId()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_USERID, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_USERID,
+				FinderCacheUtil.removeResult(_finderPathCountByUserId, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByUserId,
 					args);
 
 				args = new Object[] { socialActivitySetModelImpl.getUserId() };
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_USERID, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_USERID,
+				FinderCacheUtil.removeResult(_finderPathCountByUserId, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByUserId,
 					args);
 			}
 
 			if ((socialActivitySetModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_U_T.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByG_U_T.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						socialActivitySetModelImpl.getOriginalGroupId(),
 						socialActivitySetModelImpl.getOriginalUserId(),
 						socialActivitySetModelImpl.getOriginalType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_G_U_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_U_T,
+				FinderCacheUtil.removeResult(_finderPathCountByG_U_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByG_U_T,
 					args);
 
 				args = new Object[] {
@@ -3623,21 +3726,21 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 						socialActivitySetModelImpl.getType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_G_U_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_U_T,
+				FinderCacheUtil.removeResult(_finderPathCountByG_U_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByG_U_T,
 					args);
 			}
 
 			if ((socialActivitySetModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_C_C_T.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByC_C_T.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						socialActivitySetModelImpl.getOriginalClassNameId(),
 						socialActivitySetModelImpl.getOriginalClassPK(),
 						socialActivitySetModelImpl.getOriginalType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_C_C_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_C_C_T,
+				FinderCacheUtil.removeResult(_finderPathCountByC_C_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByC_C_T,
 					args);
 
 				args = new Object[] {
@@ -3646,13 +3749,13 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 						socialActivitySetModelImpl.getType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_C_C_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_C_C_T,
+				FinderCacheUtil.removeResult(_finderPathCountByC_C_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByC_C_T,
 					args);
 			}
 
 			if ((socialActivitySetModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_U_C_T.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByG_U_C_T.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						socialActivitySetModelImpl.getOriginalGroupId(),
 						socialActivitySetModelImpl.getOriginalUserId(),
@@ -3660,8 +3763,8 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 						socialActivitySetModelImpl.getOriginalType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_G_U_C_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_U_C_T,
+				FinderCacheUtil.removeResult(_finderPathCountByG_U_C_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByG_U_C_T,
 					args);
 
 				args = new Object[] {
@@ -3671,13 +3774,13 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 						socialActivitySetModelImpl.getType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_G_U_C_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_G_U_C_T,
+				FinderCacheUtil.removeResult(_finderPathCountByG_U_C_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByG_U_C_T,
 					args);
 			}
 
 			if ((socialActivitySetModelImpl.getColumnBitmask() &
-					FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_U_C_C_T.getColumnBitmask()) != 0) {
+					_finderPathWithoutPaginationFindByU_C_C_T.getColumnBitmask()) != 0) {
 				Object[] args = new Object[] {
 						socialActivitySetModelImpl.getOriginalUserId(),
 						socialActivitySetModelImpl.getOriginalClassNameId(),
@@ -3685,8 +3788,8 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 						socialActivitySetModelImpl.getOriginalType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_U_C_C_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_U_C_C_T,
+				FinderCacheUtil.removeResult(_finderPathCountByU_C_C_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByU_C_C_T,
 					args);
 
 				args = new Object[] {
@@ -3696,8 +3799,8 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 						socialActivitySetModelImpl.getType()
 					};
 
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_BY_U_C_C_T, args);
-				FinderCacheUtil.removeResult(FINDER_PATH_WITHOUT_PAGINATION_FIND_BY_U_C_C_T,
+				FinderCacheUtil.removeResult(_finderPathCountByU_C_C_T, args);
+				FinderCacheUtil.removeResult(_finderPathWithoutPaginationFindByU_C_C_T,
 					args);
 			}
 		}
@@ -3711,38 +3814,12 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		return socialActivitySet;
 	}
 
-	protected SocialActivitySet toUnwrappedModel(
-		SocialActivitySet socialActivitySet) {
-		if (socialActivitySet instanceof SocialActivitySetImpl) {
-			return socialActivitySet;
-		}
-
-		SocialActivitySetImpl socialActivitySetImpl = new SocialActivitySetImpl();
-
-		socialActivitySetImpl.setNew(socialActivitySet.isNew());
-		socialActivitySetImpl.setPrimaryKey(socialActivitySet.getPrimaryKey());
-
-		socialActivitySetImpl.setActivitySetId(socialActivitySet.getActivitySetId());
-		socialActivitySetImpl.setGroupId(socialActivitySet.getGroupId());
-		socialActivitySetImpl.setCompanyId(socialActivitySet.getCompanyId());
-		socialActivitySetImpl.setUserId(socialActivitySet.getUserId());
-		socialActivitySetImpl.setCreateDate(socialActivitySet.getCreateDate());
-		socialActivitySetImpl.setModifiedDate(socialActivitySet.getModifiedDate());
-		socialActivitySetImpl.setClassNameId(socialActivitySet.getClassNameId());
-		socialActivitySetImpl.setClassPK(socialActivitySet.getClassPK());
-		socialActivitySetImpl.setType(socialActivitySet.getType());
-		socialActivitySetImpl.setExtraData(socialActivitySet.getExtraData());
-		socialActivitySetImpl.setActivityCount(socialActivitySet.getActivityCount());
-
-		return socialActivitySetImpl;
-	}
-
 	/**
-	 * Returns the social activity set with the primary key or throws a {@link com.liferay.portal.NoSuchModelException} if it could not be found.
+	 * Returns the social activity set with the primary key or throws a {@link com.liferay.portal.kernel.exception.NoSuchModelException} if it could not be found.
 	 *
 	 * @param primaryKey the primary key of the social activity set
 	 * @return the social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a social activity set with the primary key could not be found
+	 * @throws NoSuchActivitySetException if a social activity set with the primary key could not be found
 	 */
 	@Override
 	public SocialActivitySet findByPrimaryKey(Serializable primaryKey)
@@ -3750,8 +3827,8 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		SocialActivitySet socialActivitySet = fetchByPrimaryKey(primaryKey);
 
 		if (socialActivitySet == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
+			if (_log.isDebugEnabled()) {
+				_log.debug(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY + primaryKey);
 			}
 
 			throw new NoSuchActivitySetException(_NO_SUCH_ENTITY_WITH_PRIMARY_KEY +
@@ -3762,63 +3839,16 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	}
 
 	/**
-	 * Returns the social activity set with the primary key or throws a {@link com.liferay.portlet.social.NoSuchActivitySetException} if it could not be found.
+	 * Returns the social activity set with the primary key or throws a {@link NoSuchActivitySetException} if it could not be found.
 	 *
 	 * @param activitySetId the primary key of the social activity set
 	 * @return the social activity set
-	 * @throws com.liferay.portlet.social.NoSuchActivitySetException if a social activity set with the primary key could not be found
+	 * @throws NoSuchActivitySetException if a social activity set with the primary key could not be found
 	 */
 	@Override
 	public SocialActivitySet findByPrimaryKey(long activitySetId)
 		throws NoSuchActivitySetException {
 		return findByPrimaryKey((Serializable)activitySetId);
-	}
-
-	/**
-	 * Returns the social activity set with the primary key or returns <code>null</code> if it could not be found.
-	 *
-	 * @param primaryKey the primary key of the social activity set
-	 * @return the social activity set, or <code>null</code> if a social activity set with the primary key could not be found
-	 */
-	@Override
-	public SocialActivitySet fetchByPrimaryKey(Serializable primaryKey) {
-		SocialActivitySet socialActivitySet = (SocialActivitySet)EntityCacheUtil.getResult(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-				SocialActivitySetImpl.class, primaryKey);
-
-		if (socialActivitySet == _nullSocialActivitySet) {
-			return null;
-		}
-
-		if (socialActivitySet == null) {
-			Session session = null;
-
-			try {
-				session = openSession();
-
-				socialActivitySet = (SocialActivitySet)session.get(SocialActivitySetImpl.class,
-						primaryKey);
-
-				if (socialActivitySet != null) {
-					cacheResult(socialActivitySet);
-				}
-				else {
-					EntityCacheUtil.putResult(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-						SocialActivitySetImpl.class, primaryKey,
-						_nullSocialActivitySet);
-				}
-			}
-			catch (Exception e) {
-				EntityCacheUtil.removeResult(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-					SocialActivitySetImpl.class, primaryKey);
-
-				throw processException(e);
-			}
-			finally {
-				closeSession(session);
-			}
-		}
-
-		return socialActivitySet;
 	}
 
 	/**
@@ -3830,99 +3860,6 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	@Override
 	public SocialActivitySet fetchByPrimaryKey(long activitySetId) {
 		return fetchByPrimaryKey((Serializable)activitySetId);
-	}
-
-	@Override
-	public Map<Serializable, SocialActivitySet> fetchByPrimaryKeys(
-		Set<Serializable> primaryKeys) {
-		if (primaryKeys.isEmpty()) {
-			return Collections.emptyMap();
-		}
-
-		Map<Serializable, SocialActivitySet> map = new HashMap<Serializable, SocialActivitySet>();
-
-		if (primaryKeys.size() == 1) {
-			Iterator<Serializable> iterator = primaryKeys.iterator();
-
-			Serializable primaryKey = iterator.next();
-
-			SocialActivitySet socialActivitySet = fetchByPrimaryKey(primaryKey);
-
-			if (socialActivitySet != null) {
-				map.put(primaryKey, socialActivitySet);
-			}
-
-			return map;
-		}
-
-		Set<Serializable> uncachedPrimaryKeys = null;
-
-		for (Serializable primaryKey : primaryKeys) {
-			SocialActivitySet socialActivitySet = (SocialActivitySet)EntityCacheUtil.getResult(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-					SocialActivitySetImpl.class, primaryKey);
-
-			if (socialActivitySet == null) {
-				if (uncachedPrimaryKeys == null) {
-					uncachedPrimaryKeys = new HashSet<Serializable>();
-				}
-
-				uncachedPrimaryKeys.add(primaryKey);
-			}
-			else {
-				map.put(primaryKey, socialActivitySet);
-			}
-		}
-
-		if (uncachedPrimaryKeys == null) {
-			return map;
-		}
-
-		StringBundler query = new StringBundler((uncachedPrimaryKeys.size() * 2) +
-				1);
-
-		query.append(_SQL_SELECT_SOCIALACTIVITYSET_WHERE_PKS_IN);
-
-		for (Serializable primaryKey : uncachedPrimaryKeys) {
-			query.append(String.valueOf(primaryKey));
-
-			query.append(StringPool.COMMA);
-		}
-
-		query.setIndex(query.index() - 1);
-
-		query.append(StringPool.CLOSE_PARENTHESIS);
-
-		String sql = query.toString();
-
-		Session session = null;
-
-		try {
-			session = openSession();
-
-			Query q = session.createQuery(sql);
-
-			for (SocialActivitySet socialActivitySet : (List<SocialActivitySet>)q.list()) {
-				map.put(socialActivitySet.getPrimaryKeyObj(), socialActivitySet);
-
-				cacheResult(socialActivitySet);
-
-				uncachedPrimaryKeys.remove(socialActivitySet.getPrimaryKeyObj());
-			}
-
-			for (Serializable primaryKey : uncachedPrimaryKeys) {
-				EntityCacheUtil.putResult(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
-					SocialActivitySetImpl.class, primaryKey,
-					_nullSocialActivitySet);
-			}
-		}
-		catch (Exception e) {
-			throw processException(e);
-		}
-		finally {
-			closeSession(session);
-		}
-
-		return map;
 	}
 
 	/**
@@ -3939,7 +3876,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns a range of all the social activity sets.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of social activity sets
@@ -3955,7 +3892,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 * Returns an ordered range of all the social activity sets.
 	 *
 	 * <p>
-	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link com.liferay.portlet.social.model.impl.SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	 * </p>
 	 *
 	 * @param start the lower bound of the range of social activity sets
@@ -3965,7 +3902,27 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public List<SocialActivitySet> findAll(int start, int end,
-		OrderByComparator orderByComparator) {
+		OrderByComparator<SocialActivitySet> orderByComparator) {
+		return findAll(start, end, orderByComparator, true);
+	}
+
+	/**
+	 * Returns an ordered range of all the social activity sets.
+	 *
+	 * <p>
+	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link SocialActivitySetModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	 * </p>
+	 *
+	 * @param start the lower bound of the range of social activity sets
+	 * @param end the upper bound of the range of social activity sets (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @param retrieveFromCache whether to retrieve from the finder cache
+	 * @return the ordered range of social activity sets
+	 */
+	@Override
+	public List<SocialActivitySet> findAll(int start, int end,
+		OrderByComparator<SocialActivitySet> orderByComparator,
+		boolean retrieveFromCache) {
 		boolean pagination = true;
 		FinderPath finderPath = null;
 		Object[] finderArgs = null;
@@ -3973,16 +3930,20 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
 				(orderByComparator == null)) {
 			pagination = false;
-			finderPath = FINDER_PATH_WITHOUT_PAGINATION_FIND_ALL;
+			finderPath = _finderPathWithoutPaginationFindAll;
 			finderArgs = FINDER_ARGS_EMPTY;
 		}
 		else {
-			finderPath = FINDER_PATH_WITH_PAGINATION_FIND_ALL;
+			finderPath = _finderPathWithPaginationFindAll;
 			finderArgs = new Object[] { start, end, orderByComparator };
 		}
 
-		List<SocialActivitySet> list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
-				finderArgs, this);
+		List<SocialActivitySet> list = null;
+
+		if (retrieveFromCache) {
+			list = (List<SocialActivitySet>)FinderCacheUtil.getResult(finderPath,
+					finderArgs, this);
+		}
 
 		if (list == null) {
 			StringBundler query = null;
@@ -3990,7 +3951,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 			if (orderByComparator != null) {
 				query = new StringBundler(2 +
-						(orderByComparator.getOrderByFields().length * 3));
+						(orderByComparator.getOrderByFields().length * 2));
 
 				query.append(_SQL_SELECT_SOCIALACTIVITYSET);
 
@@ -4062,7 +4023,7 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	 */
 	@Override
 	public int countAll() {
-		Long count = (Long)FinderCacheUtil.getResult(FINDER_PATH_COUNT_ALL,
+		Long count = (Long)FinderCacheUtil.getResult(_finderPathCountAll,
 				FINDER_ARGS_EMPTY, this);
 
 		if (count == null) {
@@ -4075,11 +4036,11 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 
 				count = (Long)q.uniqueResult();
 
-				FinderCacheUtil.putResult(FINDER_PATH_COUNT_ALL,
+				FinderCacheUtil.putResult(_finderPathCountAll,
 					FINDER_ARGS_EMPTY, count);
 			}
 			catch (Exception e) {
-				FinderCacheUtil.removeResult(FINDER_PATH_COUNT_ALL,
+				FinderCacheUtil.removeResult(_finderPathCountAll,
 					FINDER_ARGS_EMPTY);
 
 				throw processException(e);
@@ -4093,33 +4054,231 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 	}
 
 	@Override
-	protected Set<String> getBadColumnNames() {
+	public Set<String> getBadColumnNames() {
 		return _badColumnNames;
+	}
+
+	@Override
+	protected EntityCache getEntityCache() {
+		return EntityCacheUtil.getEntityCache();
+	}
+
+	@Override
+	protected String getPKDBName() {
+		return "activitySetId";
+	}
+
+	@Override
+	protected String getSelectSQL() {
+		return _SQL_SELECT_SOCIALACTIVITYSET;
+	}
+
+	@Override
+	protected Map<String, Integer> getTableColumnsMap() {
+		return SocialActivitySetModelImpl.TABLE_COLUMNS_MAP;
 	}
 
 	/**
 	 * Initializes the social activity set persistence.
 	 */
 	public void afterPropertiesSet() {
-		String[] listenerClassNames = StringUtil.split(GetterUtil.getString(
-					com.liferay.portal.util.PropsUtil.get(
-						"value.object.listener.com.liferay.portlet.social.model.SocialActivitySet")));
+		_finderPathWithPaginationFindAll = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findAll", new String[0]);
 
-		if (listenerClassNames.length > 0) {
-			try {
-				List<ModelListener<SocialActivitySet>> listenersList = new ArrayList<ModelListener<SocialActivitySet>>();
+		_finderPathWithoutPaginationFindAll = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findAll",
+				new String[0]);
 
-				for (String listenerClassName : listenerClassNames) {
-					listenersList.add((ModelListener<SocialActivitySet>)InstanceFactory.newInstance(
-							getClassLoader(), listenerClassName));
-				}
+		_finderPathCountAll = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countAll",
+				new String[0]);
 
-				listeners = listenersList.toArray(new ModelListener[listenersList.size()]);
-			}
-			catch (Exception e) {
-				_log.error(e);
-			}
-		}
+		_finderPathWithPaginationFindByGroupId = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByGroupId",
+				new String[] {
+					Long.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByGroupId = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByGroupId",
+				new String[] { Long.class.getName() },
+				SocialActivitySetModelImpl.GROUPID_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
+
+		_finderPathCountByGroupId = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByGroupId",
+				new String[] { Long.class.getName() });
+
+		_finderPathWithPaginationFindByUserId = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByUserId",
+				new String[] {
+					Long.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByUserId = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByUserId",
+				new String[] { Long.class.getName() },
+				SocialActivitySetModelImpl.USERID_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
+
+		_finderPathCountByUserId = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByUserId",
+				new String[] { Long.class.getName() });
+
+		_finderPathWithPaginationFindByG_U_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByG_U_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Integer.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByG_U_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByG_U_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Integer.class.getName()
+				},
+				SocialActivitySetModelImpl.GROUPID_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.USERID_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.TYPE_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
+
+		_finderPathCountByG_U_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByG_U_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Integer.class.getName()
+				});
+
+		_finderPathWithPaginationFindByC_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByC_C_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Integer.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByC_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByC_C_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Integer.class.getName()
+				},
+				SocialActivitySetModelImpl.CLASSNAMEID_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.CLASSPK_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.TYPE_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
+
+		_finderPathCountByC_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByC_C_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Integer.class.getName()
+				});
+
+		_finderPathWithPaginationFindByG_U_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByG_U_C_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Long.class.getName(), Integer.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByG_U_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByG_U_C_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Long.class.getName(), Integer.class.getName()
+				},
+				SocialActivitySetModelImpl.GROUPID_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.USERID_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.CLASSNAMEID_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.TYPE_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
+
+		_finderPathCountByG_U_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByG_U_C_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Long.class.getName(), Integer.class.getName()
+				});
+
+		_finderPathWithPaginationFindByU_C_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "findByU_C_C_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Long.class.getName(), Integer.class.getName(),
+					
+				Integer.class.getName(), Integer.class.getName(),
+					OrderByComparator.class.getName()
+				});
+
+		_finderPathWithoutPaginationFindByU_C_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED,
+				SocialActivitySetImpl.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "findByU_C_C_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Long.class.getName(), Integer.class.getName()
+				},
+				SocialActivitySetModelImpl.USERID_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.CLASSNAMEID_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.CLASSPK_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.TYPE_COLUMN_BITMASK |
+				SocialActivitySetModelImpl.MODIFIEDDATE_COLUMN_BITMASK);
+
+		_finderPathCountByU_C_C_T = new FinderPath(SocialActivitySetModelImpl.ENTITY_CACHE_ENABLED,
+				SocialActivitySetModelImpl.FINDER_CACHE_ENABLED, Long.class,
+				FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION, "countByU_C_C_T",
+				new String[] {
+					Long.class.getName(), Long.class.getName(),
+					Long.class.getName(), Integer.class.getName()
+				});
 	}
 
 	public void destroy() {
@@ -4129,36 +4288,17 @@ public class SocialActivitySetPersistenceImpl extends BasePersistenceImpl<Social
 		FinderCacheUtil.removeCache(FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION);
 	}
 
+	@BeanReference(type = CompanyProviderWrapper.class)
+	protected CompanyProvider companyProvider;
 	private static final String _SQL_SELECT_SOCIALACTIVITYSET = "SELECT socialActivitySet FROM SocialActivitySet socialActivitySet";
-	private static final String _SQL_SELECT_SOCIALACTIVITYSET_WHERE_PKS_IN = "SELECT socialActivitySet FROM SocialActivitySet socialActivitySet WHERE activitySetId IN (";
 	private static final String _SQL_SELECT_SOCIALACTIVITYSET_WHERE = "SELECT socialActivitySet FROM SocialActivitySet socialActivitySet WHERE ";
 	private static final String _SQL_COUNT_SOCIALACTIVITYSET = "SELECT COUNT(socialActivitySet) FROM SocialActivitySet socialActivitySet";
 	private static final String _SQL_COUNT_SOCIALACTIVITYSET_WHERE = "SELECT COUNT(socialActivitySet) FROM SocialActivitySet socialActivitySet WHERE ";
 	private static final String _ORDER_BY_ENTITY_ALIAS = "socialActivitySet.";
 	private static final String _NO_SUCH_ENTITY_WITH_PRIMARY_KEY = "No SocialActivitySet exists with the primary key ";
 	private static final String _NO_SUCH_ENTITY_WITH_KEY = "No SocialActivitySet exists with the key {";
-	private static final boolean _HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE = com.liferay.portal.util.PropsValues.HIBERNATE_CACHE_USE_SECOND_LEVEL_CACHE;
-	private static Log _log = LogFactoryUtil.getLog(SocialActivitySetPersistenceImpl.class);
-	private static Set<String> _badColumnNames = SetUtil.fromArray(new String[] {
+	private static final Log _log = LogFactoryUtil.getLog(SocialActivitySetPersistenceImpl.class);
+	private static final Set<String> _badColumnNames = SetUtil.fromArray(new String[] {
 				"type"
 			});
-	private static SocialActivitySet _nullSocialActivitySet = new SocialActivitySetImpl() {
-			@Override
-			public Object clone() {
-				return this;
-			}
-
-			@Override
-			public CacheModel<SocialActivitySet> toCacheModel() {
-				return _nullSocialActivitySetCacheModel;
-			}
-		};
-
-	private static CacheModel<SocialActivitySet> _nullSocialActivitySetCacheModel =
-		new CacheModel<SocialActivitySet>() {
-			@Override
-			public SocialActivitySet toEntityModel() {
-				return _nullSocialActivitySet;
-			}
-		};
 }

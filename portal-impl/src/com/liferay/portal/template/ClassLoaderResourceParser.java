@@ -14,8 +14,10 @@
 
 package com.liferay.portal.template;
 
+import com.liferay.petra.lang.ClassLoaderPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
 import com.liferay.portal.kernel.template.TemplateConstants;
 
 import java.net.URL;
@@ -23,7 +25,30 @@ import java.net.URL;
 /**
  * @author Tina Tian
  */
+@OSGiBeanProperties(
+	property = {
+		"lang.type=" + TemplateConstants.LANG_TYPE_FTL,
+		"lang.type=" + TemplateConstants.LANG_TYPE_SOY,
+		"lang.type=" + TemplateConstants.LANG_TYPE_VM
+	},
+	service = TemplateResourceParser.class
+)
 public class ClassLoaderResourceParser extends URLResourceParser {
+
+	public ClassLoaderResourceParser() {
+		Class<?> clazz = getClass();
+
+		_classLoader = clazz.getClassLoader();
+	}
+
+	/**
+	 * @deprecated As of Mueller (7.2.x), replaced by {@link
+	 * 			#ClassLoaderResourceParser()}
+	 */
+	@Deprecated
+	public ClassLoaderResourceParser(ClassLoader classLoader) {
+		_classLoader = classLoader;
+	}
 
 	@Override
 	@SuppressWarnings("deprecation")
@@ -36,18 +61,28 @@ public class ClassLoaderResourceParser extends URLResourceParser {
 			return null;
 		}
 
-		Class<?> clazz = getClass();
-
-		ClassLoader classLoader = clazz.getClassLoader();
-
 		if (_log.isDebugEnabled()) {
 			_log.debug("Loading " + templateId);
+		}
+
+		ClassLoader classLoader = _classLoader;
+
+		int pos = templateId.indexOf(TemplateConstants.CLASS_LOADER_SEPARATOR);
+
+		if (pos >= 0) {
+			classLoader = ClassLoaderPool.getClassLoader(
+				templateId.substring(0, pos));
+
+			templateId = templateId.substring(
+				pos + TemplateConstants.CLASS_LOADER_SEPARATOR.length());
 		}
 
 		return classLoader.getResource(templateId);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ClassLoaderResourceParser.class);
+
+	private final ClassLoader _classLoader;
 
 }

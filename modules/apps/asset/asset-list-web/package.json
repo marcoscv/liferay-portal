@@ -1,0 +1,17 @@
+{
+	"dependencies": {
+		"metal-component": "^2.16.7",
+		"metal-soy": "^2.16.7",
+		"metal-state": "^2.16.7"
+	},
+	"devDependencies": {
+		"liferay-npm-scripts": "1.2.0"
+	},
+	"name": "asset-list-web",
+	"scripts": {
+		"build": "liferay-npm-scripts build --soy --bundler",
+		"csf": "liferay-npm-scripts lint",
+		"format": "liferay-npm-scripts format"
+	},
+	"version": "1.0.0"
+}

@@ -14,12 +14,12 @@
 
 package com.liferay.taglib.ui;
 
-import com.liferay.portal.kernel.servlet.PortalIncludeUtil;
-import com.liferay.portal.kernel.servlet.taglib.BaseBodyTagSupport;
-import com.liferay.portal.kernel.servlet.taglib.FileAvailabilityUtil;
 import com.liferay.portal.kernel.util.IntegerWrapper;
 import com.liferay.portal.kernel.util.ServerDetector;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.taglib.BaseBodyTagSupport;
+import com.liferay.taglib.FileAvailabilityUtil;
+import com.liferay.taglib.util.PortalIncludeUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
@@ -53,9 +53,8 @@ public class IconListTag extends BaseBodyTagSupport implements BodyTag {
 
 			return EVAL_BODY_AGAIN;
 		}
-		else {
-			return SKIP_BODY;
-		}
+
+		return SKIP_BODY;
 	}
 
 	@Override
@@ -151,18 +150,16 @@ public class IconListTag extends BaseBodyTagSupport implements BodyTag {
 		if (Validator.isNull(_endPage)) {
 			return _END_PAGE;
 		}
-		else {
-			return _endPage;
-		}
+
+		return _endPage;
 	}
 
 	protected String getStartPage() {
 		if (Validator.isNull(_startPage)) {
 			return _START_PAGE;
 		}
-		else {
-			return _startPage;
-		}
+
+		return _startPage;
 	}
 
 	private static final String _END_PAGE = "/html/taglib/ui/icon_list/end.jsp";
@@ -171,7 +168,7 @@ public class IconListTag extends BaseBodyTagSupport implements BodyTag {
 		"/html/taglib/ui/icon_list/start.jsp";
 
 	private String _endPage;
-	private boolean _showWhenSingleIcon = false;
+	private boolean _showWhenSingleIcon;
 	private String _startPage;
 
 }
