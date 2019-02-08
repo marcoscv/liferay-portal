@@ -121,6 +121,7 @@ public class ProductMenuProductNavigationControlMenuEntry
 
 		values.put("portletNamespace", portletNamespace);
 
+		values.put("ariaLabel", HtmlUtil.escape(LanguageUtil.get(request, "toggle-product-menu")));
 		values.put("title", HtmlUtil.escape(LanguageUtil.get(request, "menu")));
 
 		String productMenuState = SessionClicks.get(
@@ -130,10 +131,12 @@ public class ProductMenuProductNavigationControlMenuEntry
 			"closed");
 
 		if (Objects.equals(productMenuState, "open")) {
+			values.put("ariaExpanded", "true");
 			values.put("cssClass", "active");
 			values.put("dataURL", StringPool.BLANK);
 		}
 		else {
+			values.put("ariaExpanded", "false");
 			values.put("cssClass", StringPool.BLANK);
 
 			ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(

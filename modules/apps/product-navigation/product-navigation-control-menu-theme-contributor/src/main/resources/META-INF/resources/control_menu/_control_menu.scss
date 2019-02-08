@@ -75,6 +75,12 @@
 	padding: 0 2px;
 }
 
+button.control-menu-icon {
+	background-color: transparent;
+	border-width: 0;
+	cursor: pointer;
+}
+
 .control-menu-level-1 {
 	background-color: $control-menu-level-1-bg;
 	color: $control-menu-level-1-color;
